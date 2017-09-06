@@ -13,11 +13,10 @@
 
 . $HOME/.bashrc
 
-a=(`ls -1 /work/MikheyevU/Maeva/varroahost/data/*R1_001.fastq.gz`) #51
-b=(`ls -1 /work/MikheyevU/Maeva/varroahost/data/*R2_001.fastq.gz`)
+a=(`ls -1 /work/MikheyevU/Maeva/varroahost/data/*-R1_001.fastq.gz`) #51
+b=(`ls -1 /work/MikheyevU/Maeva/varroahost/data/*-R2_001.fastq.gz`)
 
-base=$(basename ${a["SLURM_ARRAY_TASK_ID"]} "R1_001.fastq.gz")
-base=${base//-*/}
+base=$(basename ${a["SLURM_ARRAY_TASK_ID"]} "-R1_001.fastq.gz")
 f=${a["SLURM_ARRAY_TASK_ID"]}
 r=${b["SLURM_ARRAY_TASK_ID"]}
 echo $f
@@ -26,7 +25,7 @@ echo $r
 bowbase=/work/MikheyevU/Maeva/varroahost/ref/vdjelly
 ref=/work/MikheyevU/Maeva/varroahost/ref/vd_assembly_filled.fasta
 
-outfile=/work/MikheyevU/Maeva/varroahost/bam/alignvdjelly/`basename $f R1_001.fastq.gz`.bam
+outfile=/work/MikheyevU/Maeva/varroahost/bam/alignvdjelly/`basename $f -R1_001.fastq.gz`.bam
 
 if [ -s "$outfile" ]
 then
@@ -34,6 +33,6 @@ then
     sleep 10s
 else
     echo "$oufile is empty."
-    bowtie2 -p 2 --very-sensitive-local --sam-rg ID:$base --sam-rg LB:Nextera --sam-rg SM:$base --sam-rg PL:ILLUMINA -x $bowbase -1 $f -2 $r | samtools view -Su -F4 - | novosort  -c 2 -m 10G -i -o /work/MikheyevU/Maeva/varroahost/bam/alignvdjelly/`basename $f R1_001.fastq.gz`.bam -
+    bowtie2 -p 2 --very-sensitive-local --sam-rg ID:$base --sam-rg LB:Nextera --sam-rg SM:$base --sam-rg PL:ILLUMINA -x $bowbase -1 $f -2 $r | samtools view -Su -F4 - | novosort  -c 2 -m 10G -i -o /work/MikheyevU/Maeva/varroahost/bam/alignvdjelly/`basename $f -R1_001.fastq.gz`.bam -
 fi
 
