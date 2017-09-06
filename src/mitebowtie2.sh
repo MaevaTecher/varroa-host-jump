@@ -13,10 +13,10 @@
 
 . $HOME/.bashrc
 
-a=(`ls -1 /work/MikheyevU/Maeva/varroahost/data/*-R1_001.fastq.gz`) #51
-b=(`ls -1 /work/MikheyevU/Maeva/varroahost/data/*-R2_001.fastq.gz`)
+a=(`ls -1 /work/MikheyevU/Maeva/varroahost/data/*R1_001.fastq.gz`) #51
+b=(`ls -1 /work/MikheyevU/Maeva/varroahost/data/*R2_001.fastq.gz`)
 
-base=$(basename ${a["SLURM_ARRAY_TASK_ID"]} "_R1_001.fastq.gz")
+base=$(basename ${a["SLURM_ARRAY_TASK_ID"]} "R1_001.fastq.gz")
 base=${base//-*/}
 f=${a["SLURM_ARRAY_TASK_ID"]}
 r=${b["SLURM_ARRAY_TASK_ID"]}
@@ -26,7 +26,7 @@ echo $r
 bowbase=/work/MikheyevU/Maeva/varroahost/ref/vdjelly
 ref=/work/MikheyevU/Maeva/varroahost/ref/vd_assembly_filled.fasta
 
-outfile=/work/MikheyevU/Maeva/varroahost/mapbowtie3/`basename $f -R1_001.fastq.gz`.bam
+outfile=/work/MikheyevU/Maeva/varroahost/mapbowtie3/`basename $f R1_001.fastq.gz`.bam
 
 if [ -s "$outfile" ]
 then
