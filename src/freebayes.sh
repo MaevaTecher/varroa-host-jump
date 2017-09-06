@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=freebayes
 #SBATCH --partition=compute
-#SBATCH --mem=20G
-#SBATCH --cpus-per-task=2
+#SBATCH --mem=80G
+#SBATCH --cpus-per-task=1
 #SBATCH --time=7-0
 #SBATCH --ntasks=1
 ##SBATCH --mail-user=%u@oist.jp
@@ -15,5 +15,5 @@
 
 module load freebayes
 
-freebayes --fasta-reference 454LargeContigs.fasta --bam VD149_S1.bam VD646_1_S17.bam VJ325_1_S30.bam VJ950_1_S44.bam -v freebayes4.vcf
+freebayes --fasta-reference /work/MikheyevU/Maeva/varroahost/ref454/LargeContigs.fasta --use-best-n-alleles 4 --bam /work/MikheyevU/Maeva/varroahost/freebayes/VD149_S1.bam /work/MikheyevU/Maeva/varroahost/freebayes/VD646_1_S17.bam /work/MikheyevU/Maeva/varroahost/freebayes/VJ325_1_S30.bam /work/MikheyevU/Maeva/varroahost/freebayes/VJ950_1_S44.bam -v freebayes4.vcf
 
