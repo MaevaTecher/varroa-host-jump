@@ -1,0 +1,16 @@
+{
+    "__default__" :
+    {
+        "cpus-per-task" : 1,
+        "partition" : "compute",
+        "mem" : "4G",
+        "time": "7-00:00:00" 
+    },
+    "bowtie2":
+    {
+        "cpus-per-task" : 16,
+        "partition" : "compute",
+        "mem" : "10G",
+        "time": "7-00:00:00" 
+    }
+}
