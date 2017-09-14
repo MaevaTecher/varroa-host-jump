@@ -20,6 +20,6 @@ rule removeHost:
 
 rule mashtree:
 	input: expand(outDir + "/sketches/{sample}.fastq.gz", sample = SAMPLES)
-	output: outDir + "/sketches/varroa.dnd"
+	output: tree = outDir + "/sketches/varroa.dnd", matrix = outDir + "/sketches/varroa.phylip"
 	threads: 12
-	shell: "mashtree.pl --genomesize 500000000 --mindepth 2 --tempdir /work/scratch --numcpus {threads} --outmatrix {input} > {output}"
+	shell: "mashtree.pl --genomesize 500000000 --mindepth 2 --tempdir /work/scratch/mashtree --numcpus {threads} --outmatrix {output.matrix} {input} > {output.tree}"
