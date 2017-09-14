@@ -12,7 +12,7 @@
 ##SBATCH --error=job_%j.err
 
 source activate varroa
-snakemake --restart-times 0 -j 100 -p --max-jobs-per-second 1 --cluster-config cluster.json --cluster "sbatch  -p {cluster.partition} --cpus-per-task {cluster.cpus-per-task} -t {cluster.time} --mem {cluster.mem}" --rerun-incomplete --notemp
+snakemake --restart-times 1 -j 100 -p --max-jobs-per-second 1 --cluster-config cluster.json --cluster "sbatch  -p {cluster.partition} --cpus-per-task {cluster.cpus-per-task} -t {cluster.time} --mem {cluster.mem}" --rerun-incomplete --notemp
 
 # --rerun-incomplete
 # --ignore-incomplete
