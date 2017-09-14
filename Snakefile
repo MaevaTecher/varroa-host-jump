@@ -22,4 +22,4 @@ rule mashtree:
 	input: expand(outDir + "/sketches/{sample}.fastq.gz", sample = SAMPLES)
 	output: outDir + "/sketches/varroa.dnd"
 	threads: 12
-	shell: "mashtree.pl --genomesize 500000000 --mindepth 2 --tmpdir /tmp/sasha --numcpus {threads} --outmatrix {input} > {output}"
+	shell: "mashtree.pl --genomesize 500000000 --mindepth 2 --tempdir /tmp/sasha --numcpus {threads} --outmatrix {input} > {output}"
