@@ -30,7 +30,7 @@ rule map2destructor:
 		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
 		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
 	threads: 12
-	output: temp(outDir + "/mapbam/{sample}.bam")
+	output: temp(outDir + "/mapbam/{sample}.fastq.gz")
 	shell: 
 		"""
 		bowtie2 -p {threads} -x {varroaBowtieIndex} -1  {input.read1} -2 {input.read2}  | samtools view -Su -F4 | awk '{{print "@"$1"\\n"$10"\\n+\\n"$11}}' | gzip > {output}
