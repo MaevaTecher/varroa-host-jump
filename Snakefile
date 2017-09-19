@@ -35,6 +35,7 @@ rule map2destructor:
 		"""
 		bowtie2 -p {threads} -x {varroaBowtieIndex} -1  {input.read1} -2 {input.read2}  | samtools view -Su -F4 | novosort -c 2 -m 10G -i -o {output}
 		"""	
+
 rule freeBayes:
 	input: expand(outDir + "/mapbam/{sample}.bam", sample = SAMPLES)
 	output: "/work/MikheyevU/Maeva/varroahost/scratch/varroa.vcf"
