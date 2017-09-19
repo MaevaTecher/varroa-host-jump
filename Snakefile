@@ -33,7 +33,7 @@ rule map2destructor:
 	output: temp(outDir + "/mapbam/{sample}.fastq.gz")
 	shell: 
 		"""
-		bowtie2 -p {threads} -x {varroaBowtieIndex} -1  {input.read1} -2 {input.read2}  | samtools view -Su -F4 | awk '{{print "@"$1"\\n"$10"\\n+\\n"$11}}' | gzip > {output}
+		bowtie2 -p {threads} -x {varroaBowtieIndex} -1  {input.read1} -2 {input.read2}  | samtools view -Su -F4 | novosort -c 2 -m 10G -i -o {output}
 		"""	
 
 rule freeBayes:
