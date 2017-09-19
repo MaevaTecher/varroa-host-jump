@@ -35,8 +35,3 @@ rule map2destructor:
 		"""
 		bowtie2 -p {threads} -x {varroaBowtieIndex} -1  {input.read1} -2 {input.read2}  | samtools view -Su -F4 | awk '{{print "@"$1"\\n"$10"\\n+\\n"$11}}' | gzip > {output}
 		"""	
-
-rule freeBayes:
-	input: expand(outDir + "/mapbam/{sample}.bam", sample = SAMPLES)
-	output: "/work/MikheyevU/Maeva/varroahost/scratch/varroa.vcf"
-	shell:  "freebayes --use-best-n-alleles 4 --bam {input} -v {output} -f {VDREF}"
