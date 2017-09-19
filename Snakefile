@@ -6,7 +6,7 @@ varroaBowtieIndex = refDir + "/destructor/vdjellytrim"
 SAMPLES, = glob_wildcards(outDir + "/reads/{sample}-R1_001.fastq.gz")
 
 rule all:
-	input: outDir + "/sketches/varroa.dnd"
+	input: "/work/MikheyevU/Maeva/varroahost/scratch/varroa.vcf"
 		
 rule removeHost:
 	input:
@@ -35,3 +35,8 @@ rule map2destructor:
 		"""
 		bowtie2 -p {threads} -x {varroaBowtieIndex} -1  {input.read1} -2 {input.read2}  | samtools view -Su -F4 | awk '{{print "@"$1"\\n"$10"\\n+\\n"$11}}' | gzip > {output}
 		"""	
+
+rule freeBayes:
+	input: expand(outDir + "/mapbam/{sample}.bam", sample = SAMPLES)
+	output: "/work/MikheyevU/Maeva/varroahost/scratch/varroa.vcf"
+	shell:  "freebayes --use-best-n-alleles 4 --bam {input} -v {output} -f {VDREF}"
