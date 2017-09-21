@@ -6,7 +6,7 @@ varroaBowtieIndex = refDir + "/destructor/vdjellytrim"
 SAMPLES, = glob_wildcards(outDir + "/reads/{sample}-R1_001.fastq.gz")
 
 rule all:
-	input: temp(outDir + "/mapbam/{sample}.fastq.gz", sample = SAMPLES)
+	input: expand(outDir + "/mapbam/{sample}.fastq.gz", sample = SAMPLES)
 		
 rule removeHost:
 	input:
