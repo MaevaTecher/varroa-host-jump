@@ -3,7 +3,7 @@
     {
         "cpus-per-task" : 1,
         "partition" : "compute",
-        "mem" : "4G",
+        "mem" : "5G",
         "time": "7-00:00:00" 
     },
     "removeHost":
@@ -19,5 +19,13 @@
         "partition" : "compute",
         "mem" : "10G",
         "time": "5:00:00" 
+    },
+    "map2destructor":
+    {
+        "cpus-per-task" : 12,
+        "partition" : "compute",
+        "mem" : "10G",
+        "time": "5:00:00"
     }
+
 }
