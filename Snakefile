@@ -3,6 +3,7 @@ outDir = "/work/MikheyevU/Maeva/varroahost/data"
 refDir = "/work/MikheyevU/Maeva/varroahost/ref" 
 hostBeeBowtieIndex = refDir + "/bees/hostbee"
 varroaBowtieIndex = refDir + "/destructor/vdjellytrim"
+VDREF = refDir + "/destructor/vd_assembly_filled.trimmed.fasta"
 SAMPLES, = glob_wildcards(outDir + "/reads/{sample}-R1_001.fastq.gz")
 
 rule all:
