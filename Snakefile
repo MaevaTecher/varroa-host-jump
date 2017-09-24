@@ -6,7 +6,7 @@ varroaBowtieIndex = refDir + "/destructor/vdjellytrim"
 SAMPLES, = glob_wildcards(outDir + "/reads/{sample}-R1_001.fastq.gz")
 
 rule all:
-	input: expand(outDir + "/mapbam/{sample}.bam", sample = SAMPLES)
+	input: "/work/MikheyevU/Maeva/varroahost/scratch/varroa.vcf"
 		
 rule removeHost:
 	input:
@@ -31,7 +31,7 @@ rule map2destructor:
 		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
 	threads: 12
 	output: temp(outDir + "/mapbam/{sample}.bam")
-	shell: "bowtie2 -p {threads} -x {varroaBowtieIndex} -1 {input.read1} -2 {input.read2}  | samtools view -Su -F4 | novosort -c 2 -m 10G -i -o {output} -"	
+	shell: "bowtie2 -p {threads} -x {varroaBowtieIndex} -1 {input.read1} -2 {input.read2}  | samtools view -Su -F4 | novosort -c 2 -m 20G -i -o {output} -"	
 
 rule freeBayes:
 	input: expand(outDir + "/mapbam/{sample}.bam", sample = SAMPLES)
