@@ -36,5 +36,5 @@ rule map2destructor:
 
 rule freeBayes:
 	input: expand(outDir + "/mapbam/{sample}.bam", sample = SAMPLES)
-	output: "/work/MikheyevU/Maeva/varroahost/scratch/varroa.vcf"
+	output: outDir + "/sketches/varroa.vcf"
 	shell:  "freebayes --use-best-n-alleles 4 --bam {input} -v {output} -f {VDREF}"
