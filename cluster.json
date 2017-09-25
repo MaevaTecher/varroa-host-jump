@@ -31,7 +31,7 @@
     {
         "cpus-per-task" : 12,
         "partition" : "compute",
-        "mem" : "20G",
-        "time": "12:00:00"
+        "mem" : "30G",
+        "time": "2-00:00:00"
     }
 }
