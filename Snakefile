@@ -7,7 +7,7 @@ VDREF = refDir + "/destructor/vd_assembly_filled.trimmed.fasta"
 SAMPLES, = glob_wildcards(outDir + "/reads/{sample}-R1_001.fastq.gz")
 
 rule all:
-	input: "/work/MikheyevU/Maeva/varroahost/scratch/varroa.vcf"
+	input: outDir + "/sketches/varroa.vcf"
 		
 rule removeHost:
 	input:
