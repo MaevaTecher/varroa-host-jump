@@ -27,11 +27,25 @@
         "mem" : "30G",
         "time": "12:00:00"
     },
-        "freeBayes":
+    "map2jacobsoni":
     {
         "cpus-per-task" : 12,
         "partition" : "compute",
-        "mem" : "60G",
-        "time": "2-00:00:00"
+        "mem" : "30G",
+        "time": "12:00:00"
+    },
+    "freebayes_jacobsoni":
+    {
+        "cpus-per-task" : 12,
+        "partition" : "compute",
+        "mem" : "40G",
+        "time": "14-00:00:00"
+    },    
+     "freebayes_destructor":
+    {
+        "cpus-per-task" : 12,
+        "partition" : "compute",
+        "mem" : "40G",
+        "time": "14-00:00:00"
     }
 }
