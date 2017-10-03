@@ -4,10 +4,15 @@ refDir = "/work/MikheyevU/Maeva/varroahost/ref"
 hostBeeBowtieIndex = refDir + "/bees/hostbee"
 varroaBowtieIndex = refDir + "/destructor/vdjellytrim"
 VDREF = refDir + "/destructor/vd_assembly_filled.trimmed.fasta"
+jacobBowtieIndex = refDir + "/jacobsoni/vjassembly"
+VJREF = refDir + "/jacobsoni/vj_454LargeContigs.fna"
 SAMPLES, = glob_wildcards(outDir + "/reads/{sample}-R1_001.fastq.gz")
 
 rule all:
-	input: outDir + "/sketches/varroa.vcf"
+	input: 
+		outDir + "/sketches/varroa.dnd"
+		outDir + "/sketches/variant_destructor.vcf"
+		outDir + "/sketches/variant_jacobsoni.vcf"
 		
 rule removeHost:
 	input:
@@ -34,7 +39,20 @@ rule map2destructor:
 	output: temp(outDir + "/mapbam/{sample}.bam")
 	shell: "bowtie2 -p {threads} -x {varroaBowtieIndex} -1 {input.read1} -2 {input.read2}  | samtools view -Su -F4 | novosort -c 2 -m 20G -i -o {output} -"	
 
-rule freeBayes:
+rule freebayes_destructor:
 	input: expand(outDir + "/mapbam/{sample}.bam", sample = SAMPLES)
-	output: outDir + "/sketches/varroa.vcf"
+	output: outDir + "/sketches/variant_destructor.vcf"
 	shell:  "freebayes --use-best-n-alleles 4 --bam {input} -v {output} -f {VDREF}"
+
+rule map2jacobsoni:
+	input:
+		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
+		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
+	threads: 12
+	output: temp(outDir + "/map_vj/{sample}.bam")
+	shell: "bowtie2 -p {threads} -x {jacobBowtieIndex} -1 {input.read1} -2 {input.read2}  | samtools view -Su -F4 | novosort -c 2 -m 20G -i -o {output} -"	
+		
+rule freebayes_jacobsoni:
+	input: expand(outDir + "/map_vj/{sample}.bam", sample = SAMPLES)
+	output: outDir + "/sketches/variant_jacobsoni.vcf"
+	shell:  "freebayes --use-best-n-alleles 4 --bam {input} -v {output} -f {VJREF}"
