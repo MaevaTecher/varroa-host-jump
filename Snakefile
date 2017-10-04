@@ -11,7 +11,6 @@ SAMPLES, = glob_wildcards(outDir + "/reads/{sample}-R1_001.fastq.gz")
 rule all:
 	input: 
 		outDir + "/picardstat/{sample}_picardVD.txt", sample = SAMPLES
-		outDir + "/sketches/variant_destructor.vcf"
 		
 rule removeHost:
 	input:
