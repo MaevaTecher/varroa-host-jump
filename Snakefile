@@ -9,7 +9,7 @@ VJREF = refDir + "/jacobsoni/vj_454LargeContigs.fna"
 SAMPLES, = glob_wildcards(outDir + "/reads/{sample}-R1_001.fastq.gz")
 
 rule all:
-	input: temp(outDir + "/picardstat/{sample}_picardVD.txt")
+	input: expand(outDir + "/picardstat/{sample}_picardVD.txt", sample = SAMPLES)
 		
 rule removeHost:
 	input:
