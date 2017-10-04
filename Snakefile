@@ -36,6 +36,11 @@ rule map2destructor:
 	output: temp(outDir + "/mapbam/{sample}.bam")
 	shell: "bowtie2 -p {threads} -x {varroaBowtieIndex} -1 {input.read1} -2 {input.read2}  | samtools view -Su -F4 | novosort -c 2 -m 20G -i -o {output} -"	
 
+rule destructorstat:
+	input: expand(outDir + "/mapbam/{sample}.bam", sample = SAMPLES)
+	output: temp(outDir + "/picardstat/{sample}_picardVD.txt")
+	shell:  "picard CollectAlignmentSummaryMetrics R= {VDREF} I= {input} O= {output}"
+		
 rule freebayes_destructor:
 	input: expand(outDir + "/mapbam/{sample}.bam", sample = SAMPLES)
 	output: outDir + "/sketches/variant_destructor.vcf"
