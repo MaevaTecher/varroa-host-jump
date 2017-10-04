@@ -9,7 +9,8 @@ VJREF = refDir + "/jacobsoni/vj_454LargeContigs.fna"
 SAMPLES, = glob_wildcards(outDir + "/reads/{sample}-R1_001.fastq.gz")
 
 rule all:
-	input: expand(outDir + "/picardstat/{sample}_picardVD.txt", sample = SAMPLES)
+	input: outDir + "/sketches/variant_jacobsoni.vcf"
+	input: outDir + "/sketches/variant_destructor.vcf"
 		
 rule removeHost:
 	input:
@@ -35,11 +36,6 @@ rule map2destructor:
 	threads: 12
 	output: temp(outDir + "/mapbam/{sample}.bam")
 	shell: "bowtie2 -p {threads} -x {varroaBowtieIndex} -1 {input.read1} -2 {input.read2}  | samtools view -Su -F4 | novosort -c 2 -m 20G -i -o {output} -"	
-
-rule destructorstat:
-	input: expand(outDir + "/mapbam/{sample}.bam", sample = SAMPLES)
-	output: temp(outDir + "/picardstat/{sample}_picardVD.txt")
-	shell:  "picard CollectAlignmentSummaryMetrics R= {VDREF} I= {input} O= {output}"
 		
 rule freebayes_destructor:
 	input: expand(outDir + "/mapbam/{sample}.bam", sample = SAMPLES)
