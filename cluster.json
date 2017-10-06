@@ -27,6 +27,13 @@
         "mem" : "30G",
         "time": "12:00:00"
     },
+     "ngmdestructor":
+    {
+        "cpus-per-task" : 12,
+        "partition" : "compute",
+        "mem" : "30G",
+        "time": "12:00:00"
+    },
     "map2jacobsoni":
     {
         "cpus-per-task" : 12,
