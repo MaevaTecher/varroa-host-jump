@@ -11,7 +11,7 @@ SAMPLES, = glob_wildcards(outDir + "/reads/{sample}-R1_001.fastq.gz")
 rule all:
 	input: outDir + "/sketches/variant_destructor.vcf"+\
 		outDir + "/sketches/variant_jacobsoni.vcf"+\
-		temp(outDir + "/ngm_vd/{sample}.bam")
+		expand(outDir + "/ngm_vd/{sample}.bam", sample = SAMPLES)
 		
 rule removeHost:
 	input:
