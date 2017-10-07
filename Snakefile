@@ -53,7 +53,7 @@ rule map2jacobsoni:
 	shell: "bowtie2 -p {threads} -x {jacobBowtieIndex} -1 {input.read1} -2 {input.read2}  | samtools view -Su -F4 | novosort -c 2 -m 20G -i -o {output} -"	
 	
 rule freebayes_destructor:
-	input: expand(outDir + "/ngm_vd/{sample}.bam", sample = SAMPLES)
+	input: expand(outDir + "/mapbam/{sample}.bam", sample = SAMPLES)
 	output: outDir + "/sketches/variant_destructor.vcf"
 	shell:  "freebayes --use-best-n-alleles 4 --bam {input} -v {output} -f {VDREF}"
 
