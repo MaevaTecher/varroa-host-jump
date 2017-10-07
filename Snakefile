@@ -71,7 +71,7 @@ rule freebayes_destructor:
 	input: rules.inList.output
         output:  outDir + "/sketches/variant_destructor.{region}.vcf"
         params: span=lambda wildcards: REGIONS[wildcards.region]
-        shell:  "freebayes --use-best-n-alleles 4 -L {input} {params.span} -v {output} -f {VDREF}
+        shell:  "freebayes --use-best-n-alleles 4 -L {input} {params.span} -v {output} -f {VDREF}"
 	
 rule freebayes_jacobsoni:
 	input: expand(outDir + "/map_vj/{sample}.bam", sample = SAMPLES)
