@@ -19,7 +19,7 @@ for region in REGIONS:
                 REGIONS[region][idx] = " -r " + str(i)
 
 rule all:
-	input: outDir + "/sketches/variant_destructor.vcf"
+	input: outDir + "/sketches/input.list"
 		
 rule inList:
         input: glob.glob(BAMFILES)
