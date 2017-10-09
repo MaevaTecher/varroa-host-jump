@@ -19,5 +19,33 @@
         "partition" : "compute",
         "mem" : "10G",
         "time": "5:00:00" 
-    }
+    },
+    "nextgenmap":
+    {
+        "cpus-per-task" : 12,
+        "partition" : "compute",
+        "mem" : "60G",
+        "time": "24:00:00" 
+    },
+    "bowtie2":
+    {
+        "cpus-per-task" : 12,
+        "partition" : "compute",
+        "mem" : "60G",
+        "time": "24:00:00" 
+    },
+    "freeBayesNGM":
+    {
+        "cpus-per-task" : 1,
+        "partition" : "compute",
+        "mem" : "80G",
+        "time": "4-00:00:00" 
+    },
+    "freeBayesBowtie2":
+    {
+        "cpus-per-task" : 1,
+        "partition" : "compute",
+        "mem" : "80G",
+        "time": "4-00:00:00" 
+    }               
 }
