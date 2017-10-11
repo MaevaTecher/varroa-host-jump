@@ -24,15 +24,15 @@
     {
         "cpus-per-task" : 12,
         "partition" : "compute",
-        "mem" : "60G",
-        "time": "24:00:00" 
+        "mem" : "80G",
+        "time": "2-00:00:00" 
     },
     "bowtie2":
     {
         "cpus-per-task" : 12,
         "partition" : "compute",
-        "mem" : "60G",
-        "time": "24:00:00" 
+        "mem" : "80G",
+        "time": "2-00:00:00" 
     },
     "freeBayesNGM":
     {

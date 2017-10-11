@@ -45,11 +45,11 @@ rule bowtie2:
 	threads: 12
 	output: 
 		alignment = temp(outDir + "/alignments/bowtie2/{sample}.bam"), 
-		index = temp(outDir + "/alignments/bowtie2/{sample}.bai")
+		index = temp(outDir + "/alignments/bowtie2/{sample}.bam.bai")
 	shell:
 		"""
 		module load bowtie2/2.2.6 samtools/1.3.1
-		bowtie2 -p {threads} --very-sensitive-local --sam-rg ID:{wildcards.sample} --sam-rg LB:Nextera --sam-rg SM:{wildcards.sample} --sam-rg PL:ILLUMINA -x {varroaBowtieIndex} -1 {input.read1} -2 {input.read2} | samtools view -Su - | samtools sort - -m 55G -o - | samtools rmdup - {output.alignment}
+		bowtie2 -p {threads} --very-sensitive-local --sam-rg ID:{wildcards.sample} --sam-rg LB:Nextera --sam-rg SM:{wildcards.sample} --sam-rg PL:ILLUMINA -x {varroaBowtieIndex} -1 {input.read1} -2 {input.read2} | samtools view -Su - | samtools sort - -m 55G -T /work/scratch/sasha/{wildcards.sample} -o - | samtools rmdup - {output.alignment}
 		samtools index {output.alignment}
 		"""
 
@@ -60,11 +60,11 @@ rule nextgenmap:
 	threads: 12
 	output: 
 		alignment = temp(outDir + "/alignments/ngm/{sample}.bam"), 
-		index = temp(outDir + "/alignments/ngm/{sample}.bai")
+		index = temp(outDir + "/alignments/ngm/{sample}.bam.bai")
 	shell:
 		"""
 		module load NextGenMap/0.5.0 samtools/1.3.1
-		ngm -t {threads} -b  -1 {input.read1} -2 {input.read2} -r {vdRef} --rg-id {wildcards.sample} --rg-sm {wildcards.sample} --rg-pl ILLUMINA --rg-lb {wildcards.sample} | samtools sort - -m 55G -o - | samtools rmdup - {output.alignment}
+		ngm -t {threads} -b  -1 {input.read1} -2 {input.read2} -r {vdRef} --rg-id {wildcards.sample} --rg-sm {wildcards.sample} --rg-pl ILLUMINA --rg-lb {wildcards.sample} | samtools sort - -m 55G -T /work/scratch/sasha/{wildcards.sample} -o - | samtools rmdup - {output.alignment}
 		samtools index {output.alignment}
 		"""
 	
