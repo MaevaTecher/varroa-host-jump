@@ -3,6 +3,7 @@ from scripts.split_fasta_regions import split_fasta
 
 outDir = "data"
 refDir = "ref" 
+SCRATCH  = "/work/scratch/sasha"
 hostBeeBowtieIndex = refDir + "/bees/hostbee"
 varroaBowtieIndex = refDir + "/destructor/vd"
 vdRef = refDir + "/destructor/vd.fasta"
@@ -49,7 +50,7 @@ rule bowtie2:
 	shell:
 		"""
 		module load bowtie2/2.2.6 samtools/1.3.1
-		bowtie2 -p {threads} --very-sensitive-local --sam-rg ID:{wildcards.sample} --sam-rg LB:Nextera --sam-rg SM:{wildcards.sample} --sam-rg PL:ILLUMINA -x {varroaBowtieIndex} -1 {input.read1} -2 {input.read2} | samtools view -Su - | samtools sort - -m 55G -T /work/scratch/sasha/{wildcards.sample} -o - | samtools rmdup - {output.alignment}
+		bowtie2 -p {threads} --very-sensitive-local --sam-rg ID:{wildcards.sample} --sam-rg LB:Nextera --sam-rg SM:{wildcards.sample} --sam-rg PL:ILLUMINA -x {varroaBowtieIndex} -1 {input.read1} -2 {input.read2} | samtools view -Su - | samtools sort - -m 55G -T {SCRATCH}/bowtie/{wildcards.sample} -o - | samtools rmdup -  | variant - -m 1000 -b -o {output.alignment}
 		samtools index {output.alignment}
 		"""
 
@@ -64,7 +65,7 @@ rule nextgenmap:
 	shell:
 		"""
 		module load NextGenMap/0.5.0 samtools/1.3.1
-		ngm -t {threads} -b  -1 {input.read1} -2 {input.read2} -r {vdRef} --rg-id {wildcards.sample} --rg-sm {wildcards.sample} --rg-pl ILLUMINA --rg-lb {wildcards.sample} | samtools sort - -m 55G -T /work/scratch/sasha/{wildcards.sample} -o - | samtools rmdup - {output.alignment}
+		ngm -t {threads} -b  -1 {input.read1} -2 {input.read2} -r {vdRef} --rg-id {wildcards.sample} --rg-sm {wildcards.sample} --rg-pl ILLUMINA --rg-lb {wildcards.sample} | samtools sort - -m 55G -T {SCRATCH}/ngm/{wildcards.sample} -o - | samtools rmdup - | | variant - -m 1000 -b -o {output.alignment}
 		samtools index {output.alignment}
 		"""
 	

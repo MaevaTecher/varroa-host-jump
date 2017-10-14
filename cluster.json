@@ -38,14 +38,14 @@
     {
         "cpus-per-task" : 1,
         "partition" : "compute",
-        "mem" : "80G",
+        "mem" : "30G",
         "time": "4-00:00:00" 
     },
     "freeBayesBowtie2":
     {
         "cpus-per-task" : 1,
         "partition" : "compute",
-        "mem" : "80G",
+        "mem" : "30G",
         "time": "4-00:00:00" 
     }               
 }
