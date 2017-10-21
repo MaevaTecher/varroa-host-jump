@@ -34,18 +34,11 @@
         "mem" : "80G",
         "time": "2-00:00:00" 
     },
-    "freeBayesNGM":
+    "freeBayes":
     {
         "cpus-per-task" : 1,
         "partition" : "compute",
-        "mem" : "30G",
+        "mem" : "25G",
         "time": "4-00:00:00" 
-    },
-    "freeBayesBowtie2":
-    {
-        "cpus-per-task" : 1,
-        "partition" : "compute",
-        "mem" : "30G",
-        "time": "4-00:00:00" 
-    }               
+    }
 }

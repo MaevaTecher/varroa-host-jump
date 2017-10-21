@@ -70,31 +70,20 @@ rule nextgenmap:
 		samtools index {output.alignment}
 		"""
 	
-rule freeBayesNGM:
+rule freeBayes:
 	input: 
-		expand(outDir + "/alignments/ngm/{sample}.bam", sample = SAMPLES)
+		expand(outDir + "/alignments/{{aligner}}/{sample}.bam", sample = SAMPLES)
 	output: 
-		temp(outDir + "/var/ngm/split/freebayes.{region}.vcf")
+		temp(outDir + "/var/{aligner}/split/freebayes.{region}.vcf")
 	params: 
 		span = lambda wildcards: REGIONS[wildcards.region],
-		bams = lambda wildcards, input: os.path.dirname(input[0]) + "/*.bam"
+		bams = lambda wildcards, input: os.path.dirname(input[0]) + "/*.bam",
+		missing = lambda wildcards, input: len(input) * 0.9
 	shell:
 		"""
-		module load freebayes/1.1.0 vcftools/0.1.12b
-		freebayes --min-alternate-fraction 0.2 --use-best-n-alleles 3 -b {params.bams} {params.span}  -f {vdRef} | vcftools  --vcf - --minQ 40 --recode --stdout > {output}
-		"""
-rule freeBayesBowtie2:
-	input: 
-		expand(outDir + "/alignments/bowtie2/{sample}.bam", sample = SAMPLES)
-	output: 
-		temp(outDir + "/var/bowtie2/split/freebayes.{region}.vcf")
-	params: 
-		span = lambda wildcards: REGIONS[wildcards.region],
-		bams = lambda wildcards, input: os.path.dirname(input[0]) + "/*.bam"
-	shell:
-		"""
-		module load freebayes/1.1.0 vcftools/0.1.12b
-		freebayes --min-alternate-fraction 0.2 --use-best-n-alleles 3 -b {params.bams} {params.span}  -f {vdRef} | vcftools  --vcf - --minQ 40 --recode --stdout > {output}
+		module load freebayes/1.1.0 vcftools/0.1.12b vcflib/1.0.0-rc1
+		for i in {params.bams}; do name=$(basename $i .bam); if [[ $name == VJ* ]] ; then echo $name VJ; else echo $name VD; fi ; done > {outDir}/var/pops.txt
+		freebayes --min-alternate-fraction 0.2 --use-best-n-alleles 4 -m 5 -q 5 --populations {outDir}/var/pops.txt -b {params.bams} {params.span}  -f {vdRef} | vcffilter  -f "QUAL > 20 & NS > {params.missing}" > {output}
 		"""
 
 rule mergeVCF:
@@ -104,7 +93,18 @@ rule mergeVCF:
 		temp(outDir + "/var/{aligner}/raw.vcf")
 	shell:
 		"""
-		module load samtools/1.3.1
-		(grep "^#" {input[0]} ; cat {input} | grep -v "^#" | uniq ) > {output}  
+		module load samtools/1.3.1 vcflib/1.0.0-rc1 vcftools/0.1.12b 
+		(grep "^#" {input[0]} ; cat {input} | grep -v "^#" ) | vcfuniq > {output}  
+		"""
+
+rule filterVCF:
+	# see http://ddocent.com//filtering/
+	input:
+		rules.mergeVCF.output
+	output:
+		vcf = temp(outDir + "/var/{aligner}/final.FIL.recode.vcf")
+	shell:
+		"""
+		./scripts/dDocent_filters.sh {input} {outDir}/var/{wildcards.aligner}/final yes no 
 		"""
 

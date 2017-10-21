@@ -16,8 +16,8 @@ fi
 #Filteres out sites with that on average have heterzygotes with less than a 0.28 allele balance between reads from each allele and Quality / Depth < 0.5 and ratio of mapping quality for reference and alternate alleles
 
 vcffilter -s -f "AB > 0.2 & AB < 0.8 | AB < 0.01 | AB > 0.99" -s -g "QR > 0 | QA > 0 " $1 | vcffilter -s -f "QUAL / DP > 0.2" | vcffilter -s -f "MQM / MQMR > 0.25 & MQM / MQMR < 1.75" > $2
-FILTERED=$(mawk '!/#/' $2 | wc -l)
-OLD=$(mawk '!/#/' $1 | wc -l)
+FILTERED=$(awk '!/#/' $2 | wc -l)
+OLD=$(awk '!/#/' $1 | wc -l)
 NUMFIL=$(($OLD - $FILTERED))
 echo -e "Number of sites filtered based on allele balance at heterozygous loci, locus quality, and mapping quality / Depth\n" $NUMFIL "of" $OLD "\n"
 echo -e "Number of sites filtered based on allele balance at heterozygous loci, locus quality, and mapping quality / Depth\n" $NUMFIL "of" $OLD "\n" > $2.filterstats
@@ -25,8 +25,8 @@ echo -e "Number of sites filtered based on allele balance at heterozygous loci, 
 #Filters out loci that have reads from both strands, with some leeway for a bad individual or two
 
 vcffilter -f "SAF / SAR > 100 & SRF / SRR > 100 | SAR / SAF > 100 & SRR / SRF > 50" -s $2 > $2.filAB.vcf
-FILTERED=$(mawk '!/#/' $2.filAB.vcf | wc -l)
-OLD=$(mawk '!/#/' $2 | wc -l)
+FILTERED=$(awk '!/#/' $2.filAB.vcf | wc -l)
+OLD=$(awk '!/#/' $2 | wc -l)
 NUMFIL=$(($OLD - $FILTERED))
 echo -e "Number of additional sites filtered based on overlapping forward and reverse reads\n" $NUMFIL "of" $OLD "\n"
 echo -e "Number of additional sites filtered based on overlapping forward and reverse reads\n" $NUMFIL "of" $OLD "\n" >> $2.filterstats
@@ -42,16 +42,16 @@ fi
 
 if [ "$PE" != "yes" ]; then
 vcffilter -f "PAIRED > 0.05 & PAIREDR > 0.05 & PAIREDR / PAIRED < 1.75 & PAIREDR / PAIRED > 0.25 | PAIRED < 0.05 & PAIREDR < 0.05" -s $2.filAB.vcf > $2.fil.vcf
-FILTERED=$(mawk '!/#/' $2.fil.vcf  | wc -l)
-OLD=$(mawk '!/#/' $2.filAB.vcf | wc -l)
+FILTERED=$(awk '!/#/' $2.fil.vcf  | wc -l)
+OLD=$(awk '!/#/' $2.filAB.vcf | wc -l)
 NUMFIL=$(($OLD - $FILTERED))
 echo -e "Number of additional sites filtered based on properly paired status\n" $NUMFIL "of" $OLD "\n"
 echo -e "Number of additional sites filtered based on properly paired status\n" $NUMFIL "of" $OLD "\n" >> $2.filterstats
 
 else
-vcffilter -f "PAIRED < 0.005 & PAIREDR > 0.005 | PAIRED > 0.005 & PAIREDR < 0.005" -t NP -F PASS -A $2.filAB.vcf | mawk '!/NP/' > $2.fil.vcf
-FILTERED=$(mawk '!/#/' $2.fil.vcf  | wc -l)
-OLD=$(mawk '!/#/' $2.filAB.vcf | wc -l)
+vcffilter -f "PAIRED < 0.005 & PAIREDR > 0.005 | PAIRED > 0.005 & PAIREDR < 0.005" -t NP -F PASS -A $2.filAB.vcf | awk '!/NP/' > $2.fil.vcf
+FILTERED=$(awk '!/#/' $2.fil.vcf  | wc -l)
+OLD=$(awk '!/#/' $2.filAB.vcf | wc -l)
 NUMFIL=$(($OLD - $FILTERED))
 echo -e "Number of additional sites filtered based on properly paired status\n" $NUMFIL "of" $OLD "\n"
 echo -e "Number of additional sites filtered based on properly paired status\n" $NUMFIL "of" $OLD "\n" >> $2.filterstats
@@ -65,18 +65,18 @@ IND=$(($IND - 0 ))
 
 #Creates a file with the original site depth and qual for each locus
 cut -f8 $1 | grep -oe "DP=[0-9]*" | sed -s 's/DP=//g' > $1.DEPTH
-mawk '!/#/' $1 | cut -f1,2,6 > $1.loci.qual
+awk '!/#/' $1 | cut -f1,2,6 > $1.loci.qual
 
 #Calculates the average depth and standard deviation
-DEPTH=$(mawk '{ sum += $1; n++ } END { if (n > 0) print sum / n; }' $1.DEPTH)
-SD=$(mawk '{delta = $1 - avg; avg += delta / NR; mean2 += delta * ($1 - avg); } END { print sqrt(mean2 / NR); }' $1.DEPTH)
+DEPTH=$(awk '{ sum += $1; n++ } END { if (n > 0) print sum / n; }' $1.DEPTH)
+SD=$(awk '{delta = $1 - avg; avg += delta / NR; mean2 += delta * ($1 - avg); } END { print sqrt(mean2 / NR); }' $1.DEPTH)
 DEPTH=$(perl -e "print int("$DEPTH") + int("$SD")")
 #DEPTH=$(perl -e "print int("$DEPTH"+100*("$DEPTH"**0.5))")
 
 #Filters loci above the mean depth + 1 standard deviation that have quality scores that are less than 2*DEPTH
-paste $1.loci.qual $1.DEPTH | mawk -v x=$DEPTH '$4 > x'| mawk '$3 < 2 * $4' > $1.lowQDloci
+paste $1.loci.qual $1.DEPTH | awk -v x=$DEPTH '$4 > x'| awk '$3 < 2 * $4' > $1.lowQDloci
 LQDL=$(cat $1.lowQDloci | wc -l)
-OLD=$(mawk '!/#/' $2.fil.vcf | wc -l)
+OLD=$(awk '!/#/' $2.fil.vcf | wc -l)
 echo -e "Number of sites filtered based on high depth and lower than 2*DEPTH quality score\n" $LQDL "of" $OLD "\n"  
 echo -e "Number of sites filtered based on high depth and lower than 2*DEPTH quality score\n" $LQDL "of" $OLD "\n" >> $2.filterstats
 
@@ -84,15 +84,15 @@ echo -e "Number of sites filtered based on high depth and lower than 2*DEPTH qua
 vcftools --vcf $2.fil.vcf --remove-filtered NP --exclude-positions $1.lowQDloci --site-depth --out $1 2> /dev/null
 cut -f3 $1.ldepth > $1.site.depth
 
-DP=$(mawk '{ sum += $1; n++ } END { if (n > 0) print sum / n; }' $1.site.depth)
-SD=$(mawk '{delta = $1 - avg; avg += delta / NR; mean2 += delta * ($1 - avg); } END { print sqrt(mean2 / NR); }' $1.site.depth)
+DP=$(awk '{ sum += $1; n++ } END { if (n > 0) print sum / n; }' $1.site.depth)
+SD=$(awk '{delta = $1 - avg; avg += delta / NR; mean2 += delta * ($1 - avg); } END { print sqrt(mean2 / NR); }' $1.site.depth)
 
 #Calculates actual number of individuals in VCF file
 #This is important because loci will now be filtered by mean depth calculated with individuals present in VCF
-IND=$(mawk '/#/' $1 | tail -1 | wc -w)
+IND=$(awk '/#/' $1 | tail -1 | wc -w)
 IND=$(($IND - 9))
 
-mawk '!/D/' $1.site.depth | mawk -v x=$IND '{print $1/x}' > meandepthpersite
+awk '!/D/' $1.site.depth | awk -v x=$IND '{print $1/x}' > meandepthpersite
 
 gnuplot << \EOF >> $2.filterstats
 set terminal dumb size 120, 30
@@ -129,7 +129,7 @@ EOF
 
 #Calculates a mean depth cutoff to use for filtering
 DP=$(perl -e "print ($DP+ 1.645*$SD) / $IND")
-PP=$(mawk '!/SUM/' $1.site.depth | sort -rn | perl -e '$d=.05;@l=<>;print $l[int($d*$#l)]' )
+PP=$(awk '!/SUM/' $1.site.depth | sort -rn | perl -e '$d=.05;@l=<>;print $l[int($d*$#l)]' )
 PP=$(perl -e "print int($PP / $IND)")
 
 if [[ -z "$4" ]]; then
@@ -147,16 +147,16 @@ echo -e "Maximum mean depth cutoff is" $PP >> $2.filterstats
 
 #Combines all filters to create a final filtered VCF file
 vcftools --vcf $2.fil.vcf --remove-filtered NP --recode-INFO-all --out $2.FIL --max-meanDP $PP --recode 2> /dev/null
-FILTERED=$(mawk '!/#/' $2.FIL.recode.vcf  | wc -l)
-OLD=$(mawk '!/#/' $2.fil.vcf | wc -l)
+FILTERED=$(awk '!/#/' $2.FIL.recode.vcf  | wc -l)
+OLD=$(awk '!/#/' $2.fil.vcf | wc -l)
 NUMFIL=$(($OLD - $FILTERED))
 echo -e "Number of sites filtered based on maximum mean depth\n" $NUMFIL "of" $OLD "\n"
 echo -e "Number of sites filtered based on maximum mean depth\n" $NUMFIL "of" $OLD "\n" >> $2.filterstats
 
 vcftools --vcf $2.fil.vcf --remove-filtered NP --recode-INFO-all --out $2.FIL --max-meanDP $PP --exclude-positions $1.lowQDloci --recode 2> /dev/null
 
-OLD=$(mawk '!/#/' $1 | wc -l)
-FILTERED=$(mawk '!/#/' $2.FIL.recode.vcf  | wc -l)
+OLD=$(awk '!/#/' $1 | wc -l)
+FILTERED=$(awk '!/#/' $2.FIL.recode.vcf  | wc -l)
 NUMFIL=$(($OLD - $FILTERED))
 
 echo -e "Total number of sites filtered\n" $NUMFIL "of" $OLD "\n"
@@ -178,29 +178,29 @@ else
 echo -e "Maximum mean depth cutoff is" $PP >> $2.filterstats
 #Combines all filters to create a final filtered VCF file
 vcftools --vcf $2.fil.vcf --remove-filtered NP --recode-INFO-all --out $2.FIL --max-meanDP $PP --recode 2> /dev/null
-FILTERED=$(mawk '!/#/' $2.FIL.recode.vcf  | wc -l)
-OLD=$(mawk '!/#/' $2.fil.vcf | wc -l)
+FILTERED=$(awk '!/#/' $2.FIL.recode.vcf  | wc -l)
+OLD=$(awk '!/#/' $2.fil.vcf | wc -l)
 NUMFIL=$(($OLD - $FILTERED))
 echo -e "Number of sites filtered based on maximum mean depth\n" $NUMFIL "of" $OLD "\n"
 echo -e "Number of sites filtered based on maximum mean depth\n" $NUMFIL "of" $OLD "\n" >> $2.filterstats
 
 vcftools --vcf $2.fil.vcf --remove-filtered NP --recode-INFO-all --out $2.FIL1 --max-meanDP $PP --exclude-positions $1.lowQDloci --recode 2> /dev/null
 vcftools --vcf $2.FIL1.recode.vcf --site-depth --out $2.FIL1 2> /dev/null
-mawk '!/CHR/' $2.FIL1.ldepth | mawk '{
+awk '!/CHR/' $2.FIL1.ldepth | awk '{
 if (NR == 1) {chrom=$1;i=1;pos[i]=$2;dp[i]=$3}
 else if ($1 == chrom) {i++;pos[i]=$2;dp[i]=$3}
 else if ($1 != chrom) {for (x in dp) dpp= dpp + dp[x]; adp=dpp / i; adp= adp / 10 * 6; for (j = 1; j <= i; j++) if (dp[j] < adp) print chrom"\t"pos[j];chrom=$1;i=1;delete pos;pos[i]=$2;delete dp;dpp=0;dp[i]=$3}
 }' > $2.dpmismatch.loci
 
-OLD=$(mawk '!/#/' $2.FIL1.recode.vcf | wc -l)
+OLD=$(awk '!/#/' $2.FIL1.recode.vcf | wc -l)
 DPMM=$(cat $2.dpmismatch.loci | wc -l)
 echo -e "Number of sites filtered based on within locus depth mismatch\n" $DPMM "of" $OLD "\n"
 echo -e "Number of sites filtered based on within locus depth mismatch\n" $DPMM "of" $OLD "\n" >> $2.filterstats
 
 vcftools --vcf $2.FIL1.recode.vcf --exclude-positions $2.dpmismatch.loci --recode --recode-INFO-all --out $2.FIL 2> /dev/null
 
-OLD=$(mawk '!/#/' $1 | wc -l)
-FILTERED=$(mawk '!/#/' $2.FIL.recode.vcf  | wc -l)
+OLD=$(awk '!/#/' $1 | wc -l)
+FILTERED=$(awk '!/#/' $2.FIL.recode.vcf  | wc -l)
 NUMFIL=$(($OLD - $FILTERED))
 
 echo -e "Total number of sites filtered\n" $NUMFIL "of" $OLD "\n"
