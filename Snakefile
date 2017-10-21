@@ -18,9 +18,9 @@ for region in REGIONS:
 SAMPLES, = glob_wildcards(outDir + "/reads/{sample}-R1_001.fastq.gz")
 
 rule all:
-	input: outDir + "/sketches/varroa.dnd",
-		outDir + "/var/ngm.raw.vcf.gz",
-		outDir + "/var/bowtie2.raw.vcf.gz"
+	input: 
+		"data/sketches/varroa.dnd",
+		expand("data/var/{aligner}/raw.vcf", aligner = ("ngm", "bowtie2"))
 		
 rule removeHost:
 	input:
@@ -97,24 +97,14 @@ rule freeBayesBowtie2:
 		freebayes --min-alternate-fraction 0.2 --use-best-n-alleles 3 -b {params.bams} {params.span}  -f {vdRef} | vcftools  --vcf - --minQ 40 --recode --stdout > {output}
 		"""
 
-rule mergeBayesBowtie2:
+rule mergeVCF:
 	input: 
-		expand(outDir + "/var/bowtie2/split/freebayes.{region}.vcf", region = REGIONS)
+		expand(outDir + "/var/{{aligner}}/split/freebayes.{region}.vcf", region = REGIONS)
 	output:
-		outDir + "/var/bowtie2.raw.vcf.gz"
+		temp(outDir + "/var/{aligner}/raw.vcf")
 	shell:
 		"""
 		module load samtools/1.3.1
-		(head -10000 {input[0]} | grep "^#" ; cat {input} | grep -v "^#" | uniq | bgzip > {output} ) && tabix -p {output}
+		(grep "^#" {input[0]} ; cat {input} | grep -v "^#" | uniq ) > {output}  
 		"""
 
-rule mergefreeBayesNGM:
-	input: 
-		expand(outDir + "/var/ngm/split/freebayes.{region}.vcf", region = REGIONS)
-	output:
-		outDir + "/var/ngm.raw.vcf.gz"
-	shell:
-		"""
-		module load samtools/1.3.1
-		(head -10000 {input[0]} | grep "^#" ; cat {input} | grep -v "^#" | uniq | bgzip > {output} ) && tabix -p {output}
-		"""		
