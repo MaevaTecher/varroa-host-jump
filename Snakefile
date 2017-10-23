@@ -1,5 +1,6 @@
 # Population genetic analysis of Varroa on native and introudced hosts
 from scripts.split_fasta_regions import split_fasta
+from snakemake.utils import R
 
 outDir = "data"
 refDir = "ref" 
@@ -20,7 +21,9 @@ SAMPLES, = glob_wildcards(outDir + "/reads/{sample}-R1_001.fastq.gz")
 rule all:
 	input: 
 		"data/sketches/varroa.dnd",
-		"data/var/filtered.vcf.gz"
+		"data/var/filtered.vcf.gz",
+		"Rdata/vj.recode.vcf", "Rdata/vd.recode.vcf",
+		dFst = "Rdata/dFst.txt.gz", mFst = "Rdata/mFst.txt.gz", dcStats = "Rdata/dcStats.txt.gz", dmStats = "Rdata/dmStats.txt.gz", jcStats = "Rdata/jcStats.txt.gz", jmStats = "Rdata/jmStats.txt.gz"
 		
 rule removeHost:
 	input:
@@ -113,7 +116,7 @@ rule filterVCF:
 		Nind=$(grep -m1 "^#C" {input}  | cut -f10- |wc -w)
 		coverageCutoff=$(awk -v Nind=$Nind '{{sum+=$1}} END {{print "DP < "(sum / NR / Nind + sqrt(sum / NR / Nind) * 3 ) * Nind}}' {outDir}/var/{wildcards.aligner}/depth.txt)
 		echo Using coverage cutoff $coverageCutoff
-		vcffilter -s -f \"$coverageCutoff\" {input} | vcftools --vcf - --exclude-bed ref/destructor/masking_coordinates --max-alleles 2 --remove-indels --recode --stdout > {output}
+		vcffilter -s -f \"$coverageCutoff\" {input} | vcftools --vcf - --exclude-bed ref/destructor/masking_coordinates --max-alleles 2 --recode --stdout > {output}
 		"""
 
 rule chooseMapper:
@@ -132,27 +135,54 @@ rule chooseMapper:
 		if [[ $ngm -gt $bowtie2 ]]; then
 			echo choosing ngm
 			bgzip -c {input.ngm} > {output.bgzip}
-			vcfallelicprimitives {input.ngm} | bgzip > {output.primitives}
+			vcftools --vcf {input.ngm} --remove-indels --stdout | vcfallelicprimitives | bgzip > {output.primitives}
 		else
 			echo choosing bowtie2
 			bgzip -c {input.bowtie2} > {output.bgzip}
-			vcfallelicprimitives {input.bowtie2} | bgzip > {output.primitives}
+			vcftools --vcf {input.bowtie2} --remove-indels --stdout | vcfallelicprimitives  | bgzip > {output.primitives}
 		fi
 		tabix -p vcf {output.bgzip} && tabix -p vcf {output.primitives}
 		"""
 
-rule wcFst:
+# compute Fst-level statistics for subsequent R analysis
+rule popstats:
 	input:
+		outDir + "/var/filtered.vcf.gz"
+	output:
+		dFst = "Rdata/dFst.txt.gz", mFst = "Rdata/mFst.txt.gz", dcStats = "Rdata/dcStats.txt.gz", dmStats = "Rdata/dmStats.txt.gz", jcStats = "Rdata/jcStats.txt.gz", jmStats = "Rdata/jmStats.txt.gz"
 	shell:
-	"""
-	
+		"""
+		module load vcflib/1.0.0-rc1
+		dc=$(awk -v host=cerana -v species=VD -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat data/var/filtered.vcf.gz |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") Rdata/varroa.txt | sed 's/,$//')
+		dm=$(awk -v host=mellifera -v species=VD -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat data/var/filtered.vcf.gz |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") Rdata/varroa.txt | sed 's/,$//')
+		jm=$(awk -v host=mellifera -v species=VJ -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat data/var/filtered.vcf.gz |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") Rdata/varroa.txt | sed 's/,$//')
+		jc=$(awk -v host=cerana -v species=VJ -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat data/var/filtered.vcf.gz |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") Rdata/varroa.txt | sed 's/,$//')
+		#compute Fst for both species
+		wcFst --target $dm --background $dc --file {input} --type GL | gzip > {output.dFst}
+		wcFst --target $jm --background $jc --file {input} --type GL | gzip > {output.mFst}
+		#compute descriptive statistics for both species
+		popStat --type GL --target $dc --file {input} | gzip > {output.dcStats}
+		popStat --type GL --target $dm --file {input} | gzip > {output.dmStats}
+		popStat --type GL --target $jc --file {input} | gzip > {output.jcStats}
+		popStat --type GL --target $jm --file {input} | gzip > {output.jmStats}
+		"""
 
-	dc=$(awk -v host=cerana -v species=VD -v ORS=, '(NR==FNR) {a[$1]=NR; next} ($2==host) && ($3==species) {print a[$1]}'  <(zcat  data/var/filtered.vcf.gz |grep -m1 "^#C" | cut -f10- | tr "\t" "\n") Rdata/varroa.txt | sed 's/,$//')
-	dm=$(awk -v host=mellifera -v species=VD -v ORS=, '(NR==FNR) {a[$1]=NR; next} ($2==host) && ($3==species) {print a[$1]}'  <(zcat  data/var/filtered.vcf.gz |grep -m1 "^#C" | cut -f10- | tr "\t" "\n") Rdata/varroa.txt | sed 's/,$//')
-	jm=$(awk -v host=mellifera -v species=VJ -v ORS=, '(NR==FNR) {a[$1]=NR; next} ($2==host) && ($3==species) {print a[$1]}'  <(zcat  data/var/filtered.vcf.gz |grep -m1 "^#C" | cut -f10- | tr "\t" "\n") Rdata/varroa.txt | sed 's/,$//')
-	jc=$(awk -v host=cerana -v species=VJ -v ORS=, '(NR==FNR) {a[$1]=NR; next} ($2==host) && ($3==species) {print a[$1]}'  <(zcat  data/var/filtered.vcf.gz |grep -m1 "^#C" | cut -f10- | tr "\t" "\n") Rdata/varroa.txt | sed 's/,$//')
-	"""
-
+rule pcadaptPrep:
+	input:
+		outDir + "/var/filtered.vcf.gz"
+	output: "Rdata/vj.recode.vcf", "Rdata/vd.recode.vcf"
+	run:
+		shell("""
+		module load vcftools/0.1.12b
+		vcftools --gzvcf {input} --recode --keep <(grep "^VD" Rdata/varroa.txt | cut -f1) --out Rdata/vd
+		vcftools --gzvcf {input} --recode --keep <(grep "^VJ" Rdata/varroa.txt | cut -f1) --out Rdata/vj
+		""")
+		R("""
+		library("pcadapt")
+		setwd("Rdata")
+		read.pcadapt("vd.recode.vcf", type = "vcf")
+		read.pcadapt("vj.recode.vcf", type = "vcf")
+		""")
 
 # --background <(awk -v host=cerana -v species=VD '($2==host) && ($3==species) {a[$1]==""}  ($1 in a) {out=out","NR} END {out} ' Rdata/varroa.txt | tr "\n" ",") --target <(awk -v host=mellifera -v species=VD '($2==host) && ($3==species) {a[$1]==""}  ($1 in a) {print NR} ' Rdata/varroa.txt | tr "\n" ",")
 
