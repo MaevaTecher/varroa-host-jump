@@ -1,7 +1,4 @@
 # Population genetic analysis of Varroa on native and introudced hosts
-from scripts.split_fasta_regions import split_fasta
-from snakemake.utils import R
-
 outDir = "data"
 refDir = "ref" 
 SCRATCH  = "/work/scratch/maeva"
@@ -11,13 +8,6 @@ hostBowtiemellifera = refDir + "/bees/mellifera"
 hostBowtiecerana = refDir + "/bees/cerana"
 varroaBowtieIndex = refDir + "/destructor/vd"
 vdRef = refDir + "/destructor/vd.fasta"
-
-SPLITS = range(200)
-REGIONS = split_fasta(vdRef, len(SPLITS))  # dictionary with regions to be called, with keys in SPLITS
-for region in REGIONS:
-	for idx,i in enumerate(REGIONS[region]):
-		REGIONS[region][idx] = " -r " + str(i)
-
 
 SAMPLES, = glob_wildcards(outDir + "/reads/{sample}-R1_001.fastq.gz")
 
