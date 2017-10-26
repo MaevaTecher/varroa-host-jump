@@ -6,6 +6,7 @@ outDir = "data"
 refDir = "ref" 
 SCRATCH  = "/work/scratch/sasha"
 hostBeeBowtieIndex = refDir + "/bees/hostbee"
+hostBeeMtBowtieIndex = refDir + "/bees/mtdna"
 varroaBowtieIndex = refDir + "/destructor/vd"
 vdRef = refDir + "/destructor/vd.fasta"
 
@@ -21,9 +22,32 @@ SAMPLES, = glob_wildcards(outDir + "/reads/{sample}-R1_001.fastq.gz")
 rule all:
 	input: 
 		"data/sketches/varroa.dnd",
-		"data/var/filtered.vcf.gz",
-		"Rdata/vj.recode.vcf", "Rdata/vd.recode.vcf",
-		dFst = "Rdata/dFst.txt.gz", mFst = "Rdata/mFst.txt.gz", dcStats = "Rdata/dcStats.txt.gz", dmStats = "Rdata/dmStats.txt.gz", jcStats = "Rdata/jcStats.txt.gz", jmStats = "Rdata/jmStats.txt.gz"
+		expand("data/R/{species}.outflank.rds", species = ("vd","vj"))
+
+# use mitochondrial DNA to verify host identity
+rule checkHost:
+	input:
+		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
+		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz"
+	output:
+		temp(outDir + "/meta/hosts/{sample}.txt")
+	threads: 12
+	shell:
+		"""
+		module load bowtie2/2.2.6 samtools/1.3.1
+		bowtie2 -p {threads} -x {hostBeeMtBowtieIndex} -1  {input.read1} -2 {input.read2} | samtools view -S -q 40  -F4 - | awk -v mellifera=0 -v cerana=0 -v sample={wildcards.sample} '$3~/^L/ {{mellifera++; next}}  {{cerana++}} END {{if(mellifera>cerana) print sample"\\tmellifera\\t"cerana"\\t"mellifera ; else print sample"\\tcerana\\t"cerana"\\t"mellifera}}' > {output}
+		"""
+
+rule combineHost:
+	input: 
+		expand(outDir + "/meta/hosts/{sample}.txt", sample = SAMPLES)
+	output:
+		refDir + "/hosts.txt"
+	shell:
+		"""
+		(echo -ne "id\\thost\\tcerana\\tmellifera\\n"; cat {input}) > {output}
+		"""
+
 		
 rule removeHost:
 	input:
@@ -103,7 +127,7 @@ rule mergeVCF:
 rule filterVCF:
 	# see http://ddocent.com//filtering/
 	# filter DP  + 3*sqrt(DP) https://arxiv.org/pdf/1404.0929.pdf
-	# also removing indels and sites with more than two variants
+	# also sites with more than two variants
 	input:
 		rules.mergeVCF.output
 	output:
@@ -120,6 +144,7 @@ rule filterVCF:
 		"""
 
 rule chooseMapper:
+	# The results are very similar between the two mappers, so we're going with the one that has the greatest number of variants
 	input:
 		ngm = outDir + "/var/ngm/filtered.vcf", 
 		bowtie2 = outDir + "/var/bowtie2/filtered.vcf", 
@@ -135,16 +160,56 @@ rule chooseMapper:
 		if [[ $ngm -gt $bowtie2 ]]; then
 			echo choosing ngm
 			bgzip -c {input.ngm} > {output.bgzip}
-			vcftools --vcf {input.ngm} --remove-indels --stdout | vcfallelicprimitives | bgzip > {output.primitives}
+			vcftools --vcf {input.ngm} --recode --remove-indels --stdout | vcfallelicprimitives | bgzip > {output.primitives}
 		else
 			echo choosing bowtie2
 			bgzip -c {input.bowtie2} > {output.bgzip}
-			vcftools --vcf {input.bowtie2} --remove-indels --stdout | vcfallelicprimitives  | bgzip > {output.primitives}
+			vcftools --vcf {input.bowtie2} --recode --remove-indels --stdout | vcfallelicprimitives  | bgzip > {output.primitives}
 		fi
 		tabix -p vcf {output.bgzip} && tabix -p vcf {output.primitives}
 		"""
 
-# compute Fst-level statistics for subsequent R analysis
+# At this point we go with ngm, which produces a bit more variants
+
+
+rule VCF012:
+	# convert vcf to R data frame with meta-data 
+	input: 
+		vcf = outDir + "/var/filtered.vcf.gz",
+		ref = refDir + "/varroa.txt"
+	output: "data/R/{species}.txt"
+	shell: 
+		"""
+#		module load vcftools/0.1.12b; vcftools --gzvcf {input.vcf} --012 --mac 1 --keep <(grep -i "^{wildcards.species}" Rdata/varroa.txt | cut -f1) --out data/R/{wildcards.species}
+		# transpose loci to columns
+		(echo -ne "id\\thost\\tspecies\\t"; cat data/R/{wildcards.species}.012.pos | tr "\\t" "_" | tr "\\n" "\\t" | sed 's/\\t$//'; echo) > {output}
+		paste <(awk 'NR==FNR {{a[$1]=$0; next}} $1 in a {{print a[$1]}}' {input.ref} data/R/{wildcards.species}.012.indv) <(cat data/R/{wildcards.species}.012  | cut -f2-) | sed 's/-1/9/g' >> {output}
+
+		"""
+
+rule outflankFst:
+	# compute FST for outflank analysis
+	input:
+		outDir + "/R/{species}.txt"
+	output: 
+		outDir + "/R/{species}.outflank.rds"
+	shell:
+		"Rscript --vanilla scripts/outflank.R {input} {output}"
+
+		# R("""
+		# library(OutFLANK)
+		# library(data.table)
+		# variants <- fread("{input}")
+		# saveRDS(MakeDiploidFSTMat(variants[,!(id:host), with = FALSE], names(variants)[-c(1:3)], variants[, host]), "{output}")
+		# """)
+
+	# 	setwd("Rdata")
+	# 	read.pcadapt("vd.recode.vcf", type = "vcf")
+	# 	file.rename("tmp.pcadapt", "vd.pcadapt")
+	# 	read.pcadapt("vj.recode.vcf", type = "vcf")
+	# 	file.rename("tmp.pcadapt", "vj.pcadapt")
+	# 	""")
+
 rule popstats:
 	input:
 		outDir + "/var/filtered.vcf.gz"
@@ -167,28 +232,6 @@ rule popstats:
 		popStat --type GL --target $jm --file {input} | gzip > {output.jmStats}
 		"""
 
-rule pcadaptPrep:
-	input:
-		outDir + "/var/filtered.vcf.gz"
-	output: "Rdata/vj.recode.vcf", "Rdata/vd.recode.vcf"
-	run:
-		shell("""
-		module load vcftools/0.1.12b
-		vcftools --gzvcf {input} --recode --keep <(grep "^VD" Rdata/varroa.txt | cut -f1) --out Rdata/vd
-		vcftools --gzvcf {input} --recode --keep <(grep "^VJ" Rdata/varroa.txt | cut -f1) --out Rdata/vj
-		""")
-		R("""
-		library("pcadapt")
-		setwd("Rdata")
-		read.pcadapt("vd.recode.vcf", type = "vcf")
-		read.pcadapt("vj.recode.vcf", type = "vcf")
-		""")
-
-# --background <(awk -v host=cerana -v species=VD '($2==host) && ($3==species) {a[$1]==""}  ($1 in a) {out=out","NR} END {out} ' Rdata/varroa.txt | tr "\n" ",") --target <(awk -v host=mellifera -v species=VD '($2==host) && ($3==species) {a[$1]==""}  ($1 in a) {print NR} ' Rdata/varroa.txt | tr "\n" ",")
-
-#vcftools --gzvcf data/var/filtered.vcf.gz --weir-fst-pop <(awk '($2=="mellifera") && ($3=="VD") {print $1}' Rdata/varroa.txt) --weir-fst-pop <(awk '($2=="cerana") && ($3=="VD") {print $1}' Rdata/varroa.txt) --fst-window-size 1000 --fst-window-step 500
-
-# At this point we go with ngm, which produces a bit more variants
 
 
 # # estimate SNP effects
