@@ -12,6 +12,7 @@ vdRef = refDir + "/destructor/vd.fasta"
 
 SPLITS = range(200)
 REGIONS = split_fasta(vdRef, len(SPLITS))  # dictionary with regions to be called, with keys in SPLITS
+Q = (20, 40) # 99 and 99.99% mapping accuracy
 for region in REGIONS:
 	for idx,i in enumerate(REGIONS[region]):
 		REGIONS[region][idx] = " -r " + str(i)
@@ -20,29 +21,30 @@ for region in REGIONS:
 SAMPLES, = glob_wildcards(outDir + "/reads/{sample}-R1_001.fastq.gz")
 
 rule all:
-	input: 
-		"data/sketches/varroa.dnd",
-		expand("data/R/{species}.outflank.rds", species = ("vd","vj"))
+	input: expand("data/meta/hosts/hosts-{q}.txt", q = Q)
+# 		"data/sketches/varroa.dnd",
+# 		expand("data/R/{species}.outflank.rds", species = ("vd","vj"))
 
 # use mitochondrial DNA to verify host identity
+
 rule checkHost:
 	input:
 		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
-		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz"
+		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
 	output:
-		temp(outDir + "/meta/hosts/{sample}.txt")
+		temp(outDir + "/meta/hosts/{sample}-{q}.txt")
 	threads: 12
 	shell:
 		"""
 		module load bowtie2/2.2.6 samtools/1.3.1
-		bowtie2 -p {threads} -x {hostBeeMtBowtieIndex} -1  {input.read1} -2 {input.read2} | samtools view -S -q 40  -F4 - | awk -v mellifera=0 -v cerana=0 -v sample={wildcards.sample} '$3~/^L/ {{mellifera++; next}}  {{cerana++}} END {{if(mellifera>cerana) print sample"\\tmellifera\\t"cerana"\\t"mellifera ; else print sample"\\tcerana\\t"cerana"\\t"mellifera}}' > {output}
+		bowtie2 -p {threads} -x {hostBeeMtBowtieIndex} -1  {input.read1} -2 {input.read2} | samtools view -S -q {wildcards.q}  -F4 - | awk -v mellifera=0 -v cerana=0 -v sample={wildcards.sample} '$3~/^L/ {{mellifera++; next}}  {{cerana++}} END {{if(mellifera>cerana) print sample"\\tmellifera\\t"cerana"\\t"mellifera ; else print sample"\\tcerana\\t"cerana"\\t"mellifera}}' > {output}
 		"""
 
 rule combineHost:
-	input: 
-		expand(outDir + "/meta/hosts/{sample}.txt", sample = SAMPLES)
+	input:
+		expand(outDir + "/meta/hosts/{sample}-{{q}}.txt", sample = SAMPLES)
 	output:
-		refDir + "/hosts.txt"
+		outDir + "/meta/hosts/hosts-{q}.txt"
 	shell:
 		"""
 		(echo -ne "id\\thost\\tcerana\\tmellifera\\n"; cat {input}) > {output}
@@ -186,6 +188,12 @@ rule VCF012:
 		paste <(awk 'NR==FNR {{a[$1]=$0; next}} $1 in a {{print a[$1]}}' {input.ref} data/R/{wildcards.species}.012.indv) <(cat data/R/{wildcards.species}.012  | cut -f2-) | sed 's/-1/9/g' >> {output}
 
 		"""
+
+#overall distance matrix
+rule VCF2Dis:
+	input: outDir + "/var/filtered.vcf.gz"
+	output: outDir + "/var/filtered.mat"
+	shell: "module load VCF2Dis/1.09; VCF2Dis -InPut {input} -OutPut {output}"
 
 rule outflankFst:
 	# compute FST for outflank analysis
