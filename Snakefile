@@ -56,7 +56,6 @@ rule bowtie2mtdna:
 		index = temp(outDir + "/mtdna_bowtie2/{sample}.bam.bai")
 	shell:
 		"""
-		module load bowtie2/2.2.6 samtools/1.3.1 /apps/unit/MikheyevU/VariantBam/1.4.3
 		bowtie2 -p {threads} --very-sensitive-local --sam-rg ID:{wildcards.sample} --sam-rg LB:Nextera --sam-rg SM:{wildcards.sample} --sam-rg PL:ILLUMINA -x {vdmtDNABowtieIndex} -1 {input.read1} -2 {input.read2} | samtools view -Su - | samtools sort - -m 55G -T {SCRATCH}/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 100 -b -o {output.alignment}
 		samtools index {output.alignment}
 		"""
