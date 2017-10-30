@@ -1,4 +1,5 @@
 # Population genetic analysis of Varroa on native and introduced hosts
+import glob
 from split_fasta_regions import split_fasta
 
 outDir = "data"
