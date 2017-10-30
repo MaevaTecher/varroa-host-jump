@@ -21,9 +21,9 @@ for region in REGIONS:
 SAMPLES, = glob_wildcards(outDir + "/reads/{sample}-R1_001.fastq.gz")
 
 rule all:
-	input: expand("data/meta/hosts/hosts-{q}.txt", q = Q)
-# 		"data/sketches/varroa.dnd",
-# 		expand("data/R/{species}.outflank.rds", species = ("vd","vj"))
+	input: expand("data/meta/hosts/hosts-{q}.txt", q = Q),
+ 		"data/sketches/varroa.dnd",
+ 		expand("data/R/{species}.outflank.rds", species = ("vd","vj"))
 
 # use mitochondrial DNA to verify host identity
 
@@ -176,17 +176,19 @@ rule chooseMapper:
 
 rule VCF012:
 	# convert vcf to R data frame with meta-data 
+	# remove maf 0.1, since we don't have much power for them
 	input: 
 		vcf = outDir + "/var/filtered.vcf.gz",
 		ref = refDir + "/varroa.txt"
 	output: "data/R/{species}.txt"
 	shell: 
 		"""
-#		module load vcftools/0.1.12b; vcftools --gzvcf {input.vcf} --012 --mac 1 --keep <(grep -i "^{wildcards.species}" Rdata/varroa.txt | cut -f1) --out data/R/{wildcards.species}
+		module load vcftools/0.1.12b
+		vcftools --gzvcf {input.vcf} --012 --mac 1 --keep <(awk -v species={wildcards.species} '$3==toupper(species) {{print $1 }}' {input.ref}) --maf 0.1 --out data/R/{wildcards.species}
 		# transpose loci to columns
 		(echo -ne "id\\thost\\tspecies\\t"; cat data/R/{wildcards.species}.012.pos | tr "\\t" "_" | tr "\\n" "\\t" | sed 's/\\t$//'; echo) > {output}
-		paste <(awk 'NR==FNR {{a[$1]=$0; next}} $1 in a {{print a[$1]}}' {input.ref} data/R/{wildcards.species}.012.indv) <(cat data/R/{wildcards.species}.012  | cut -f2-) | sed 's/-1/9/g' >> {output}
-
+		# take fedHost and species columns and append them to the genotype data file
+		paste <(awk 'NR==FNR {{a[$1]=$1"\\t"$4"\\t"$3; next}} $1 in a {{print a[$1]}}' {input.ref} data/R/{wildcards.species}.012.indv) <(cat data/R/{wildcards.species}.012  | cut -f2-) | sed 's/-1/9/g' >> {output}
 		"""
 
 #overall distance matrix
@@ -204,40 +206,34 @@ rule outflankFst:
 	shell:
 		"Rscript --vanilla scripts/outflank.R {input} {output}"
 
-		# R("""
-		# library(OutFLANK)
-		# library(data.table)
-		# variants <- fread("{input}")
-		# saveRDS(MakeDiploidFSTMat(variants[,!(id:host), with = FALSE], names(variants)[-c(1:3)], variants[, host]), "{output}")
-		# """)
-
-	# 	setwd("Rdata")
-	# 	read.pcadapt("vd.recode.vcf", type = "vcf")
-	# 	file.rename("tmp.pcadapt", "vd.pcadapt")
-	# 	read.pcadapt("vj.recode.vcf", type = "vcf")
-	# 	file.rename("tmp.pcadapt", "vj.pcadapt")
-	# 	""")
-
 rule popstats:
 	input:
-		outDir + "/var/filtered.vcf.gz"
+		vcf = outDir + "/var/filtered.vcf.gz",
+		ref = refDir + "/varroa.txt"
 	output:
-		dFst = "Rdata/dFst.txt.gz", mFst = "Rdata/mFst.txt.gz", dcStats = "Rdata/dcStats.txt.gz", dmStats = "Rdata/dmStats.txt.gz", jcStats = "Rdata/jcStats.txt.gz", jmStats = "Rdata/jmStats.txt.gz"
+		dFst = outDir + "/R/dFst.txt", mFst = outDir + "/R/mFst.txt", dcStats =outDir + outDir + "/R/dcStats.txt", dmStats = outDir + "/R/dmStats.txt", jcStats = outDir + "/R/jcStats.txt", jmStats = outDir + "/R/jmStats.txt", dpFst = outDir + "/R/dpFst.txt", jpFst = outDir + "/R/jpFst.txt"
+	threads: 8
 	shell:
 		"""
-		module load vcflib/1.0.0-rc1
-		dc=$(awk -v host=cerana -v species=VD -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat data/var/filtered.vcf.gz |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") Rdata/varroa.txt | sed 's/,$//')
+		module load vcflib/1.0.0-rc1 parallel
+		dc=$(awk -v host=cerana -v species=VD -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat {input.vcf} |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") {input.ref} | sed 's/,$//')
 		dm=$(awk -v host=mellifera -v species=VD -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat data/var/filtered.vcf.gz |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") Rdata/varroa.txt | sed 's/,$//')
 		jm=$(awk -v host=mellifera -v species=VJ -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat data/var/filtered.vcf.gz |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") Rdata/varroa.txt | sed 's/,$//')
 		jc=$(awk -v host=cerana -v species=VJ -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat data/var/filtered.vcf.gz |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") Rdata/varroa.txt | sed 's/,$//')
 		#compute Fst for both species
-		wcFst --target $dm --background $dc --file {input} --type GL | gzip > {output.dFst}
-		wcFst --target $jm --background $jc --file {input} --type GL | gzip > {output.mFst}
+		
+		tempfile=$(mktemp)
+		echo "wcFst --target $dm --background $dc --file {input} --type GL  > {output.dFst} " >> $tempfile
+		echo "wcFst --target $jm --background $jc --file {input} --type GL  > {output.mFst}" >> $tempfile
+		echo "pFst --target $dm --background $dc --file {input} --type GL  > {output.dpFst} " >> $tempfile
+		echo "pFst --target $jm --background $jc --file {input} --type GL  > {output.jpFst} " >> $tempfile
 		#compute descriptive statistics for both species
-		popStat --type GL --target $dc --file {input} | gzip > {output.dcStats}
-		popStat --type GL --target $dm --file {input} | gzip > {output.dmStats}
-		popStat --type GL --target $jc --file {input} | gzip > {output.jcStats}
-		popStat --type GL --target $jm --file {input} | gzip > {output.jmStats}
+		echo "popStats --type GL --target $dc --file {input} | gzip > {output.dcStats}" >> $tempfile
+		echo "popStats --type GL --target $dm --file {input} | gzip > {output.dmStats}" >> $tempfile
+		echo "popStats --type GL --target $jc --file {input} | gzip > {output.jcStats}" >> $tempfile
+		echo "popStats --type GL --target $jm --file {input} | gzip > {output.jmStats}" >> $tempfile
+		cat $tempfile | xargs -P {threads} -I % sh -c '%'
+		rm $tempfile
 		"""
 
 
