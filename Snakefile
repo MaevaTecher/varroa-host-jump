@@ -28,7 +28,8 @@ for region in REGIONS:
 
 rule all:
 	input: expand(outDir + "/mtdna_bowtie2/{sample}.bam", sample = SAMPLES),
-		expand(outDir + "mtdna_bowtie2/{sample}.bam.bai", sample = SAMPLES)
+		expand(outDir + "mtdna_bowtie2/{sample}.bam.bai", sample = SAMPLES),
+		"data/mtdna_var/mtdnafiltered.vcf"
 
 # use all genome to verify host identity
 #rule checkmellifera:
@@ -45,7 +46,7 @@ rule all:
 #	output: temp(outDir + "/hostbee/cerana/{sample}.bam")
 #	shell: "bowtie2 -p {threads} -x {hostBowtiecerana} -1 {input.read1} -2 {input.read2}  | samtools view -Su -F4 | novosort -c 2 -m 20G -i -o {output} -"
 
-rule bowtie2mtdna
+rule bowtie2mtdna:
 	input:
 		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
 		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
