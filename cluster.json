@@ -6,18 +6,32 @@
         "mem" : "5G",
         "time": "7-00:00:00" 
     },
-    "checkmellifera":
+    "bowtie2mtdna":
     {
         "cpus-per-task" : 12,
         "partition" : "compute",
         "mem" : "40G",
         "time": "2-00:00:00" 
     },
-    "checkcerana":
+    "freeBayesmtdna":
         {
         "cpus-per-task" : 12,
         "partition" : "compute",
         "mem" : "40G",
         "time": "2-00:00:00" 
+    },    
+    "mergeVCFmtdna":
+        {
+        "cpus-per-task" : 12,
+        "partition" : "compute",
+        "mem" : "10G",
+        "time": "1-00:00:00" 
+    },
+    "filterVCFmtdna":
+        {
+        "cpus-per-task" : 12,
+        "partition" : "compute",
+        "mem" : "10G",
+        "time": "1-00:00:00" 
     }
 }
