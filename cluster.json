@@ -15,10 +15,10 @@
     },
     "freeBayesmtdna":
         {
-        "cpus-per-task" : 12,
+        "cpus-per-task" : 1,
         "partition" : "compute",
         "mem" : "40G",
-        "time": "4-00:00:00" 
+        "time": "7-00:00:00" 
     },    
     "mergeVCFmtdna":
         {
