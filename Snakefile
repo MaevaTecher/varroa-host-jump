@@ -29,7 +29,10 @@ for region in REGIONS:
 
 rule all:
 	input: expand(outDir + "/mtdna_bowtie2/{sample}.bam", sample = SAMPLES),
-		expand(outDir + "/mtdna_bowtie2/{sample}.bam.bai", sample = SAMPLES)
+		expand(outDir + "/mtdna_bowtie2/{sample}.bam.bai", sample = SAMPLES), 
+		expand(outDir + "/mtdna_var/mtdna.{region}.vcf", region = REGIONS),
+		"/data/mtdna_var/mtdnaraw.vcf", 
+		"/data/mtdna_var/mtdnafiltered.vcf"
 
 # use all genome to verify host identity
 #rule checkmellifera:
