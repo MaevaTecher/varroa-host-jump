@@ -65,7 +65,7 @@ rule bowtie2mtdna:
 
 rule freeBayesmtdna:
 	input: 
-		expand(outDir + outDir + "/mtdna_bowtie2/{sample}.bam", sample = SAMPLES)
+		expand(outDir + "/mtdna_bowtie2/{sample}.bam", sample = SAMPLES)
 	output: 
 		temp(outDir + "/mtdna_var/mtdna.{region}.vcf")
 	params: 
