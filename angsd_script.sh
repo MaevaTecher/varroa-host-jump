@@ -15,8 +15,8 @@
 ANGSD=/apps/unit/MikheyevU/Maeva/angsd
 #NGSADMIX=/apps/unit/MikheyevU/NGSadmix/32/NGSadmix
 
-SAMTOOLS=/apps/unit/MikheyevU/Maeva/samtools/bin/samtools
-HTSLIB=/apps/unit/MikheyevU/Maeva/htslib
+#SAMTOOLS=/apps/unit/MikheyevU/Maeva/samtools/bin/samtools
+#HTSLIB=/apps/unit/MikheyevU/Maeva/htslib
 
 MTDNAREF=/work/MikheyevU/Maeva/varroa-jump/ref/destructor/mtdnamite/VDAJ493124.fasta
 BAMLIST=/work/MikheyevU/Maeva/varroa-jump/data/mtdna_bowtie2/mtbam.list
