@@ -70,7 +70,6 @@ rule freeBayesmtdna:
 		missing = lambda wildcards, input: len(input) * 0.9
 	shell:
 		"""
-		module load freebayes/1.1.0 vcftools/0.1.12b vcflib/1.0.0-rc1
 		for i in {params.bams}; do name=$(basename $i .bam); if [[ $name == VJ* ]] ; then echo $name VJ; else echo $name VD; fi ; done > {outDir}/mtdna_var/pops.txt
 		freebayes --min-alternate-fraction 0.2 --use-best-n-alleles 4 -m 5 -q 5 --populations {outDir}/var/pops.txt -b {params.bams} {params.span}  -f {vdmtDNA} | vcffilter  -f "QUAL > 20 & NS > {params.missing}" > {output}
 		"""
@@ -82,7 +81,6 @@ rule mergeVCFmtdna:
 		temp(outDir + "/mtdna_var/mtdnaraw.vcf")
 	shell:
 		"""
-		module load vcflib/1.0.0-rc1
 		(grep "^#" {input[0]} ; cat {input} | grep -v "^#" ) | vcfuniq  > {output}
 		"""
 
@@ -96,7 +94,6 @@ rule filterVCFmtdna:
 		vcf = outDir + "/mtdna_var/mtdnafiltered.vcf"
 	shell:
 		"""
-		module load vcftools/0.1.12b vcflib/1.0.0-rc1 eplot/2.08
 		perl  -ne 'print "$1\\n" if /DP=(\d+)/'  {input} > {outDir}/mtdna_var/depth.txt
 		sort -n {outDir}/mtdna_var/depth.txt | uniq -c | awk '{{print $2,$1}}' | eplot -d -r [200:2000] 2>/dev/null | tee 
 		Nind=$(grep -m1 "^#C" {input}  | cut -f10- |wc -w)
