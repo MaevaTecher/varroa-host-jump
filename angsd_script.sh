@@ -26,18 +26,21 @@ $ANGSD/angsd -P 12 -b $BAMLIST -ref $MTDNAREF -out $OUTDIR/mite \
         -uniqueOnly 1 \
         -remove_bads 1 \
         -only_proper_pairs 1\
+        -SNP_pval 1e-8\
+        -minMapQ 20 \
+        -minQ 20 \
+	-doGlf 2 \
+	-doGeno 32\
         -trim 0 \
         -C 50 \
         -baq 1 \
-        -minMapQ 20 \
-        -minQ 20 \
-        -minInd 15 \
-        -setMinDepth 60 \
-        -setMaxDepth 400 \
+	#-minInd 15 \
+        #-setMinDepth 60 \
+        #-setMaxDepth 400 \
         -doCounts 1 \
         -GL 1 \
         -doMajorMinor 4 \
         -doMaf 1 \
         -skipTriallelic 1 \
-	      -doGlf 2 \
-        -SNP_pval 1e-8
+
+
