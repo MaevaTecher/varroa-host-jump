@@ -28,7 +28,7 @@ for region in REGIONS:
 
 
 rule all:
-	input: "/data/mtdna_var/mtdnaraw.vcf"
+	input: "data/mtdna_var/mtdnaraw.vcf"
 
 # use all genome to verify host identity
 #rule checkmellifera:
