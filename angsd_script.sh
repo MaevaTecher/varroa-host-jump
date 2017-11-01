@@ -41,6 +41,7 @@ $ANGSD/angsd -P 12 -b $BAMLIST -ref $MTDNAREF -out $OUTDIR/mite \
         -GL 1 \
         -doMajorMinor 4 \
         -doMaf 1 \
-        -skipTriallelic 1
+        -skipTriallelic 1\
+	-doPost 1
 
 
