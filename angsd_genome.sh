@@ -19,23 +19,7 @@ ANGSD=/apps/unit/MikheyevU/Maeva/angsd
 #HTSLIB=/apps/unit/MikheyevU/Maeva/htslib
 
 VDREF=/work/MikheyevU/Maeva/varroa-jump/ref/destructor/vd.fasta
-BAMLIST=/work/MikheyevU/Maeva/varroa-jump/data/angsd/ngmbam.list
+BAMLIST=/work/MikheyevU/Maeva/varroa-jump/data/angsd/ngmbam_sort.list
 OUTDIR=/work/MikheyevU/Maeva/varroa-jump/data/angsd
 
-$ANGSD/angsd -P 12 -b $BAMLIST -ref $VDREF -out $OUTDIR/mitegeno \
-        -uniqueOnly 1 \
-        -remove_bads 1 \
-        -only_proper_pairs 1\
-	-trim 0 \
-	-C 50\
-	-baq 1\	
-	-minMapQ 20
-	-minQ 20
-	-doCounts 1\
-	-GL 1\
-	-doMajorMinor 1\
-	-doMaf 1\
-	-skipTriallelic 1\
-	-SNP_pval 1e-8
-      	-doGeno 32\
-        -doPost 1
+$ANGSD/angsd -P 12 -b $BAMLIST -ref $VDREF -out $OUTDIR/mitegeno_sort -uniqueOnly 1 -remove_bads 1 -only_proper_pairs 1 -trim 0 -C 50 -baq 1 -minMapQ 20 -minQ 20 -doCounts 1 -GL 1 -doMajorMinor 4 -doMaf 1 -skipTriallelic 1 -SNP_pval 1e-8 -doGeno 32 -doPost 1 -doGlf 2
