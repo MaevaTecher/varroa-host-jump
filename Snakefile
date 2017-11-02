@@ -332,7 +332,7 @@ rule angsd_transform:
 	threads: 12
 	shell:
 		"""
-		angsd -P {threads} -b {input} -ref {vdmtDNA} -out {ANGSDOUT} \
+		angsd -P {threads} -b {input} -ref {vdRef} -out {ANGSDOUT} \
         	-uniqueOnly 1 \
         	-remove_bads 1 \
         	-only_proper_pairs 1\
