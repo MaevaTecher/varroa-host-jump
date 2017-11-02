@@ -90,11 +90,11 @@ rule all:
 
 ##---- PART2 ---- Exploratory analysis on reads that only mapped on Varroa genomes + variant calling
 
-rule mashtree:
-	input: expand(outDir + "/sketches/{sample}.fastq.gz", sample = SAMPLES)
-	output: tree = outDir + "/sketches/varroa.dnd", matrix = outDir + "/sketches/varroa.phylip"
-	threads: 12
-	shell: "mashtree.pl --genomesize 500000000 --mindepth 2 --tempdir /work/MikheyevU/Maeva/varroahost/scratch --numcpus {threads} --outmatrix {output.matrix} {input} > {output.tree}"
+#rule mashtree:
+#	input: expand(outDir + "/sketches/{sample}.fastq.gz", sample = SAMPLES)
+#	output: tree = outDir + "/sketches/varroa.dnd", matrix = outDir + "/sketches/varroa.phylip"
+#	threads: 12
+#	shell: "mashtree.pl --genomesize 500000000 --mindepth 2 --tempdir /work/MikheyevU/Maeva/varroahost/scratch --numcpus {threads} --outmatrix {output.matrix} {input} > {output.tree}"
 
 ## Here reads will be mapped using either bowtie2 or ngm, then test which one is the best
 ## on whole genome
