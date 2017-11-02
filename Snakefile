@@ -332,27 +332,9 @@ rule angsd_transform:
 	threads: 12
 	shell:
 		"""
-		angsd -P {threads} -b {input} -ref {vdRef} -out {ANGSDOUT} \
-        	-uniqueOnly 1 \
-        	-remove_bads 1 \
-        	-only_proper_pairs 1\
-        	-trim 0 \
-        	-C 50 \
-        	-baq 1 \
-        	-minMapQ 20 \
-        	-minQ 20 \
-        	-doCounts 1 \
-        	-GL 1 \
-        	-doMajorMinor 4 \
-        	-doMaf 1 \
-        	-skipTriallelic 1\
-        	-SNP_pval 1e-8\
-        	-doGeno 32\
-        	-doPost 1 \		
-        	-doGlf 2 \
-        	#-minInd 15 \
-		#-setMinDepth 60 \
-        	#-setMaxDepth 400 \
+		angsd -P {threads} -b {input} -ref {vdRef} -out {ANGSDOUT} -uniqueOnly 1 -remove_bads 1 -only_proper_pairs 1 -trim 0 -C 50 -baq 1 -minMapQ 20 -minQ 20 -doCounts 1 -GL 1 -doMajorMinor 4 -doMaf 1 -skipTriallelic 1 -SNP_pval 1e-8 -doGeno 32 -doPost 1 -doGlf 2 #-minInd 15 \
+#-setMinDepth 60 \
+#-setMaxDepth 400 \
 		"""
 
 
