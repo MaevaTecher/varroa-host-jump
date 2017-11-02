@@ -32,8 +32,7 @@ for region in REGIONS:
 
 ## Pseudo rule for build-target
 rule all:
-	input: "data/mtdna_var/mtdnaraw.vcf",
-		"data/mtdna_var/mtdnafiltered.vcf"
+	input: expand(outDir + "/ansgd/mitegeno")
 		
 
 ##---- PART1 ---- Check the host identity by mapping reads on honey bee reference genome
@@ -326,7 +325,36 @@ rule filterVCFmtdna:
 
 ##---- PART3 ---- Bayesian like analysis with NGSadmix		
 
-
+rule angsd_transform:
+	input:
+		outDir + "/angsd/ngmbam.list"
+	output:
+		ANGSDOUT = outDir + "/angsd/mitegeno"
+	threads: 12
+	shell:
+		"""
+		angsd -P {threads} -b {input} -ref {vdmtDNA} -out {ANGSDOUT} \
+        	-uniqueOnly 1 \
+        	-remove_bads 1 \
+        	-only_proper_pairs 1\
+        	-SNP_pval 1e-8\
+        	-minMapQ 20 \
+        	-minQ 20 \
+        	-doGlf 2 \
+        	-doGeno 32\
+        	-trim 0 \
+        	-C 50 \
+        	-baq 1 \
+        	#-minInd 15 \
+		#-setMinDepth 60 \
+        	#-setMaxDepth 400 \
+        	-doCounts 1 \
+        	-GL 1 \
+        	-doMajorMinor 4 \
+        	-doMaf 1 \
+        	-skipTriallelic 1\
+        	-doPost 1
+		"""
 
 
 # # estimate SNP effects
