@@ -23,12 +23,12 @@ vdmtDNA = refDir + "/destructor/mtdnamite/VDAJ493124.fasta"
 SAMPLES, = glob_wildcards(outDir + "/reads/{sample}-R1_001.fastq.gz")
 
 ## Creation of parameters for splitting reference genome and cut off computation time
-SPLITS = range(10)
-REGIONS = split_fasta(vdmtDNA, len(SPLITS))  # dictionary with regions to be called, with keys in SPLITS
+#SPLITS = range(10)
+#REGIONS = split_fasta(vdmtDNA, len(SPLITS))  # dictionary with regions to be called, with keys in SPLITS
 Q = (20, 40) # 99 and 99.99% mapping accuracy
-for region in REGIONS:
-	for idx,i in enumerate(REGIONS[region]):
-		REGIONS[region][idx] = " -r " + str(i)
+#for region in REGIONS:
+#	for idx,i in enumerate(REGIONS[region]):
+#		REGIONS[region][idx] = " -r " + str(i)
 
 ## Pseudo rule for build-target
 rule all:
