@@ -32,8 +32,7 @@ Q = (20, 40) # 99 and 99.99% mapping accuracy
 
 ## Pseudo rule for build-target
 rule all:
-	input: expand(outDir + "/ansgd/mitegeno")
-		
+	input: expand(outDir + "/ansgd/mitegeno.{format}.gz", format = ("beagle", "geno", "mafs"))
 
 ##---- PART1 ---- Check the host identity by mapping reads on honey bee reference genome
 ## Use only mitochondrial DNA to verify host identity
