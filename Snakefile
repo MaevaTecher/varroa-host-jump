@@ -266,62 +266,62 @@ rule mashtree:
 #		"""
 
 ## only on mtDNA for checking later the haplotype identification		
-rule bowtie2mtdna:
-	input:
-		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
-		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
-	threads: 12
-	output: 
-		alignment = temp(outDir + "/mtdna_bowtie2/{sample}.bam"), 
-		index = temp(outDir + "/mtdna_bowtie2/{sample}.bam.bai")
-	shell:
-		"""
-		bowtie2 -p {threads} --very-sensitive-local --sam-rg ID:{wildcards.sample} --sam-rg LB:Nextera --sam-rg SM:{wildcards.sample} --sam-rg PL:ILLUMINA -x {vdmtDNABowtieIndex} -1 {input.read1} -2 {input.read2} | samtools view -Su -F4 -q10 - | samtools sort - -m 55G -T {SCRATCH}/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 100 -b -o {output.alignment}
-		samtools index {output.alignment}
-		"""
+#rule bowtie2mtdna:
+#	input:
+#		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
+#		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
+#	threads: 12
+#	output: 
+#		alignment = temp(outDir + "/mtdna_bowtie2/{sample}.bam"), 
+#		index = temp(outDir + "/mtdna_bowtie2/{sample}.bam.bai")
+#	shell:
+#		"""
+#		bowtie2 -p {threads} --very-sensitive-local --sam-rg ID:{wildcards.sample} --sam-rg LB:Nextera --sam-rg SM:{wildcards.sample} --sam-rg PL:ILLUMINA -x {vdmtDNABowtieIndex} -1 {input.read1} -2 {input.read2} | samtools view -Su -F4 -q10 - | samtools sort - -m 55G -T {SCRATCH}/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 100 -b -o {output.alignment}
+#		samtools index {output.alignment}
+#		"""
 
-rule freeBayesmtdna:
-	input: 
-		expand(outDir + "/mtdna_bowtie2/{sample}.bam", sample = SAMPLES)
-	output: 
-		temp(outDir + "/mtdna_var/mtdna.{region}.vcf")
-	params: 
-		span = lambda wildcards: REGIONS[wildcards.region],
-		bams = lambda wildcards, input: os.path.dirname(input[0]) + "/*.bam",
-		missing = lambda wildcards, input: len(input) * 0.9
-	shell:
-		"""
-		for i in {params.bams}; do name=$(basename $i .bam); if [[ $name == VJ* ]] ; then echo $name VJ; else echo $name VD; fi ; done > {outDir}/mtdna_var/pops.txt
-		freebayes --min-alternate-fraction 0.2 --use-best-n-alleles 4 -m 5 -q 5 --populations {outDir}/var/pops.txt -b {params.bams} {params.span}  -f {vdmtDNA} | vcffilter  -f "QUAL > 20 & NS > {params.missing}" > {output}
-		"""
+#rule freeBayesmtdna:
+#	input: 
+#		expand(outDir + "/mtdna_bowtie2/{sample}.bam", sample = SAMPLES)
+#	output: 
+#		temp(outDir + "/mtdna_var/mtdna.{region}.vcf")
+#	params: 
+#		span = lambda wildcards: REGIONS[wildcards.region],
+#		bams = lambda wildcards, input: os.path.dirname(input[0]) + "/*.bam",
+#		missing = lambda wildcards, input: len(input) * 0.9
+#	shell:
+#		"""
+#		for i in {params.bams}; do name=$(basename $i .bam); if [[ $name == VJ* ]] ; then echo $name VJ; else echo $name VD; fi ; done > {outDir}/mtdna_var/pops.txt
+#		freebayes --min-alternate-fraction 0.2 --use-best-n-alleles 4 -m 5 -q 5 --populations {outDir}/var/pops.txt -b {params.bams} {params.span}  -f {vdmtDNA} | vcffilter  -f "QUAL > 20 & NS > {params.missing}" > {output}
+#		"""
 
-rule mergeVCFmtdna:
-	input: 
-		expand(outDir + "/mtdna_var/mtdna.{region}.vcf", region = REGIONS)
-	output:
-		temp(outDir + "/mtdna_var/mtdnaraw.vcf")
-	shell:
-		"""
-		(grep "^#" {input[0]} ; cat {input} | grep -v "^#" ) | vcfuniq  > {output}
-		"""
+#rule mergeVCFmtdna:
+#	input: 
+#		expand(outDir + "/mtdna_var/mtdna.{region}.vcf", region = REGIONS)
+#	output:
+#		temp(outDir + "/mtdna_var/mtdnaraw.vcf")
+#	shell:
+#		"""
+#		(grep "^#" {input[0]} ; cat {input} | grep -v "^#" ) | vcfuniq  > {output}
+#		"""
 
-rule filterVCFmtdna:
+#rule filterVCFmtdna:
 	# see http://ddocent.com//filtering/
 	# filter DP  + 3*sqrt(DP) https://arxiv.org/pdf/1404.0929.pdf
 	# also sites with more than two variants
-	input:
-		rules.mergeVCFmtdna.output
-	output:
-		vcf = outDir + "/mtdna_var/mtdnafiltered.vcf"
-	shell:
-		"""
-		perl  -ne 'print "$1\\n" if /DP=(\d+)/'  {input} > {outDir}/mtdna_var/depth.txt
-		sort -n {outDir}/mtdna_var/depth.txt | uniq -c | awk '{{print $2,$1}}' | eplot -d -r [200:2000] 2>/dev/null | tee 
-		Nind=$(grep -m1 "^#C" {input}  | cut -f10- |wc -w)
-		coverageCutoff=$(awk -v Nind=$Nind '{{sum+=$1}} END {{print "DP < "(sum / NR / Nind + sqrt(sum / NR / Nind) * 3 ) * Nind}}' {outDir}/mtdna_var/depth.txt)
-		echo Using coverage cutoff $coverageCutoff
-		vcffilter -s -f \"$coverageCutoff\" {input} | vcftools --vcf - --max-alleles 2 --recode --stdout > {output}
-		"""
+#	input:
+#		rules.mergeVCFmtdna.output
+#	output:
+#		vcf = outDir + "/mtdna_var/mtdnafiltered.vcf"
+#	shell:
+#		"""
+#		perl  -ne 'print "$1\\n" if /DP=(\d+)/'  {input} > {outDir}/mtdna_var/depth.txt
+#		sort -n {outDir}/mtdna_var/depth.txt | uniq -c | awk '{{print $2,$1}}' | eplot -d -r [200:2000] 2>/dev/null | tee 
+#		Nind=$(grep -m1 "^#C" {input}  | cut -f10- |wc -w)
+#		coverageCutoff=$(awk -v Nind=$Nind '{{sum+=$1}} END {{print "DP < "(sum / NR / Nind + sqrt(sum / NR / Nind) * 3 ) * Nind}}' {outDir}/mtdna_var/depth.txt)
+#		echo Using coverage cutoff $coverageCutoff
+#		vcffilter -s -f \"$coverageCutoff\" {input} | vcftools --vcf - --max-alleles 2 --recode --stdout > {output}
+#		"""
 
 ##---- PART3 ---- Bayesian like analysis with NGSadmix		
 
