@@ -12,12 +12,9 @@
 
 ##Specify the path for the apps I need to use
 NGSADMIX=/apps/unit/MikheyevU/NGSadmix/32/NGSadmix
-
-MTDNAREF=/work/MikheyevU/Maeva/varroa-jump/ref/destructor/mtdnamite/VDAJ493124.fasta
-BAMLIST=/work/MikheyevU/Maeva/varroa-jump/data/mtdna_bowtie2/mtbam.list
-INPUTBEAGLE=/work/MikheyevU/Maeva/varroa-jump/data/mtdna_var/mite.beagle.gz
+INPUTBEAGLE=/work/MikheyevU/Maeva/varroa-jump/data/angsd/mitegeno_sort.beagle.gz
 OUTDIR=/work/MikheyevU/Maeva/varroa-jump/data/bayesian
 
-K=2
+K=5
 
-$NGSADMIX -P 12 -likes $INPUTBEAGLE -K $K -outfiles $OUTDIR/assign_$K -minMaf 0
+$NGSADMIX -P 12 -likes $INPUTBEAGLE -K $K -outfiles $OUTDIR/assignsort_$K -minMaf 0
