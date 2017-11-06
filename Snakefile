@@ -8,6 +8,7 @@ SCRATCH  = "/work/scratch/sasha"
 hostBeeBowtieIndex = refDir + "/bees/hostbee"
 hostBeeMtBowtieIndex = refDir + "/bees/mtdna"
 varroaBowtieIndex = refDir + "/destructor/vd"
+krakenDB = "/work/MikheyevU/kraken_db"
 vdRef = refDir + "/destructor/vd.fasta"
 
 SPLITS = range(200)
@@ -23,7 +24,8 @@ SAMPLES, = glob_wildcards(outDir + "/reads/{sample}-R1_001.fastq.gz")
 rule all:
 	input: expand("data/meta/hosts/hosts-{q}.txt", q = Q),
  		"data/sketches/varroa.dnd",
- 		expand("data/R/{species}.outflank.rds", species = ("vd","vj"))
+ 		expand("data/R/{species}.outflank.rds", species = ("vd","vj")),
+ 		expand("data/kraken/{sample}.txt", sample = SAMPLES)
 
 # use mitochondrial DNA to verify host identity
 
@@ -50,7 +52,6 @@ rule combineHost:
 		(echo -ne "id\\thost\\tcerana\\tmellifera\\n"; cat {input}) > {output}
 		"""
 
-		
 rule removeHost:
 	input:
 		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
@@ -76,12 +77,54 @@ rule bowtie2:
 	threads: 12
 	output: 
 		alignment = temp(outDir + "/alignments/bowtie2/{sample}.bam"), 
-		index = temp(outDir + "/alignments/bowtie2/{sample}.bam.bai")
+		index = temp(outDir + "/alignments/bowtie2/{sample}.bam.bai"),
+		read1 = outDir + "/reads_unmapped/{sample}.1.fastq.gz",
+		read2 = outDir + "/reads_unmapped/{sample}.2.fastq.gz"
+
 	shell:
 		"""
 		module load bowtie2/2.2.6 samtools/1.3.1 VariantBam/1.4.3
-		bowtie2 -p {threads} --very-sensitive-local --sam-rg ID:{wildcards.sample} --sam-rg LB:Nextera --sam-rg SM:{wildcards.sample} --sam-rg PL:ILLUMINA -x {varroaBowtieIndex} -1 {input.read1} -2 {input.read2} | samtools view -Su - | samtools sort - -m 55G -T {SCRATCH}/bowtie/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
+		bowtie2 -p {threads} --very-sensitive-local --sam-rg ID:{wildcards.sample} --sam-rg LB:Nextera --sam-rg SM:{wildcards.sample} --sam-rg PL:ILLUMINA  --un-conc-gz  {outDir}/reads_unmapped/{wildcards.sample} -x {varroaBowtieIndex} -1 {input.read1} -2 {input.read2} | samtools view -Su - | samtools sort - -m 55G -T {SCRATCH}/bowtie/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
 		samtools index {output.alignment}
+		"""
+
+#FIXME: move into botwie2 code, simplify botwi2 rule in cluster.json
+# collect unmapped reads for host screening
+# rule collectUnmapped:
+# 	input:
+# 		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
+# 		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
+# 	threads: 12
+# 	output: 
+# 		read1 = outDir + "/reads_unmapped/{sample}.1.fastq.gz",
+# 		read2 = outDir + "/reads_unmapped/{sample}.2.fastq.gz",
+# 	shell:
+# 		"""
+# 		module load bowtie2/2.2.6 
+# 		bowtie2 -p {threads} --very-sensitive-local -x {varroaBowtieIndex} -1 {input.read1} -2 {input.read2} --un-conc-gz  {outDir}/reads_unmapped/{wildcards.sample} > /dev/null
+# 		mv {outDir}/reads_unmapped/{wildcards.sample}.1 {output.read1}
+# 		mv {outDir}/reads_unmapped/{wildcards.sample}.2 {output.read2}				
+# 		"""		
+
+rule kraken:
+	input: outDir + "/reads_unmapped/{sample}.1.fastq.gz", outDir + "/reads_unmapped/{sample}.2.fastq.gz"
+	output: outDir + "/kraken/{sample}.txt"
+	threads: 12
+	shell:
+		"""
+		module load Kraken/1.0 jellyfish/1.1.11
+		kraken --preload --db {krakenDB} --gzip-compressed --threads {threads} --paired --output {output} --fastq-input {input}
+		"""
+
+rule krakenMerge:
+	input: expand(outDir + "/kraken/{sample}.txt", sample = SAMPLES)
+	output: outDir + "/R/microbes.csv.gz"
+	shell:
+		"""
+		( echo "id,taxId,count" 
+ 		for i in {input}; do
+			awk '$3!=0 {{print $3}}' $i | sort | uniq -c | awk -v OFS="," -v species=$(basename $i .txt) '{{print species, $2, $1}}' 
+		done ) | gzip > {output}
 		"""
 
 rule nextgenmap:
@@ -211,7 +254,7 @@ rule popstats:
 		vcf = outDir + "/var/filtered.vcf.gz",
 		ref = refDir + "/varroa.txt"
 	output:
-		dFst = outDir + "/R/dFst.txt", mFst = outDir + "/R/mFst.txt", dcStats =outDir + outDir + "/R/dcStats.txt", dmStats = outDir + "/R/dmStats.txt", jcStats = outDir + "/R/jcStats.txt", jmStats = outDir + "/R/jmStats.txt", dpFst = outDir + "/R/dpFst.txt", jpFst = outDir + "/R/jpFst.txt"
+		dFst = outDir + "/R/dFst.txt", jFst = outDir + "/R/jFst.txt", dcStats =outDir + outDir + "/R/dcStats.txt", dmStats = outDir + "/R/dmStats.txt", jcStats = outDir + "/R/jcStats.txt", jmStats = outDir + "/R/jmStats.txt", dpFst = outDir + "/R/dpFst.txt", jpFst = outDir + "/R/jpFst.txt"
 	threads: 8
 	shell:
 		"""
@@ -224,14 +267,14 @@ rule popstats:
 		
 		tempfile=$(mktemp)
 		echo "wcFst --target $dm --background $dc --file {input} --type GL  > {output.dFst} " >> $tempfile
-		echo "wcFst --target $jm --background $jc --file {input} --type GL  > {output.mFst}" >> $tempfile
+		echo "wcFst --target $jm --background $jc --file {input} --type GL  > {output.jFst}" >> $tempfile
 		echo "pFst --target $dm --background $dc --file {input} --type GL  > {output.dpFst} " >> $tempfile
 		echo "pFst --target $jm --background $jc --file {input} --type GL  > {output.jpFst} " >> $tempfile
 		#compute descriptive statistics for both species
-		echo "popStats --type GL --target $dc --file {input} | gzip > {output.dcStats}" >> $tempfile
-		echo "popStats --type GL --target $dm --file {input} | gzip > {output.dmStats}" >> $tempfile
-		echo "popStats --type GL --target $jc --file {input} | gzip > {output.jcStats}" >> $tempfile
-		echo "popStats --type GL --target $jm --file {input} | gzip > {output.jmStats}" >> $tempfile
+		echo "popStats --type GL --target $dc --file {input}  > {output.dcStats}" >> $tempfile
+		echo "popStats --type GL --target $dm --file {input}  > {output.dmStats}" >> $tempfile
+		echo "popStats --type GL --target $jc --file {input}  > {output.jcStats}" >> $tempfile
+		echo "popStats --type GL --target $jm --file {input}  > {output.jmStats}" >> $tempfile
 		cat $tempfile | xargs -P {threads} -I % sh -c '%'
 		rm $tempfile
 		"""

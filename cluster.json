@@ -27,6 +27,13 @@
         "mem" : "80G",
         "time": "2-00:00:00" 
     },
+    "kraken":
+    {
+        "cpus-per-task" : 12,
+        "partition" : "largemem",
+        "mem" : "200G",
+        "time": "5-00:00:00" 
+    },
     "bowtie2":
     {
         "cpus-per-task" : 12,
@@ -34,6 +41,13 @@
         "mem" : "80G",
         "time": "2-00:00:00" 
     },
+    "collectUnmapped":
+    {
+        "cpus-per-task" : 12,
+        "partition" : "compute",
+        "mem" : "10G",
+        "time": "1-00:00:00" 
+    },    
     "checkHost":
     {
         "cpus-per-task" : 4,
