@@ -23,16 +23,16 @@ vdmtDNA = refDir + "/destructor/mtdnamite/VDAJ493124.fasta"
 SAMPLES, = glob_wildcards(outDir + "/reads/{sample}-R1_001.fastq.gz")
 
 ## Creation of parameters for splitting reference genome and cut off computation time
-#SPLITS = range(10)
-#REGIONS = split_fasta(vdmtDNA, len(SPLITS))  # dictionary with regions to be called, with keys in SPLITS
+SPLITS = range(10)
+REGIONS = split_fasta(vdmtDNA, len(SPLITS))  # dictionary with regions to be called, with keys in SPLITS
 Q = (20, 40) # 99 and 99.99% mapping accuracy
-#for region in REGIONS:
-#	for idx,i in enumerate(REGIONS[region]):
-#		REGIONS[region][idx] = " -r " + str(i)
+for region in REGIONS:
+	for idx,i in enumerate(REGIONS[region]):
+		REGIONS[region][idx] = " -r " + str(i)
 
 ## Pseudo rule for build-target
 rule all:
-	input: expand(outDir + "/ansgd/mitegeno.{format}.gz", format = ("beagle", "geno", "mafs"))
+	input: expand(outDir + "/mtdna_var/mtdnarawp1.vcf")
 
 ##---- PART1 ---- Check the host identity by mapping reads on honey bee reference genome
 ## Use only mitochondrial DNA to verify host identity
@@ -279,30 +279,30 @@ rule all:
 #		samtools index {output.alignment}
 #		"""
 
-#rule freeBayesmtdna:
-#	input: 
-#		expand(outDir + "/mtdna_bowtie2/{sample}.bam", sample = SAMPLES)
-#	output: 
-#		temp(outDir + "/mtdna_var/mtdna.{region}.vcf")
-#	params: 
-#		span = lambda wildcards: REGIONS[wildcards.region],
-#		bams = lambda wildcards, input: os.path.dirname(input[0]) + "/*.bam",
-#		missing = lambda wildcards, input: len(input) * 0.9
-#	shell:
-#		"""
-#		for i in {params.bams}; do name=$(basename $i .bam); if [[ $name == VJ* ]] ; then echo $name VJ; else echo $name VD; fi ; done > {outDir}/mtdna_var/pops.txt
-#		freebayes --min-alternate-fraction 0.2 --use-best-n-alleles 4 -m 5 -q 5 --populations {outDir}/var/pops.txt -b {params.bams} {params.span}  -f {vdmtDNA} | vcffilter  -f "QUAL > 20 & NS > {params.missing}" > {output}
-#		"""
+rule freeBayesmtdna:
+	input: 
+		expand(outDir + "/mtdna_bowtie2/{sample}.bam", sample = SAMPLES)
+	output: 
+		temp(outDir + "/mtdna_var/mtdna.{region}p1.vcf")
+	params: 
+		span = lambda wildcards: REGIONS[wildcards.region],
+		bams = lambda wildcards, input: os.path.dirname(input[0]) + "/*.bam",
+		missing = lambda wildcards, input: len(input) * 0.9
+	shell:
+		"""
+		for i in {params.bams}; do name=$(basename $i .bam); if [[ $name == VJ* ]] ; then echo $name VJ; else echo $name VD; fi ; done > {outDir}/mtdna_var/pops.txt
+		freebayes --ploidy 1 --min-alternate-fraction 0.2 --use-best-n-alleles 4 -m 5 -q 5 --populations {outDir}/var/pops.txt -b {params.bams} {params.span}  -f {vdmtDNA} | vcffilter  -f "QUAL > 20 & NS > {params.missing}" > {output}
+		"""
 
-#rule mergeVCFmtdna:
-#	input: 
-#		expand(outDir + "/mtdna_var/mtdna.{region}.vcf", region = REGIONS)
-#	output:
-#		temp(outDir + "/mtdna_var/mtdnaraw.vcf")
-#	shell:
-#		"""
-#		(grep "^#" {input[0]} ; cat {input} | grep -v "^#" ) | vcfuniq  > {output}
-#		"""
+rule mergeVCFmtdna:
+	input: 
+		expand(outDir + "/mtdna_var/mtdna.{region}p1.vcf", region = REGIONS)
+	output:
+		temp(outDir + "/mtdna_var/mtdnarawp1.vcf")
+	shell:
+		"""
+		(grep "^#" {input[0]} ; cat {input} | grep -v "^#" ) | vcfuniq  > {output}
+		"""
 
 #rule filterVCFmtdna:
 	# see http://ddocent.com//filtering/
