@@ -1,6 +1,6 @@
 ## Population genetic analysis of Varroa on native and introduced hosts
-#from scripts.split_fasta_regions import split_fasta
-#from snakemake.utils import R
+from scripts.split_fasta_regions import split_fasta
+from snakemake.utils import R
 
 ## Set path for input files and fasta reference genome
 outDir = "data"
