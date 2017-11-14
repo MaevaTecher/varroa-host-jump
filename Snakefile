@@ -32,7 +32,7 @@ for region in REGIONS:
 
 ## Pseudo rule for build-target
 rule all:
-	input: expand(outDir + "/ngsadmix/biallelic7chrm.vcf.gz")
+	input: expand(outDir + "/ngsadmix/biallelic7chrm.BEAGLE.GL")
 
 ##---- PART1 ---- Check the host identity by mapping reads on honey bee reference genome
 ## Use only mitochondrial DNA to verify host identity
@@ -336,22 +336,17 @@ rule filterVCFmtdna:
 
 rule vcf2BEAGLEGL:
 	input: outDir + "/var/filtered.vcf.gz"
-	output: outDir + "/ngsadmix/biallelic7chrm.vcf.gz"
+	output: outDir + "/ngsadmix/biallelic7chrm.BEAGLE.GL"	
 	shell: """
 		vcftools --gzvcf {input} \
+		--BEAGLE-GL \
 		--chr BEIS01000001.1 \
 		--chr BEIS01000002.1 \
 		--chr BEIS01000003.1 \
 		--chr BEIS01000004.1 \
 		--chr BEIS01000005.1 \
 		--chr BEIS01000006.1 \
-		--chr BEIS01000007.1 \
-		--recode-INFO-all \
-		--max-alleles 2 \
-		--min-alleles 2 \
-		--BEAGLE-GL \
-		--out {output} \
-		--recode
+		--chr BEIS01000007.1  > {output}
 		"""
 		
 
