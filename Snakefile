@@ -32,252 +32,252 @@ for region in REGIONS:
 
 ## Pseudo rule for build-target
 rule all:
-	input: expand(outDir + "/mtdna_var/mtdnarawp1.vcf")
+	input: expand(outDir + "/ngsadmix/biallelic7chrm.vcf.gz")
 
 ##---- PART1 ---- Check the host identity by mapping reads on honey bee reference genome
 ## Use only mitochondrial DNA to verify host identity
 
-#rule checkHost:
-#	input:
-#		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
-#		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
-#	output:
-#		temp(outDir + "/meta/hosts/{sample}-{q}.txt")
-#	threads: 12
-#	shell:
-#		"""
-#		module load bowtie2/2.2.6 samtools/1.3.1
-#		bowtie2 -p {threads} -x {hostBeeMtBowtieIndex} -1  {input.read1} -2 {input.read2} | samtools view -S -q {wildcards.q}  -F4 - | awk -v mellifera=0 -v cerana=0 -v sample={wildcards.sample} '$3~/^L/ {{mellifera++; next}}  {{cerana++}} END {{if(mellifera>cerana) print sample"\\tmellifera\\t"cerana"\\t"mellifera ; else print sample"\\tcerana\\t"cerana"\\t"mellifera}}' > {output}
-#		"""
+rule checkHost:
+	input:
+		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
+		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
+	output:
+		temp(outDir + "/meta/hosts/{sample}-{q}.txt")
+	threads: 12
+	shell:
+		"""
+		module load bowtie2/2.2.6 samtools/1.3.1
+		bowtie2 -p {threads} -x {hostBeeMtBowtieIndex} -1  {input.read1} -2 {input.read2} | samtools view -S -q {wildcards.q}  -F4 - | awk -v mellifera=0 -v cerana=0 -v sample={wildcards.sample} '$3~/^L/ {{mellifera++; next}}  {{cerana++}} END {{if(mellifera>cerana) print sample"\\tmellifera\\t"cerana"\\t"mellifera ; else print sample"\\tcerana\\t"cerana"\\t"mellifera}}' > {output}
+		"""
 
-#rule combineHost:
-#	input:
-#		expand(outDir + "/meta/hosts/{sample}-{{q}}.txt", sample = SAMPLES)
-#	output:
-#		outDir + "/meta/hosts/hosts-{q}.txt"
-#	shell:
-#		"""
-#		(echo -ne "id\\thost\\tcerana\\tmellifera\\n"; cat {input}) > {output}
-#		"""
+rule combineHost:
+	input:
+		expand(outDir + "/meta/hosts/{sample}-{{q}}.txt", sample = SAMPLES)
+	output:
+		outDir + "/meta/hosts/hosts-{q}.txt"
+	shell:
+		"""
+		(echo -ne "id\\thost\\tcerana\\tmellifera\\n"; cat {input}) > {output}
+		"""
 
-#rule removeHost:
-#	input:
-#		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
-#		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
-#	threads: 12
-#	output: temp(outDir + "/sketches/{sample}.fastq.gz")
-#	shell: 
-#		"""
-#		module load bowtie2/2.2.6 samtools/1.3.1
-#		bowtie2 -p {threads} -x {hostBeeBowtieIndex} -1  {input.read1} -2 {input.read2}  | samtools view -S -f12 | awk '{{print "@"$1"\\n"$10"\\n+\\n"$11}}' | gzip > {output}
+rule removeHost:
+	input:
+		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
+		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
+	threads: 12
+	output: temp(outDir + "/sketches/{sample}.fastq.gz")
+	shell: 
+		"""
+		module load bowtie2/2.2.6 samtools/1.3.1
+		bowtie2 -p {threads} -x {hostBeeBowtieIndex} -1  {input.read1} -2 {input.read2}  | samtools view -S -f12 | awk '{{print "@"$1"\\n"$10"\\n+\\n"$11}}' | gzip > {output}
 		"""
 		
 # Use all genome to verify host identity
-#rule checkmellifera:
-#	input:
-#		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
-#		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz"
-#	output: temp(outDir + "/hostbee/mellifera/{sample}.bam")
-#	shell: "bowtie2 -p {threads} -x {hostBowtiemellifera} -1 {input.read1} -2 {input.read2}  | samtools view -Su -F4 | novosort -c 2 -m 20G -i -o {output} -"
+rule checkmellifera:
+	input:
+		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
+		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz"
+	output: temp(outDir + "/hostbee/mellifera/{sample}.bam")
+	shell: "bowtie2 -p {threads} -x {hostBowtiemellifera} -1 {input.read1} -2 {input.read2}  | samtools view -Su -F4 | novosort -c 2 -m 20G -i -o {output} -"
 		
-#rule checkcerana:
-#	input:
-#		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
-#		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz"
-#	output: temp(outDir + "/hostbee/cerana/{sample}.bam")
-#	shell: "bowtie2 -p {threads} -x {hostBowtiecerana} -1 {input.read1} -2 {input.read2}  | samtools view -Su -F4 | novosort -c 2 -m 20G -i -o {output} -"
+rule checkcerana:
+	input:
+		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
+		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz"
+	output: temp(outDir + "/hostbee/cerana/{sample}.bam")
+	shell: "bowtie2 -p {threads} -x {hostBowtiecerana} -1 {input.read1} -2 {input.read2}  | samtools view -Su -F4 | novosort -c 2 -m 20G -i -o {output} -"
 
 
 ##---- PART2 ---- Exploratory analysis on reads that only mapped on Varroa genomes + variant calling
 
-#rule mashtree:
-#	input: expand(outDir + "/sketches/{sample}.fastq.gz", sample = SAMPLES)
-#	output: tree = outDir + "/sketches/varroa.dnd", matrix = outDir + "/sketches/varroa.phylip"
-#	threads: 12
-#	shell: "mashtree.pl --genomesize 500000000 --mindepth 2 --tempdir /work/MikheyevU/Maeva/varroahost/scratch --numcpus {threads} --outmatrix {output.matrix} {input} > {output.tree}"
+rule mashtree:
+	input: expand(outDir + "/sketches/{sample}.fastq.gz", sample = SAMPLES)
+	output: tree = outDir + "/sketches/varroa.dnd", matrix = outDir + "/sketches/varroa.phylip"
+	threads: 12
+	shell: "mashtree.pl --genomesize 500000000 --mindepth 2 --tempdir /work/MikheyevU/Maeva/varroahost/scratch --numcpus {threads} --outmatrix {output.matrix} {input} > {output.tree}"
 
 ## Here reads will be mapped using either bowtie2 or ngm, then test which one is the best
 ## on whole genome
-#rule bowtie2:
-#	input:
-#		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
-#		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
-#	threads: 12
-#	output: 
-#		alignment = temp(outDir + "/alignments/bowtie2/{sample}.bam"), 
-#		index = temp(outDir + "/alignments/bowtie2/{sample}.bam.bai")
-#	shell:
-#		"""
-#		module load bowtie2/2.2.6 samtools/1.3.1 VariantBam/1.4.3
-#		bowtie2 -p {threads} --very-sensitive-local --sam-rg ID:{wildcards.sample} --sam-rg LB:Nextera --sam-rg SM:{wildcards.sample} --sam-rg PL:ILLUMINA -x {varroaBowtieIndex} -1 {input.read1} -2 {input.read2} | samtools view -Su - | samtools sort - -m 55G -T {SCRATCH}/bowtie/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
-#		samtools index {output.alignment}
-#		"""
+rule bowtie2:
+	input:
+		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
+		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
+	threads: 12
+	output: 
+		alignment = temp(outDir + "/alignments/bowtie2/{sample}.bam"), 
+		index = temp(outDir + "/alignments/bowtie2/{sample}.bam.bai")
+	shell:
+		"""
+		module load bowtie2/2.2.6 samtools/1.3.1 VariantBam/1.4.3
+		bowtie2 -p {threads} --very-sensitive-local --sam-rg ID:{wildcards.sample} --sam-rg LB:Nextera --sam-rg SM:{wildcards.sample} --sam-rg PL:ILLUMINA -x {varroaBowtieIndex} -1 {input.read1} -2 {input.read2} | samtools view -Su - | samtools sort - -m 55G -T {SCRATCH}/bowtie/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
+		samtools index {output.alignment}
+		"""
 
-#rule nextgenmap:
-#	input:
-#		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
-#		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
-#	threads: 12
-#	output: 
-#		alignment = temp(outDir + "/alignments/ngm/{sample}.bam"), 
-#		index = temp(outDir + "/alignments/ngm/{sample}.bam.bai")
-#	shell:
-#		"""
-#		module load NextGenMap/0.5.0 samtools/1.3.1 VariantBam/1.4.3
-#		ngm -t {threads} -b  -1 {input.read1} -2 {input.read2} -r {vdRef} --rg-id {wildcards.sample} --rg-sm {wildcards.sample} --rg-pl ILLUMINA --rg-lb {wildcards.sample} | samtools sort - -m 55G -T {SCRATCH}/ngm/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
-#		samtools index {output.alignment}
-#		"""
+rule nextgenmap:
+	input:
+		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
+		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
+	threads: 12
+	output: 
+		alignment = temp(outDir + "/alignments/ngm/{sample}.bam"), 
+		index = temp(outDir + "/alignments/ngm/{sample}.bam.bai")
+	shell:
+		"""
+		module load NextGenMap/0.5.0 samtools/1.3.1 VariantBam/1.4.3
+		ngm -t {threads} -b  -1 {input.read1} -2 {input.read2} -r {vdRef} --rg-id {wildcards.sample} --rg-sm {wildcards.sample} --rg-pl ILLUMINA --rg-lb {wildcards.sample} | samtools sort - -m 55G -T {SCRATCH}/ngm/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
+		samtools index {output.alignment}
+		"""
 		
-#rule freeBayes:
-#	input: 
-#		expand(outDir + "/alignments/{{aligner}}/{sample}.bam", sample = SAMPLES)
-#	output: 
-#		temp(outDir + "/var/{aligner}/split/freebayes.{region}.vcf")
-#	params: 
-#		span = lambda wildcards: REGIONS[wildcards.region],
-#		bams = lambda wildcards, input: os.path.dirname(input[0]) + "/*.bam",
-#		missing = lambda wildcards, input: len(input) * 0.9
-#	shell:
-#		"""
-#		module load freebayes/1.1.0 vcftools/0.1.12b vcflib/1.0.0-rc1
-#		for i in {params.bams}; do name=$(basename $i .bam); if [[ $name == VJ* ]] ; then echo $name VJ; else echo $name VD; fi ; done > {outDir}/var/pops.txt
-#		freebayes --min-alternate-fraction 0.2 --use-best-n-alleles 4 -m 5 -q 5 --populations {outDir}/var/pops.txt -b {params.bams} {params.span}  -f {vdRef} | vcffilter  -f "QUAL > 20 & NS > {params.missing}" > {output}
-#		"""
+rule freeBayes:
+	input: 
+		expand(outDir + "/alignments/{{aligner}}/{sample}.bam", sample = SAMPLES)
+	output: 
+		temp(outDir + "/var/{aligner}/split/freebayes.{region}.vcf")
+	params: 
+		span = lambda wildcards: REGIONS[wildcards.region],
+		bams = lambda wildcards, input: os.path.dirname(input[0]) + "/*.bam",
+		missing = lambda wildcards, input: len(input) * 0.9
+	shell:
+		"""
+		module load freebayes/1.1.0 vcftools/0.1.12b vcflib/1.0.0-rc1
+		for i in {params.bams}; do name=$(basename $i .bam); if [[ $name == VJ* ]] ; then echo $name VJ; else echo $name VD; fi ; done > {outDir}/var/pops.txt
+		freebayes --min-alternate-fraction 0.2 --use-best-n-alleles 4 -m 5 -q 5 --populations {outDir}/var/pops.txt -b {params.bams} {params.span}  -f {vdRef} | vcffilter  -f "QUAL > 20 & NS > {params.missing}" > {output}
+		"""
 
-#rule mergeVCF:
-#	input: 
-#		expand(outDir + "/var/{{aligner}}/split/freebayes.{region}.vcf", region = REGIONS)
-#	output:
-#		temp(outDir + "/var/{aligner}/raw.vcf")
-#	shell:
-#		"""
-#		module load vcflib/1.0.0-rc1
-#		(grep "^#" {input[0]} ; cat {input} | grep -v "^#" ) | vcfuniq  > {output}
-#		"""
+rule mergeVCF:
+	input: 
+		expand(outDir + "/var/{{aligner}}/split/freebayes.{region}.vcf", region = REGIONS)
+	output:
+		temp(outDir + "/var/{aligner}/raw.vcf")
+	shell:
+		"""
+		module load vcflib/1.0.0-rc1
+		(grep "^#" {input[0]} ; cat {input} | grep -v "^#" ) | vcfuniq  > {output}
+		"""
 
-#rule filterVCF:
+rule filterVCF:
 	# see http://ddocent.com//filtering/
 	# filter DP  + 3*sqrt(DP) https://arxiv.org/pdf/1404.0929.pdf
 	# also sites with more than two variants
-#	input:
-#		rules.mergeVCF.output
-#	output:
-#		vcf = outDir + "/var/{aligner}/filtered.vcf"
-#	shell:
-#		"""
-#		module load vcftools/0.1.12b vcflib/1.0.0-rc1 eplot/2.08
-#		perl  -ne 'print "$1\\n" if /DP=(\d+)/'  {input} > {outDir}/var/{wildcards.aligner}/depth.txt
-#		sort -n {outDir}/var/{wildcards.aligner}/depth.txt | uniq -c | awk '{{print $2,$1}}' | eplot -d -r [200:2000] 2>/dev/null | tee 
-#		Nind=$(grep -m1 "^#C" {input}  | cut -f10- |wc -w)
-#		coverageCutoff=$(awk -v Nind=$Nind '{{sum+=$1}} END {{print "DP < "(sum / NR / Nind + sqrt(sum / NR / Nind) * 3 ) * Nind}}' {outDir}/var/{wildcards.aligner}/depth.txt)
-#		echo Using coverage cutoff $coverageCutoff
-#		vcffilter -s -f \"$coverageCutoff\" {input} | vcftools --vcf - --exclude-bed ref/destructor/masking_coordinates --max-alleles 2 --recode --stdout > {output}
-#		"""
+	input:
+		rules.mergeVCF.output
+	output:
+		vcf = outDir + "/var/{aligner}/filtered.vcf"
+	shell:
+		"""
+		module load vcftools/0.1.12b vcflib/1.0.0-rc1 eplot/2.08
+		perl  -ne 'print "$1\\n" if /DP=(\d+)/'  {input} > {outDir}/var/{wildcards.aligner}/depth.txt
+		sort -n {outDir}/var/{wildcards.aligner}/depth.txt | uniq -c | awk '{{print $2,$1}}' | eplot -d -r [200:2000] 2>/dev/null | tee 
+		Nind=$(grep -m1 "^#C" {input}  | cut -f10- |wc -w)
+		coverageCutoff=$(awk -v Nind=$Nind '{{sum+=$1}} END {{print "DP < "(sum / NR / Nind + sqrt(sum / NR / Nind) * 3 ) * Nind}}' {outDir}/var/{wildcards.aligner}/depth.txt)
+		echo Using coverage cutoff $coverageCutoff
+		vcffilter -s -f \"$coverageCutoff\" {input} | vcftools --vcf - --exclude-bed ref/destructor/masking_coordinates --max-alleles 2 --recode --stdout > {output}
+		"""
 
-#rule chooseMapper:
+rule chooseMapper:
 	# The results are very similar between the two mappers, so we're going with the one that has the greatest number of variants
-#	input:
-#		ngm = outDir + "/var/ngm/filtered.vcf", 
-#		bowtie2 = outDir + "/var/bowtie2/filtered.vcf", 
-#	output:
-#		bgzip = outDir + "/var/filtered.vcf.gz",
-#		primitives = outDir + "/var/primitives.vcf.gz"
-#	shell:
-#		"""
-#		module load samtools/1.3.1 vcflib/1.0.0-rc1
-#		ngm=$(grep -vc "^#" {input.ngm})
-#		bowtie2=$(grep -vc "^#" {input.bowtie2})
-#		echo ngm has $ngm snps vs $bowtie2 for botwie2 
-#		if [[ $ngm -gt $bowtie2 ]]; then
-#			echo choosing ngm
-#			bgzip -c {input.ngm} > {output.bgzip}
-#			vcftools --vcf {input.ngm} --recode --remove-indels --stdout | vcfallelicprimitives | bgzip > {output.primitives}
-#		else
-#			echo choosing bowtie2
-#			bgzip -c {input.bowtie2} > {output.bgzip}
-#			vcftools --vcf {input.bowtie2} --recode --remove-indels --stdout | vcfallelicprimitives  | bgzip > {output.primitives}
-#		fi
-#		tabix -p vcf {output.bgzip} && tabix -p vcf {output.primitives}
-#		"""
+	input:
+		ngm = outDir + "/var/ngm/filtered.vcf", 
+		bowtie2 = outDir + "/var/bowtie2/filtered.vcf", 
+	output:
+		bgzip = outDir + "/var/filtered.vcf.gz",
+		primitives = outDir + "/var/primitives.vcf.gz"
+	shell:
+		"""
+		module load samtools/1.3.1 vcflib/1.0.0-rc1
+		ngm=$(grep -vc "^#" {input.ngm})
+		bowtie2=$(grep -vc "^#" {input.bowtie2})
+		echo ngm has $ngm snps vs $bowtie2 for botwie2 
+		if [[ $ngm -gt $bowtie2 ]]; then
+			echo choosing ngm
+			bgzip -c {input.ngm} > {output.bgzip}
+			vcftools --vcf {input.ngm} --recode --remove-indels --stdout | vcfallelicprimitives | bgzip > {output.primitives}
+		else
+			echo choosing bowtie2
+			bgzip -c {input.bowtie2} > {output.bgzip}
+			vcftools --vcf {input.bowtie2} --recode --remove-indels --stdout | vcfallelicprimitives  | bgzip > {output.primitives}
+		fi
+		tabix -p vcf {output.bgzip} && tabix -p vcf {output.primitives}
+		"""
 
 # At this point we go with ngm, which produces a bit more variants
 
-#rule VCF012:
+rule VCF012:
 	# convert vcf to R data frame with meta-data 
 	# remove maf 0.1, since we don't have much power for them
-#	input: 
-#		vcf = outDir + "/var/filtered.vcf.gz",
-#		ref = refDir + "/varroa.txt"
-#	output: "data/R/{species}.txt"
-#	shell: 
-#		"""
-#		module load vcftools/0.1.12b
-#		vcftools --gzvcf {input.vcf} --012 --mac 1 --keep <(awk -v species={wildcards.species} '$3==toupper(species) {{print $1 }}' {input.ref}) --maf 0.1 --out data/R/{wildcards.species}
-#		# transpose loci to columns
-#		(echo -ne "id\\thost\\tspecies\\t"; cat data/R/{wildcards.species}.012.pos | tr "\\t" "_" | tr "\\n" "\\t" | sed 's/\\t$//'; echo) > {output}
-#		# take fedHost and species columns and append them to the genotype data file
-#		paste <(awk 'NR==FNR {{a[$1]=$1"\\t"$4"\\t"$3; next}} $1 in a {{print a[$1]}}' {input.ref} data/R/{wildcards.species}.012.indv) <(cat data/R/{wildcards.species}.012  | cut -f2-) | sed 's/-1/9/g' >> {output}
-#		"""
+	input: 
+		vcf = outDir + "/var/filtered.vcf.gz",
+		ref = refDir + "/varroa.txt"
+	output: "data/R/{species}.txt"
+	shell: 
+		"""
+		module load vcftools/0.1.12b
+		vcftools --gzvcf {input.vcf} --012 --mac 1 --keep <(awk -v species={wildcards.species} '$3==toupper(species) {{print $1 }}' {input.ref}) --maf 0.1 --out data/R/{wildcards.species}
+		# transpose loci to columns
+		(echo -ne "id\\thost\\tspecies\\t"; cat data/R/{wildcards.species}.012.pos | tr "\\t" "_" | tr "\\n" "\\t" | sed 's/\\t$//'; echo) > {output}
+		# take fedHost and species columns and append them to the genotype data file
+		paste <(awk 'NR==FNR {{a[$1]=$1"\\t"$4"\\t"$3; next}} $1 in a {{print a[$1]}}' {input.ref} data/R/{wildcards.species}.012.indv) <(cat data/R/{wildcards.species}.012  | cut -f2-) | sed 's/-1/9/g' >> {output}
+		"""
 
 #overall distance matrix
-#rule VCF2Dis:
-#	input: outDir + "/var/filtered.vcf.gz"
-#	output: outDir + "/var/filtered.mat"
-#	shell: "module load VCF2Dis/1.09; VCF2Dis -InPut {input} -OutPut {output}"
+rule VCF2Dis:
+	input: outDir + "/var/filtered.vcf.gz"
+	output: outDir + "/var/filtered.mat"
+	shell: "module load VCF2Dis/1.09; VCF2Dis -InPut {input} -OutPut {output}"
 
-#rule outflankFst:
-#	# compute FST for outflank analysis
-#	input:
-#		outDir + "/R/{species}.txt"
-#	output: 
-#		outDir + "/R/{species}.outflank.rds"
-#	shell:
-#		"Rscript --vanilla scripts/outflank.R {input} {output}"
+rule outflankFst:
+	# compute FST for outflank analysis
+	input:
+		outDir + "/R/{species}.txt"
+	output: 
+		outDir + "/R/{species}.outflank.rds"
+	shell:
+		"Rscript --vanilla scripts/outflank.R {input} {output}"
 
-#rule popstats:
-#	input:
-#		vcf = outDir + "/var/filtered.vcf.gz",
-#		ref = refDir + "/varroa.txt"
-#	output:
-#		dFst = outDir + "/R/dFst.txt", mFst = outDir + "/R/mFst.txt", dcStats =outDir + outDir + "/R/dcStats.txt", dmStats = outDir + "/R/dmStats.txt", jcStats = outDir + "/R/jcStats.txt", jmStats = outDir + "/R/jmStats.txt", dpFst = outDir + "/R/dpFst.txt", jpFst = outDir + "/R/jpFst.txt"
-#	threads: 8
-#	shell:
-#		"""
-#		module load vcflib/1.0.0-rc1 parallel
-#		dc=$(awk -v host=cerana -v species=VD -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat {input.vcf} |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") {input.ref} | sed 's/,$//')
-#		dm=$(awk -v host=mellifera -v species=VD -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat data/var/filtered.vcf.gz |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") Rdata/varroa.txt | sed 's/,$//')
-#		jm=$(awk -v host=mellifera -v species=VJ -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat data/var/filtered.vcf.gz |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") Rdata/varroa.txt | sed 's/,$//')
-#		jc=$(awk -v host=cerana -v species=VJ -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat data/var/filtered.vcf.gz |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") Rdata/varroa.txt | sed 's/,$//')
+rule popstats:
+	input:
+		vcf = outDir + "/var/filtered.vcf.gz",
+		ref = refDir + "/varroa.txt"
+	output:
+		dFst = outDir + "/R/dFst.txt", mFst = outDir + "/R/mFst.txt", dcStats =outDir + outDir + "/R/dcStats.txt", dmStats = outDir + "/R/dmStats.txt", jcStats = outDir + "/R/jcStats.txt", jmStats = outDir + "/R/jmStats.txt", dpFst = outDir + "/R/dpFst.txt", jpFst = outDir + "/R/jpFst.txt"
+	threads: 8
+	shell:
+		"""
+		module load vcflib/1.0.0-rc1 parallel
+		dc=$(awk -v host=cerana -v species=VD -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat {input.vcf} |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") {input.ref} | sed 's/,$//')
+		dm=$(awk -v host=mellifera -v species=VD -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat data/var/filtered.vcf.gz |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") Rdata/varroa.txt | sed 's/,$//')
+		jm=$(awk -v host=mellifera -v species=VJ -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat data/var/filtered.vcf.gz |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") Rdata/varroa.txt | sed 's/,$//')
+		jc=$(awk -v host=cerana -v species=VJ -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat data/var/filtered.vcf.gz |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") Rdata/varroa.txt | sed 's/,$//')
 		#compute Fst for both species
 		
-#		tempfile=$(mktemp)
-#		echo "wcFst --target $dm --background $dc --file {input} --type GL  > {output.dFst} " >> $tempfile
-#		echo "wcFst --target $jm --background $jc --file {input} --type GL  > {output.mFst}" >> $tempfile
-#		echo "pFst --target $dm --background $dc --file {input} --type GL  > {output.dpFst} " >> $tempfile
-#		echo "pFst --target $jm --background $jc --file {input} --type GL  > {output.jpFst} " >> $tempfile
+		tempfile=$(mktemp)
+		echo "wcFst --target $dm --background $dc --file {input} --type GL  > {output.dFst} " >> $tempfile
+		echo "wcFst --target $jm --background $jc --file {input} --type GL  > {output.mFst}" >> $tempfile
+		echo "pFst --target $dm --background $dc --file {input} --type GL  > {output.dpFst} " >> $tempfile
+		echo "pFst --target $jm --background $jc --file {input} --type GL  > {output.jpFst} " >> $tempfile
 		#compute descriptive statistics for both species
-#		echo "popStats --type GL --target $dc --file {input} | gzip > {output.dcStats}" >> $tempfile
-#		echo "popStats --type GL --target $dm --file {input} | gzip > {output.dmStats}" >> $tempfile
-#		echo "popStats --type GL --target $jc --file {input} | gzip > {output.jcStats}" >> $tempfile
-#		echo "popStats --type GL --target $jm --file {input} | gzip > {output.jmStats}" >> $tempfile
-#		cat $tempfile | xargs -P {threads} -I % sh -c '%'
-#		rm $tempfile
-#		"""
+		echo "popStats --type GL --target $dc --file {input} | gzip > {output.dcStats}" >> $tempfile
+		echo "popStats --type GL --target $dm --file {input} | gzip > {output.dmStats}" >> $tempfile
+		echo "popStats --type GL --target $jc --file {input} | gzip > {output.jcStats}" >> $tempfile
+		echo "popStats --type GL --target $jm --file {input} | gzip > {output.jmStats}" >> $tempfile
+		cat $tempfile | xargs -P {threads} -I % sh -c '%'
+		rm $tempfile
+		"""
 
 ## only on mtDNA for checking later the haplotype identification		
-#rule bowtie2mtdna:
-#	input:
-#		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
-#		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
-#	threads: 12
-#	output: 
-#		alignment = temp(outDir + "/mtdna_bowtie2/{sample}.bam"), 
-#		index = temp(outDir + "/mtdna_bowtie2/{sample}.bam.bai")
-#	shell:
-#		"""
-#		bowtie2 -p {threads} --very-sensitive-local --sam-rg ID:{wildcards.sample} --sam-rg LB:Nextera --sam-rg SM:{wildcards.sample} --sam-rg PL:ILLUMINA -x {vdmtDNABowtieIndex} -1 {input.read1} -2 {input.read2} | samtools view -Su -F4 -q10 - | samtools sort - -m 55G -T {SCRATCH}/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 100 -b -o {output.alignment}
-#		samtools index {output.alignment}
-#		"""
+rule bowtie2mtdna:
+	input:
+		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
+		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
+	threads: 12
+	output: 
+		alignment = temp(outDir + "/mtdna_bowtie2/{sample}.bam"), 
+		index = temp(outDir + "/mtdna_bowtie2/{sample}.bam.bai")
+	shell:
+		"""
+		bowtie2 -p {threads} --very-sensitive-local --sam-rg ID:{wildcards.sample} --sam-rg LB:Nextera --sam-rg SM:{wildcards.sample} --sam-rg PL:ILLUMINA -x {vdmtDNABowtieIndex} -1 {input.read1} -2 {input.read2} | samtools view -Su -F4 -q10 - | samtools sort - -m 55G -T {SCRATCH}/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 100 -b -o {output.alignment}
+		samtools index {output.alignment}
+		"""
 
 rule freeBayesmtdna:
 	input: 
@@ -304,39 +304,56 @@ rule mergeVCFmtdna:
 		(grep "^#" {input[0]} ; cat {input} | grep -v "^#" ) | vcfuniq  > {output}
 		"""
 
-#rule filterVCFmtdna:
-	# see http://ddocent.com//filtering/
-	# filter DP  + 3*sqrt(DP) https://arxiv.org/pdf/1404.0929.pdf
-	# also sites with more than two variants
-#	input:
-#		rules.mergeVCFmtdna.output
-#	output:
-#		vcf = outDir + "/mtdna_var/mtdnafiltered.vcf"
-#	shell:
-#		"""
-#		perl  -ne 'print "$1\\n" if /DP=(\d+)/'  {input} > {outDir}/mtdna_var/depth.txt
-#		sort -n {outDir}/mtdna_var/depth.txt | uniq -c | awk '{{print $2,$1}}' | eplot -d -r [200:2000] 2>/dev/null | tee 
-#		Nind=$(grep -m1 "^#C" {input}  | cut -f10- |wc -w)
-#		coverageCutoff=$(awk -v Nind=$Nind '{{sum+=$1}} END {{print "DP < "(sum / NR / Nind + sqrt(sum / NR / Nind) * 3 ) * Nind}}' {outDir}/mtdna_var/depth.txt)
-#		echo Using coverage cutoff $coverageCutoff
-#		vcffilter -s -f \"$coverageCutoff\" {input} | vcftools --vcf - --max-alleles 2 --recode --stdout > {output}
-#		"""
+rule filterVCFmtdna:
+	input:
+		rules.mergeVCFmtdna.output
+	output:
+		vcf = outDir + "/mtdna_var/mtdnafiltered.vcf"
+	shell:
+		"""
+		perl  -ne 'print "$1\\n" if /DP=(\d+)/'  {input} > {outDir}/mtdna_var/depth.txt
+		sort -n {outDir}/mtdna_var/depth.txt | uniq -c | awk '{{print $2,$1}}' | eplot -d -r [200:2000] 2>/dev/null | tee 
+		Nind=$(grep -m1 "^#C" {input}  | cut -f10- |wc -w)
+		coverageCutoff=$(awk -v Nind=$Nind '{{sum+=$1}} END {{print "DP < "(sum / NR / Nind + sqrt(sum / NR / Nind) * 3 ) * Nind}}' {outDir}/mtdna_var/depth.txt)
+		echo Using coverage cutoff $coverageCutoff
+		vcffilter -s -f \"$coverageCutoff\" {input} | vcftools --vcf - --max-alleles 2 --recode --stdout > {output}
+		"""
 
 ##---- PART3 ---- Bayesian like analysis with NGSadmix		
 
-rule angsd_transform:
-	input:
-		outDir + "/angsd/ngmbam.list"
-	output:
-		ANGSDOUT = outDir + "/angsd/mitegeno"
-	threads: 12
-	shell:
-		"""
-		angsd -P {threads} -b {input} -ref {vdRef} -out {ANGSDOUT} -uniqueOnly 1 -remove_bads 1 -only_proper_pairs 1 -trim 0 -C 50 -baq 1 -minMapQ 20 -minQ 20 -doCounts 1 -GL 1 -doMajorMinor 4 -doMaf 1 -skipTriallelic 1 -SNP_pval 1e-8 -doGeno 32 -doPost 1 -doGlf 2 #-minInd 15 \
-#-setMinDepth 60 \
-#-setMaxDepth 400 \
-		"""
+#rule angsd_transform:
+#	input:
+#		outDir + "/angsd/ngmbam.list"
+#	output:
+#		ANGSDOUT = outDir + "/angsd/mitegeno"
+#	threads: 12
+#	shell:
+#		"""
+#		angsd -P {threads} -b {input} -ref {vdRef} -out {ANGSDOUT} -uniqueOnly 1 -remove_bads 1 -only_proper_pairs 1 -trim 0 -C 50 -baq 1 -minMapQ 20 -minQ 20 -doCounts 1 -GL 1 -doMajorMinor 4 -doMaf 1 -skipTriallelic 1 -SNP_pval 1e-8 -doGeno 32 -doPost 1 -doGlf 2 #-minInd 15 \
+##-setMinDepth 60 \
+##-setMaxDepth 400 \
+#		"""
 
+rule vcf2BEAGLEGL:
+	input: outDir + "/var/filtered.vcf.gz"
+	output: outDir + "/ngsadmix/biallelic7chrm.vcf.gz"
+	shell: """
+		vcftools --gzvcf {input} \
+		--chr BEIS01000001.1 \
+		--chr BEIS01000002.1 \
+		--chr BEIS01000003.1 \
+		--chr BEIS01000004.1 \
+		--chr BEIS01000005.1 \
+		--chr BEIS01000006.1 \
+		--chr BEIS01000007.1 \
+		--recode-INFO-all \
+		--max-alleles 2 \
+		--min-alleles 2 \
+		--BEAGLE-GL \
+		--out {output} \
+		--recode
+		"""
+		
 
 # # estimate SNP effects
 # rule snpEff:
