@@ -337,6 +337,7 @@ rule filterVCFmtdna:
 rule vcf2BEAGLEGL:
 	input: outDir + "/var/filtered.vcf.gz"
 	output: outDir + "/ngsadmix/biallelic7chrm.vcf.gz"
+	BASE= biallelic7chrm
 	shell: """
 		vcftools --gzvcf {input} \
 		--chr BEIS01000001.1 \
@@ -350,7 +351,7 @@ rule vcf2BEAGLEGL:
 		--max-alleles 2 \
 		--min-alleles 2 \
 		--BEAGLE-GL \
-		--out {output} \
+		--out {BASE} \
 		--recode
 		"""
 		
