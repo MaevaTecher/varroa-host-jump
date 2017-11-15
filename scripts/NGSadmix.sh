@@ -12,9 +12,9 @@
 
 ##Specify the path for the apps I need to use
 NGSADMIX=/apps/unit/MikheyevU/NGSadmix/32/NGSadmix
-INPUTBEAGLE=/work/MikheyevU/Maeva/varroa-jump/data/angsd/mitegeno_sort.beagle.gz
-OUTDIR=/work/MikheyevU/Maeva/varroa-jump/data/bayesian
+INPUTBEAGLE=/work/MikheyevU/Maeva/varroa-jump/data/angsd/bigfile.BEAGLE.GL
+OUTDIR=/work/MikheyevU/Maeva/varroa-jump/data/ngsadmix
 
-K=5
+K=2
 
 $NGSADMIX -P 12 -likes $INPUTBEAGLE -K $K -outfiles $OUTDIR/assignsort_$K -minMaf 0
