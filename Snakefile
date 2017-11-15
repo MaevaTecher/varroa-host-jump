@@ -336,7 +336,7 @@ rule filterVCFmtdna:
 ##-setMaxDepth 400 \
 #		"""
 
-rule vcf2BEAGLEGL:
+rule vcf2BEAGLEGL: ##NOT WORKING HAVE TO FIGURE OUT IF USE STDOUT or else
 	input: outDir + "/var/filtered.vcf.gz"
 	output: outDir + "/ngsadmix/biallelic7chrm.BEAGLE.GL"	
 	shell: """
