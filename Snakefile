@@ -337,18 +337,17 @@ rule filterVCFmtdna:
 #		"""
 
 rule vcf2BEAGLEGL: ##NOT WORKING HAVE TO FIGURE OUT IF USE STDOUT or else
-	input: outDir + "/var/filtered.vcf.gz"
-	output: outDir + "/ngsadmix/biallelic7chrm.BEAGLE.GL"	
+	input: bigvcf = outDir + "/var/filtered.vcf.gz"
+	output: outDir + "/ngsadmix/biallelic.{chromosomes}.BEAGLE.GL"	
+	params: chrm = lambda wildcards: config["chromosomes"][wildcards.chromosomes]
+	log: outDir + "/ngsadmix/{chromosomes}.log"
 	shell: """
 		vcftools --gzvcf {input} \
-		--BEAGLE-GL \
-		--chr BEIS01000001.1 \
-		--chr BEIS01000002.1 \
-		--chr BEIS01000003.1 \
-		--chr BEIS01000004.1 \
-		--chr BEIS01000005.1 \
-		--chr BEIS01000006.1 \
-		--chr BEIS01000007.1  > {output}
+		--recode-INFO-all \
+		--chr {params.chrm} \
+		--max-alleles 2 \
+		--min-alleles 2 \
+		--recode  > {output}
 		"""
 		
 
