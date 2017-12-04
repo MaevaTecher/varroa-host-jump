@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=vdvjbowtie2
+#SBATCH --job-name=ngsadmix6
 #SBATCH --partition=compute
 #SBATCH --mem=15G
 #SBATCH --cpus-per-task=2
@@ -12,9 +12,10 @@
 
 ##Specify the path for the apps I need to use
 NGSADMIX=/apps/unit/MikheyevU/NGSadmix/32/NGSadmix
-INPUTBEAGLE=/work/MikheyevU/Maeva/varroa-jump/data/angsd/bigfile.BEAGLE.GL
+INPUTBEAGLE=/work/MikheyevU/Maeva/varroa-jump/data/bayesian/varchrom/filteredchr1.BEAGLE.GL
 OUTDIR=/work/MikheyevU/Maeva/varroa-jump/data/ngsadmix
 
-K=2
 
-$NGSADMIX -P 12 -likes $INPUTBEAGLE -K $K -outfiles $OUTDIR/assignsort_$K -minMaf 0
+K=6
+
+$NGSADMIX -P 12 -likes $INPUTBEAGLE -K $K -outfiles $OUTDIR/assignCHROM1_$K -minMaf 0
