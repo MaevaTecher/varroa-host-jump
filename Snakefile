@@ -35,7 +35,7 @@ for region in REGIONS:
 
 ## Pseudo rule for build-target
 rule all:
-	input: outDir + "ngsadmix/combined7.BEAGLE.GL"
+	input: outDir + "/ngsadmix/combined7.BEAGLE.GL"
 
 ##---- PART1 ---- Check the host identity by mapping reads on honey bee reference genome
 ## Use only mitochondrial DNA to verify host identity
@@ -338,8 +338,8 @@ rule filterVCFmtdna:
 #		"""
 
 rule concatBEAGLEGL:
-	input: expand (outDir + "ngsadmix/filtered.{chromosomes}.BEAGLE.GL", chromosomes = CHROMOSOMES)
-	output: outDir + "ngsadmix/combined7.BEAGLE.GL"
+	input: expand (outDir + "/ngsadmix/filtered.{chromosomes}.BEAGLE.GL", chromosomes = CHROMOSOMES)
+	output: outDir + "/ngsadmix/combined7.BEAGLE.GL"
 	shell:
 		"""
 		(head -1 {input[0]}; for i in {input} do; cat $i |sed 1d ; done) > {output} 
