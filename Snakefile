@@ -337,13 +337,19 @@ rule filterVCFmtdna:
 #		--recode  > {output}
 #		"""
 
-rule concatBEAGLEGL:
+rule concatBEAGLEGL: ##REVIEW TO DO NEEDS WILDCARD
 	input: expand (outDir + "/ngsadmix/filtered.{chromosomes}.BEAGLE.GL", chromosomes = CHROMOSOMES)
 	output: outDir + "/ngsadmix/combined7.BEAGLE.GL"
 	shell:
 		"""
 		(head -1 {input[0]}; for i in {input} do; cat $i |sed 1d ; done) > {output} 
 		"""
+		
+rule NGSadmix:
+	input: outDir + "/ngsadmix/combined7.BEAGLE.GL"
+	threads: 12
+	output: ###
+	shell: """ NGSadmix -P {threads} -likes {input} -K {param.K} -outfiles {output} -minMaf 0
 		
 # # estimate SNP effects
 # rule snpEff:
