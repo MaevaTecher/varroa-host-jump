@@ -35,11 +35,7 @@ for region in REGIONS:
 
 ## Pseudo rule for build-target
 rule all:
-<<<<<<< HEAD
-	input: expand(outDir + "/angsd/mitegeno.{format}.gz", format = ("beagle", "geno", "mafs"))
-=======
 	input: outDir + "ngsadmix/combined7.BEAGLE.GL"
->>>>>>> b3364f1521b3e621f59fa766ad60d1ee9e4d0e2a
 
 ##---- PART1 ---- Check the host identity by mapping reads on honey bee reference genome
 ## Use only mitochondrial DNA to verify host identity
@@ -328,39 +324,18 @@ rule filterVCFmtdna:
 
 ##---- PART3 ---- Bayesian like analysis with NGSadmix		
 
-<<<<<<< HEAD
-rule angsd_transform:
-	input:
-		outDir + "/angsd/ngmbam.list"
-	output:
-		ANGSDOUT = outDir + "/angsd/mitegeno7"
-	threads: 12
-	shell:
-		"""
-		angsd -P {threads} -b {input} -ref {vdRef} -out {ANGSDOUT} -uniqueOnly 1 -remove_bads 1 -only_proper_pairs 1 -trim 0 -C 50 -baq 1 -minMapQ 20 -minQ 20 -doCounts 1 -GL 1 -doMajorMinor 4 -doMaf 1 -skipTriallelic 1 -SNP_pval 1e-8 -doGeno 32 -doPost 1 -doGlf 2 #-minInd 15 \
-##-setMinDepth 60 \
-##-setMaxDepth 400 \
-		"""
-
-rule vcf2BEAGLEGL: ##NOT WORKING HAVE TO FIGURE OUT IF USE STDOUT or else
-	input: outDir + "/var/filtered.vcf.gz"
-	output: outDir + "/ngsadmix/biallelic.{chromosomes}.BEAGLE.GL"	
-	params: chrm = lambda wildcards: config["chromosomes"][wildcards.chromosomes]
-	log: outDir + "/ngsadmix/{chromosomes}.log"
-=======
 #rule vcf2BEAGLEGL: REVIEW TO DO
 #	input: outDir + "/var/filtered.vcf.gz"
 #	output: outDir + "/ngsadmix/biallelic.{chromosomes}.BEAGLE.GL"	
 #	log: outDir + "/ngsadmix/{chromosomes}.log"
->>>>>>> b3364f1521b3e621f59fa766ad60d1ee9e4d0e2a
-	shell: """
-		vcftools --gzvcf {input} \
-		--recode-INFO-all \
-		--chr {CHROMOSOMES} \
-		--max-alleles 2 \
-		--min-alleles 2 \
-		--recode  > {output}
-		"""
+#	shell: """
+#		vcftools --gzvcf {input} \
+#		--recode-INFO-all \
+#		--chr {CHROMOSOMES} \
+#		--max-alleles 2 \
+#		--min-alleles 2 \
+#		--recode  > {output}
+#		"""
 
 rule concatBEAGLEGL:
 	input: expand (outDir + "ngsadmix/filtered.{chromosomes}.BEAGLE.GL", chromosomes = CHROMOSOMES)
@@ -370,7 +345,6 @@ rule concatBEAGLEGL:
 		(head -1 {input[0]}; for i in {input} do; cat $i |sed 1d ; done) > {output} 
 		"""
 		
-
 # # estimate SNP effects
 # rule snpEff:
 # 	input: rules.consensusFilter.output
