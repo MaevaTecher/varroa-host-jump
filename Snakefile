@@ -34,7 +34,7 @@ for region in REGIONS:
 
 ## Pseudo rule for build-target
 rule all:
-	input: expand(outDir + "/ngsadmix/biallelic7chrm.BEAGLE.GL")
+	input: expand(outDir + "/angsd/mitegeno.{format}.gz", format = ("beagle", "geno", "mafs"))
 
 ##---- PART1 ---- Check the host identity by mapping reads on honey bee reference genome
 ## Use only mitochondrial DNA to verify host identity
@@ -323,21 +323,21 @@ rule filterVCFmtdna:
 
 ##---- PART3 ---- Bayesian like analysis with NGSadmix		
 
-#rule angsd_transform:
-#	input:
-#		outDir + "/angsd/ngmbam.list"
-#	output:
-#		ANGSDOUT = outDir + "/angsd/mitegeno"
-#	threads: 12
-#	shell:
-#		"""
-#		angsd -P {threads} -b {input} -ref {vdRef} -out {ANGSDOUT} -uniqueOnly 1 -remove_bads 1 -only_proper_pairs 1 -trim 0 -C 50 -baq 1 -minMapQ 20 -minQ 20 -doCounts 1 -GL 1 -doMajorMinor 4 -doMaf 1 -skipTriallelic 1 -SNP_pval 1e-8 -doGeno 32 -doPost 1 -doGlf 2 #-minInd 15 \
+rule angsd_transform:
+	input:
+		outDir + "/angsd/ngmbam.list"
+	output:
+		ANGSDOUT = outDir + "/angsd/mitegeno7"
+	threads: 12
+	shell:
+		"""
+		angsd -P {threads} -b {input} -ref {vdRef} -out {ANGSDOUT} -uniqueOnly 1 -remove_bads 1 -only_proper_pairs 1 -trim 0 -C 50 -baq 1 -minMapQ 20 -minQ 20 -doCounts 1 -GL 1 -doMajorMinor 4 -doMaf 1 -skipTriallelic 1 -SNP_pval 1e-8 -doGeno 32 -doPost 1 -doGlf 2 #-minInd 15 \
 ##-setMinDepth 60 \
 ##-setMaxDepth 400 \
-#		"""
+		"""
 
 rule vcf2BEAGLEGL: ##NOT WORKING HAVE TO FIGURE OUT IF USE STDOUT or else
-	input: bigvcf = outDir + "/var/filtered.vcf.gz"
+	input: outDir + "/var/filtered.vcf.gz"
 	output: outDir + "/ngsadmix/biallelic.{chromosomes}.BEAGLE.GL"	
 	params: chrm = lambda wildcards: config["chromosomes"][wildcards.chromosomes]
 	log: outDir + "/ngsadmix/{chromosomes}.log"
