@@ -18,6 +18,7 @@ hostBowtiecerana = refDir + "/bees/cerana"
 ## Varroa destructor and V. jacobosni references
 varroaBowtieIndex = refDir + "/destructor/vd"
 vdRef = refDir + "/destructor/vd.fasta"
+vjRef = refDir + "/jacobsoni/vj.fasta"
 vdmtDNABowtieIndex = refDir + "/destructor/mtdnamite/vdnavajas"
 vdmtDNA = refDir + "/destructor/mtdnamite/VDAJ493124.fasta"
 CHROMOSOMES = ["BEIS01000001.1", "BEIS01000002.1", "BEIS01000003.1", "BEIS01000004.1", "BEIS01000005.1", "BEIS01000006.1", "BEIS01000007.1"] 
@@ -35,7 +36,7 @@ for region in REGIONS:
 
 ## Pseudo rule for build-target
 rule all:
-	input: outDir + "/ngsadmix/combined7.BEAGLE.GL"
+	input: expand(outDir + "/jacobsoni/ngm/{sample}.bam"), sample = SAMPLES"
 
 ##---- PART1 ---- Check the host identity by mapping reads on honey bee reference genome
 ## Use only mitochondrial DNA to verify host identity
@@ -128,6 +129,20 @@ rule nextgenmap:
 		"""
 		module load NextGenMap/0.5.0 samtools/1.3.1 VariantBam/1.4.3
 		ngm -t {threads} -b  -1 {input.read1} -2 {input.read2} -r {vdRef} --rg-id {wildcards.sample} --rg-sm {wildcards.sample} --rg-pl ILLUMINA --rg-lb {wildcards.sample} | samtools sort - -m 55G -T {SCRATCH}/ngm/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
+		samtools index {output.alignment}
+		"""
+rule ngmVJ:
+	input:
+		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
+		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
+	threads: 12
+	output: 
+		alignment = temp(outDir + "/jacobsoni/ngm/{sample}.bam"), 
+		index = temp(outDir + "/jacobsoni/ngm/{sample}.bam.bai")
+	shell:
+		"""
+		module load NextGenMap/0.5.0 samtools/1.3.1 VariantBam/1.4.3
+		ngm -t {threads} -b  -1 {input.read1} -2 {input.read2} -r {vjRef} --rg-id {wildcards.sample} --rg-sm {wildcards.sample} --rg-pl ILLUMINA --rg-lb {wildcards.sample} | samtools sort - -m 55G -T {SCRATCH}/ngm/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
 		samtools index {output.alignment}
 		"""
 		
