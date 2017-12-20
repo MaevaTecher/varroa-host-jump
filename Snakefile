@@ -36,7 +36,7 @@ for region in REGIONS:
 
 ## Pseudo rule for build-target
 rule all:
-	input: expand(outDir + "/jacobsoni/ngm/{sample}.bam"), sample = SAMPLES
+	input: expand(outDir + "/jacobsoni/ngm/{sample}.bam", sample = SAMPLES)
 
 ##---- PART1 ---- Check the host identity by mapping reads on honey bee reference genome
 ## Use only mitochondrial DNA to verify host identity
