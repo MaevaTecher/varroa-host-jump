@@ -3,7 +3,7 @@
     {
         "cpus-per-task" : 1,
         "partition" : "compute",
-        "mem" : "10G",
+        "mem" : "30G",
         "time": "5-00:00:00" 
     },
     "checkHost":
@@ -45,15 +45,22 @@
     {
         "cpus-per-task" : 12,
         "partition" : "compute",
-        "mem" : "80G",
+        "mem" : "100G",
         "time": "2-00:00:00" 
     },    
     "nextgenmap":
     {
         "cpus-per-task" : 12,
         "partition" : "compute",
-        "mem" : "80G",
+        "mem" : "100G",
         "time": "2-00:00:00" 
+    },
+    "ngmVJ":
+    {
+        "cpus-per-task" : 12,
+        "partition" : "compute",
+        "mem" : "100G",
+        "time": "2-00:00:00"
     },
     "freeBayes":
     {
