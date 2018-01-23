@@ -3,8 +3,8 @@ from scripts.split_fasta_regions import split_fasta
 from snakemake.utils import R
 
 ## Set path for input files and fasta reference genome
-outDir = "data"
-refDir = "ref" 
+outDir = "/work/MikheyevU/Maeva/varroa-jump/data"
+refDir = "/work/MikheyevU/Maeva/varroa-jump/ref" 
 SCRATCH  = "/work/scratch/maeva"
 
 ## Honey bee references from Apis mellifera & Apis cerana
@@ -38,10 +38,8 @@ for region in REGIONS:
 
 ## Pseudo rule for build-target
 rule all:
-	input: 	expand(outDir + "/alignments/bowtie2/{sample}.bam", sample = SAMPLES),
-		expand(outDir + "/alignments/bowtie2/{sample}.bam.bai",  sample = SAMPLES),
-		expand(outDir + "/alignments/ngm/{sample}.bam", sample = SAMPLES),
-		expand(outDir + "/alignments/ngm/{sample}.bam.bai",  sample = SAMPLES)
+	input: 	expand(outDir + "/alignments-new/ngm/{sample}.bam", sample = SAMPLES),
+		expand(outDir + "/alignments-new/ngm/{sample}.bam.bai",  sample = SAMPLES)
 
 ##---- PART1 ---- Check the host identity by mapping reads on honey bee reference genome
 ## Use only mitochondrial DNA to verify host identity
@@ -167,8 +165,8 @@ rule nextgenmap:
 		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
 	threads: 12
 	output: 
-		alignment = temp(outDir + "/alignments/ngm/{sample}.bam"), 
-		index = temp(outDir + "/alignments/ngm/{sample}.bam.bai")
+		alignment = temp(outDir + "/alignments-new/ngm/{sample}.bam"), 
+		index = temp(outDir + "/alignments-new/ngm/{sample}.bam.bai")
 	shell:
 		"""
 		#module load NextGenMap/0.5.0 samtools/1.3.1 VariantBam/1.4.3
