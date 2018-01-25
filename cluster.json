@@ -55,6 +55,13 @@
         "mem" : "100G",
         "time": "2-00:00:00" 
     },
+    "mtDNA_ngm":
+    {
+        "cpus-per-task" : 12,
+        "partition" : "compute",
+        "mem" : "100G",
+        "time": "2-00:00:00"
+    },
     "ngmVJ":
     {
         "cpus-per-task" : 12,
@@ -69,19 +76,12 @@
         "mem" : "25G",
         "time": "4-00:00:00" 
     },
-    "bowtie2mtdna":
-    {
-        "cpus-per-task" : 12,
-        "partition" : "compute",
-        "mem" : "80G",
-        "time": "2-00:00:00" 
-    },
-    "freeBayesmtdna":
+    "mtDNA_freeBayes":
     {
         "cpus-per-task" : 1,
         "partition" : "compute",
         "mem" : "25G",
-        "time": "4-00:00:00" 
+        "time": "4-00:00:00"
     },    
     "popstats":
     {
