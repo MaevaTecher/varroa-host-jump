@@ -47,9 +47,7 @@ for regionmt in REGIONSMT:
 
 ## Pseudo rule for build-target
 rule all:
-	input: 	expand(outDir + "/alignments-new/ngm_mtDNA/{sample}.bam", sample = SAMPLES),
-		expand(outDir + "/alignments-new/ngm_mtDNA/{sample}.bam.bai", sample = SAMPLES),
-		"/work/MikheyevU/Maeva/varroa-jump/data/var/ngm_mtDNA/filtered_mtDNA.vcf"
+	input: 	"/work/MikheyevU/Maeva/varroa-jump/data/var/filtered.vcf.gz", "/work/MikheyevU/Maeva/varroa-jump/data/var/primitives.vcf.gz"
 		
 
 ##---- PART1 ---- Check the host identity by mapping reads on honey bee reference genome
@@ -139,8 +137,8 @@ rule bowtie2:
 	output: 
 		alignment = temp(outDir + "/alignments-new/bowtie2/{sample}.bam"), 
 		index = temp(outDir + "/alignments-new/bowtie2/{sample}.bam.bai"),
-		read1 = outDir + "/reads_unmapped_new/{sample}.1.fastq.gz",
-		read2 = outDir + "/reads_unmapped_new/{sample}.2.fastq.gz"
+		read1 = outDir + "/reads_unmapped_new/{sample}.1",
+		read2 = outDir + "/reads_unmapped_new/{sample}.2"
 
 	shell:
 		"""
@@ -405,7 +403,10 @@ rule mtDNA_filterVCF:
 
 ###using vcflib
 
-#rule vcf2fasta_mtdna:
-#		input: outDir + "/[PATH]/XXX.vcf"
-#		output: outDir + "[PATH]/xxxx.fasta"
-	
+rule vcf2fasta_mtdna:
+		input: outDir + "/var/ngm_mtDNA/filtered_mtDNA.vcf"
+		output: outDir + "/var/ngm_mtDNA/fasta/{sample}.fasta"
+		shell: 
+			"""
+			vcf2fasta -f {vdmtDNA} -P1 > {output}
+			"""
