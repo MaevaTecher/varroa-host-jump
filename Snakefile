@@ -141,7 +141,7 @@ rule bowtie2:
 
 	shell:
 		"""
-		#module load bowtie2/2.2.6 samtools/1.3.1 VariantBam/1.4.3
+		module load bowtie2/2.2.6 samtools/1.3.1 VariantBam/1.4.3
 		bowtie2 -p {threads} --very-sensitive-local --sam-rg ID:{wildcards.sample} --sam-rg LB:Nextera --sam-rg SM:{wildcards.sample} --sam-rg PL:ILLUMINA  --un-conc-gz  {outDir}/reads_unmapped_new/{wildcards.sample} -x {varroaBowtieIndex} -1 {input.read1} -2 {input.read2} | samtools view -Su - | samtools sort - -m 55G -T {SCRATCH}/bowtie/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
 		samtools index {output.alignment}
 		"""
@@ -195,7 +195,7 @@ rule nextgenmap:
 		index = temp(outDir + "/alignments-new/ngm/{sample}.bam.bai")
 	shell:
 		"""
-		#module load NextGenMap/0.5.0 samtools/1.3.1 VariantBam/1.4.3
+		module load NextGenMap/0.5.0 samtools/1.3.1 VariantBam/1.4.3
 		ngm -t {threads} -b  -1 {input.read1} -2 {input.read2} -r {vdRef} --rg-id {wildcards.sample} --rg-sm {wildcards.sample} --rg-pl ILLUMINA --rg-lb {wildcards.sample} | samtools sort - -m 80G -T {SCRATCH}/ngm/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
 		samtools index {output.alignment}
 		"""
@@ -209,7 +209,7 @@ rule ngmVJ:
 		index = temp(outDir + "/alignments-new/ngm_vj/{sample}.bam.bai")
 	shell:
 		"""
-		#module load NextGenMap/0.5.0 samtools/1.3.1 VariantBam/1.4.3
+		module load NextGenMap/0.5.0 samtools/1.3.1 VariantBam/1.4.3
 		ngm -t {threads} -b  -1 {input.read1} -2 {input.read2} -r {vjRef} --rg-id {wildcards.sample} --rg-sm {wildcards.sample} --rg-pl ILLUMINA --rg-lb {wildcards.sample} | samtools sort - -m 80G -T {SCRATCH}/ngm_vj/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
 		samtools index {output.alignment}
 		"""
