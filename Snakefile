@@ -22,7 +22,9 @@ vdRef = refDir + "/destructor/vd.fasta"
 vjRef = refDir + "/jacobsoni/vj.fasta"
 vdmtDNABowtieIndex = refDir + "/destructor/mtdnamite/vdnavajas"
 vdmtDNA = refDir + "/destructor/mtdnamite/VDAJ493124.fasta"
-#CHROMOSOMES = ["BEIS01000001.1", "BEIS01000002.1", "BEIS01000003.1", "BEIS01000004.1", "BEIS01000005.1", "BEIS01000006.1", "BEIS01000007.1"] 
+CHROMOSOMES = ["BEIS01000001.1", "BEIS01000002.1", "BEIS01000003.1", "BEIS01000004.1", "BEIS01000005.1", "BEIS01000006.1", "BEIS01000007.1"] 
+for chromosome in CHROMOSOMES:
+	print(chromosome)
 
 krakenDB = "/work/MikheyevU/kraken_db"
 
@@ -47,7 +49,11 @@ for regionmt in REGIONSMT:
 
 ## Pseudo rule for build-target
 rule all:
-	input: 	expand(outDir + "/var/singlevcf/{sample}.vcf", sample = SAMPLES)
+	input: 	expand(outDir + "/var/singlevcf/{sample}.vcf", sample = SAMPLES),
+		outDir + "/var/perpopvar/vdonly.vcf",
+		outDir + "/var/perpopvar/vjonly.vcf",
+		outDir + "/var/perpopvar/exclude-vsp.vcf",
+		expand(outDir + "/var/chrmvcf/{chromosome}.vcf", chromosome = CHROMOSOMES)
 		
 		
 ##---- PART1 ---- Check the host identity by mapping reads on honey bee reference genome
@@ -478,14 +484,49 @@ rule selectVariant:
 	output: temp(outDir + "/var/singlevcf/{sample}.vcf")
 	shell: 
 		"""
-		gatk SelectVariant -R {vdRef} --variant {input} --output {output} -sn {wildcards.sample}
+		gatk SelectVariants -R {vdRef} --variant {input} --output {output} -sn {wildcards.sample}
 		"""
 
+rule destructorvcf:
+	input: outDir + "/var/primitives.vcf.gz"
+        output: destructor = temp(outDir + "/var/perpopvar/vdonly.vcf")
+        shell:
+                """
+                gatk SelectVariants -R {vdRef} --variant {input} --output {output.destructor} --exclude-sample-expressions "VJ" --exclude-sample-expressions "VD78"
+                """
+
+rule jacobsonivcf:
+        input: outDir + "/var/primitives.vcf.gz"
+        output: jacobsoni = temp(outDir + "/var/perpopvar/vjonly.vcf")
+        shell:
+                """
+                gatk SelectVariants -R {vdRef} --variant {input} --output {output.jacobsoni} --exclude-sample-expressions "VD" --exclude-sample-expressions "VJ028"
+                """
+
+rule exclude_Vsp_vcf:
+        input: outDir + "/var/primitives.vcf.gz"
+        output: vdvjdake = temp(outDir + "/var/perpopvar/exclude-vsp.vcf")
+        shell:
+                """
+                gatk SelectVariants -R {vdRef} --variant {input} --output {output.vdvjdake} --exclude-sample-expressions "VD78" --exclude-sample-expressions "VJ028"
+                """
+
+# Cut the big vcf file to load it easily into igv and decide with regions to choose for future IMa2 runs
+rule selectVarChrom:
+        input: outDir + "/var/primitives.vcf.gz"
+        output: temp(outDir + "/var/chrmvcf/{chromosome}.vcf")
+        shell:
+                """
+                gatk SelectVariants -R {vdRef} --variant {input} --output {output} -L {wildcards.chromosome}
+                """
+
+### Before this step we need to remove the excess vcf header here
 ##using GATK 3.8
 rule fastaMaker:
-	input: expand(outDir + "/var/singlevcf/{sample}.vcf", sample = SAMPLES)
-	output: expand(outDir + "/fasta/{sample}.fasta", sample = SAMPLES)
+	input: outDir + "/var/singlevcf/{sample}.vcf"
+	output: temp(outDir + "/fasta/{sample}.fasta")
 	shell: 
 		""""
 		java -jar /apps/unit/MikheyevU/Maeva/GATK/GenomeAnalysisTK.jar -T FastaAlternateReferenceMaker -R {vdRef} -L "BEIS01000001.1:20000-30000" -V {input} -IUPAC {wildcard.sample} -o {output} 
+
 		"""
