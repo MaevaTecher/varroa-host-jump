@@ -475,7 +475,7 @@ rule vcf2fasta_mtdna:
 ##using GATK 4.0.0
 rule selectVariant:
 	input: outDir + "/var/primitives.vcf.gz"
-	output: expand(outDir + "/var/singlevcf/{sample}.vcf", sample = SAMPLES)
+	output: temp(outDir + "/var/singlevcf/{sample}.vcf")
 	shell: 
 		"""
 		gatk SelectVariant -R {vdRef} --variant {input} --output {output} -sn {wildcards.sample}
