@@ -33,7 +33,14 @@
         "partition" : "compute",
         "mem" : "80G",
         "time": "2-00:00:00" 
-    },    
+    }, 
+    "checkflorea":
+    {
+        "cpus-per-task" : 12,
+        "partition" : "compute",
+        "mem" : "80G",
+        "time": "2-00:00:00"
+    },   
     "mashtree":
     {
         "cpus-per-task" : 12,
@@ -45,28 +52,21 @@
     {
         "cpus-per-task" : 12,
         "partition" : "compute",
-        "mem" : "100G",
+        "mem" : "80G",
         "time": "2-00:00:00" 
     },    
     "nextgenmap":
     {
         "cpus-per-task" : 12,
         "partition" : "compute",
-        "mem" : "100G",
+        "mem" : "80G",
         "time": "2-00:00:00" 
-    },
-    "mtDNA_ngm":
-    {
-        "cpus-per-task" : 12,
-        "partition" : "compute",
-        "mem" : "100G",
-        "time": "2-00:00:00"
     },
     "ngmVJ":
     {
         "cpus-per-task" : 12,
         "partition" : "compute",
-        "mem" : "100G",
+        "mem" : "80G",
         "time": "2-00:00:00"
     },
     "freeBayes":
@@ -74,14 +74,21 @@
         "cpus-per-task" : 1,
         "partition" : "compute",
         "mem" : "25G",
-        "time": "4-00:00:00" 
+        "time": "4-00:00:00"
+    },
+    "mtDNA_ngm":
+    {
+        "cpus-per-task" : 12,
+        "partition" : "compute",
+        "mem" : "80G",
+        "time": "2-00:00:00"
     },
     "mtDNA_freeBayes":
     {
         "cpus-per-task" : 1,
         "partition" : "compute",
         "mem" : "25G",
-        "time": "4-00:00:00"
+        "time": "2-00:00:00"
     },    
     "popstats":
     {
@@ -89,5 +96,19 @@
         "partition" : "largemem",
         "mem" : "150G",
         "time": "5:00:00" 
-    } 
+    },
+    "selectVariant":
+    {
+        "cpus-per-task" : 1,
+        "partition" : "compute",
+        "mem" : "25G",
+        "time": "2-00:00:00"
+    },
+    "fastaMaker":
+    {
+        "cpus-per-task" : 1,
+        "partition" : "compute",
+        "mem" : "25G",
+        "time": "2-00:00:00"
+    }
 }
