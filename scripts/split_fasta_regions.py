@@ -20,7 +20,11 @@ def split_fasta(f, n):
 		recs.append(myrec(rec.id, 0, len(rec)))
 		total += len(rec)
 	
+<<<<<<< HEAD
 	bins = list(range(0, total, math.ceil(total/n)))[1:] + [total]
+=======
+	bins = list(range(0, total, int(math.ceil(total/n))))[1:] + [total]
+>>>>>>> Maeva
 	current = bins.pop(0)
 	# pdb.set_trace()	
 	outbins = [[]]
@@ -47,8 +51,13 @@ def split_fasta(f, n):
 			outbins[-1].append(myrec(rec.name, rec.start, rec.stop))
 			runningSum += rec.stop - rec.start
 	outdict = dict(zip(map(lambda x: str(x),range(len(outbins))), outbins))			
+<<<<<<< HEAD
 	# for i in outdict:
 	# 	print(" ".join(map(lambda x: str(x), outdict[i])))
+=======
+	for i in outdict:
+	 	print(" ".join(map(lambda x: str(x), outdict[i])))
+>>>>>>> Maeva
 	return(outdict)
 
 if __name__ == "__main__":
