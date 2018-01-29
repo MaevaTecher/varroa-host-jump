@@ -47,7 +47,7 @@ for regionmt in REGIONSMT:
 
 ## Pseudo rule for build-target
 rule all:
-	input: 	"/work/MikheyevU/Maeva/varroa-jump/data/var/filtered.vcf.gz", "/work/MikheyevU/Maeva/varroa-jump/data/var/primitives.vcf.gz"
+	input: 	expand(outDir + "/var/singlevcf/{sample}.vcf", sample = SAMPLES)
 		
 
 ##---- PART1 ---- Check the host identity by mapping reads on honey bee reference genome
@@ -257,7 +257,7 @@ rule chooseMapper:
 		#module load samtools/1.3.1 vcflib/1.0.0-rc1
 		ngm=$(grep -vc "^#" {input.ngm})
 		bowtie2=$(grep -vc "^#" {input.bowtie2})
-		echo ngm has $ngm snps vs $bowtie2 for botwie2 
+		echo ngm has $ngm snps vs $bowtie2 for bowtie2 
 		if [[ $ngm -gt $bowtie2 ]]; then
 			echo choosing ngm
 			bgzip -c {input.ngm} > {output.bgzip}
@@ -422,7 +422,7 @@ rule selectVariant:
 	output: expand(outDir + "/var/singlevcf/{sample}.vcf", sample = SAMPLES)
 	shell: 
 		"""
-		gatk SelectVariant -R {vdRef} --variant {wildcards.sample} --output {output} -sn {wildcards.sample}
+		gatk SelectVariant -R {vdRef} --variant {input} --output {output} -sn {wildcards.sample}
 		"""
 
 ##using GATK 3.8
