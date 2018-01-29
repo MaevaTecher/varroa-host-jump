@@ -3,109 +3,70 @@
     {
         "cpus-per-task" : 1,
         "partition" : "compute",
-<<<<<<< HEAD
-        "mem" : "10G",
-=======
         "mem" : "30G",
->>>>>>> Maeva
-        "time": "5-00:00:00" 
+        "time": "5-00:00:00"
     },
     "checkHost":
     {
         "cpus-per-task" : 4,
         "partition" : "compute",
         "mem" : "5G",
-        "time": "0-08:00:00" 
-    }, 
+        "time": "0-08:00:00"
+    },
     "removeHost":
     {
         "cpus-per-task" : 12,
         "partition" : "compute",
         "mem" : "10G",
-        "time": "5:00:00" 
+        "time": "5:00:00"
     },
     "checkmellifera":
     {
         "cpus-per-task" : 12,
         "partition" : "compute",
         "mem" : "80G",
-        "time": "2-00:00:00" 
+        "time": "2-00:00:00"
     },
     "checkcerana":
     {
         "cpus-per-task" : 12,
         "partition" : "compute",
         "mem" : "80G",
-        "time": "2-00:00:00" 
-    }, 
+        "time": "2-00:00:00"
+    },
     "checkflorea":
     {
         "cpus-per-task" : 12,
         "partition" : "compute",
         "mem" : "80G",
         "time": "2-00:00:00"
-    },   
+    },
     "mashtree":
     {
         "cpus-per-task" : 12,
         "partition" : "compute",
         "mem" : "10G",
-        "time": "5:00:00" 
+        "time": "5:00:00"
     },
-<<<<<<< HEAD
-    "nextgenmap":
-=======
     "bowtie2":
->>>>>>> Maeva
     {
         "cpus-per-task" : 12,
         "partition" : "compute",
         "mem" : "80G",
-        "time": "2-00:00:00" 
-<<<<<<< HEAD
+        "time": "2-00:00:00"
     },
-    "kraken":
-    {
-        "cpus-per-task" : 12,
-        "partition" : "largemem",
-        "mem" : "200G",
-        "time": "5-00:00:00" 
-    },
-    "bowtie2":
-=======
-    },    
     "nextgenmap":
     {
         "cpus-per-task" : 12,
         "partition" : "compute",
         "mem" : "80G",
-        "time": "2-00:00:00" 
+        "time": "2-00:00:00"
     },
     "ngmVJ":
->>>>>>> Maeva
     {
         "cpus-per-task" : 12,
         "partition" : "compute",
         "mem" : "80G",
-<<<<<<< HEAD
-        "time": "2-00:00:00" 
-    },
-    "collectUnmapped":
-    {
-        "cpus-per-task" : 12,
-        "partition" : "compute",
-        "mem" : "10G",
-        "time": "1-00:00:00" 
-    },    
-    "checkHost":
-    {
-        "cpus-per-task" : 4,
-        "partition" : "compute",
-        "mem" : "5G",
-        "time": "0-08:00:00" 
-    },
-    "freeBayes":
-=======
         "time": "2-00:00:00"
     },
     "freeBayes":
@@ -123,27 +84,18 @@
         "time": "2-00:00:00"
     },
     "mtDNA_freeBayes":
->>>>>>> Maeva
     {
         "cpus-per-task" : 1,
         "partition" : "compute",
         "mem" : "25G",
-<<<<<<< HEAD
-        "time": "4-00:00:00" 
-    },
-=======
         "time": "2-00:00:00"
-    },    
->>>>>>> Maeva
+    },
     "popstats":
     {
         "cpus-per-task" : 8,
         "partition" : "largemem",
         "mem" : "150G",
-        "time": "5:00:00" 
-<<<<<<< HEAD
-    }    
-=======
+        "time": "5:00:00"
     },
     "selectVariant":
     {
@@ -159,5 +111,4 @@
         "mem" : "25G",
         "time": "2-00:00:00"
     }
->>>>>>> Maeva
 }
