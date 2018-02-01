@@ -49,16 +49,12 @@ for regionmt in REGIONSMT:
 
 ## Pseudo rule for build-target
 rule all:
-	input: 	expand(outDir + "/var/singlevcf/{sample}.vcf", sample = SAMPLES),
-		expand(outDir + "/var/singlevcf/{sample}.vcf.gz", sample = SAMPLES)
-		#expand(outDir + "/ngsadmix/all44/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES),
-		#outDir + "/ngsadmix/all44/sevenchr.BEAGLE.GL",
-		#expand(outDir + "/ngsadmix/vdGL/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES),
-		#outDir + "/ngsadmix/vdGL/vd_sevenchr.BEAGLE.GL",
-		#expand(outDir + "/ngsadmix/vjGL/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES),
-		#outDir + "/ngsadmix/vdGL/vj_sevenchr.BEAGLE.GL",
-		#expand(outDir + "/ngsadmix/38GL/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES),
-		#outDir + "/ngsadmix/38GL/38_sevenchr.BEAGLE.GL"
+	input: 	expand(outDir + "/ngsadmix/vdGL/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES),
+		outDir + "/ngsadmix/vdGL/vd_sevenchr.BEAGLE.GL",
+		expand(outDir + "/ngsadmix/vjGL/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES),
+		outDir + "/ngsadmix/vdGL/vj_sevenchr.BEAGLE.GL",
+		expand(outDir + "/ngsadmix/38GL/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES),
+		outDir + "/ngsadmix/38GL/38_sevenchr.BEAGLE.GL"
 		
 ##---- PART1 ---- Check the host identity by mapping reads on honey bee reference genome
 ## Use only mitochondrial DNA to verify host identity
@@ -476,45 +472,53 @@ rule vcf2fasta_mtdna:
 ##using GATK 4.0.0
 rule selectVariant:
 	input: outDir + "/var/primitives.vcf.gz"
-	output: indiv= temp(outDir + "/var/singlevcf/{sample}.vcf")
-		bgzip= temp(outDir + "/var/singlevcf/{sample}.vcf.gz")
+	output: indiv = temp(outDir + "/var/singlevcf/{sample}.vcf"),
+		bgzip = temp(outDir + "/var/singlevcf/{sample}.vcf.gz")
 	shell: 
 		"""
 		gatk SelectVariants -R {vdRef} --variant {input} --output {output.indiv} -sn {wildcards.sample}
-		bgzip -c {input.indiv} > {output.bgzip}
+		bgzip -c {output.indiv} > {output.bgzip}
 		"""
 
 rule destructorvcf:
 	input: outDir + "/var/primitives.vcf.gz"
-        output: destructor = temp(outDir + "/var/perpopvar/vdonly.vcf")
-        shell:
+        output: destructor = outDir + "/var/perpopvar/vdonly.vcf",
+		bgzip = outDir + "/var/perpopvar/vdonly.vcf.gz"
+	shell:
                 """
                 gatk SelectVariants -R {vdRef} --variant {input} --output {output.destructor} --exclude-sample-expressions "VJ" --exclude-sample-expressions "VD78"
-                """
+                bgzip -c {output.destructor} > {output.bgzip}
+		"""
 
 rule jacobsonivcf:
         input: outDir + "/var/primitives.vcf.gz"
-        output: jacobsoni = temp(outDir + "/var/perpopvar/vjonly.vcf")
+        output: jacob = outDir + "/var/perpopvar/vjonly.vcf",
+                bgzip = outDir + "/var/perpopvar/vjonly.vcf.gz"
         shell:
                 """
-                gatk SelectVariants -R {vdRef} --variant {input} --output {output.jacobsoni} --exclude-sample-expressions "VD" --exclude-sample-expressions "VJ028"
+                gatk SelectVariants -R {vdRef} --variant {input} --output {output.jacob} --exclude-sample-expressions "VD" --exclude-sample-expressions "VJ028"
+                bgzip -c {output.jacob} > {output.bgzip}
                 """
 
-rule exclude_Vsp_vcf:
+rule noVsp_vcf:
         input: outDir + "/var/primitives.vcf.gz"
-        output: vdvjdake = temp(outDir + "/var/perpopvar/exclude-vsp.vcf")
+        output: vdvjdake = outDir + "/var/perpopvar/exclude_vsp.vcf",
+                bgzip = outDir + "/var/perpopvar/exclude_vsp.vcf.gz"
         shell:
                 """
                 gatk SelectVariants -R {vdRef} --variant {input} --output {output.vdvjdake} --exclude-sample-expressions "VD78" --exclude-sample-expressions "VJ028"
+                bgzip -c {output.vdvjdake} > {output.bgzip}
                 """
 
 # Cut the big vcf file to load it easily into igv and decide with regions to choose for future IMa2 runs
 rule selectVarChrom:
         input: outDir + "/var/primitives.vcf.gz"
-        output: temp(outDir + "/var/chrmvcf/{chromosome}.vcf")
+        output: chrom = temp(outDir + "/var/chrmvcf/{chromosome}.vcf"),
+                bgzip = temp(outDir + "/var/chrmvcf/{chromosome}.vcf.gz")
         shell:
                 """
-                gatk SelectVariants -R {vdRef} --variant {input} --output {output} -L {wildcards.chromosome}
+                gatk SelectVariants -R {vdRef} --variant {input} --output {output.vdvjdake} -L {wildcards.chromosome}
+                bgzip -c {output.chrom} > {output.bgzip}
                 """
 
 ### Before this step we need to remove the excess vcf header here
@@ -525,7 +529,6 @@ rule fastaMaker:
 	shell: 
 		""""
 		java -jar /apps/unit/MikheyevU/Maeva/GATK/GenomeAnalysisTK.jar -T FastaAlternateReferenceMaker -R {vdRef} -L "BEIS01000001.1:20000-30000" -V {input} -IUPAC {wildcard.sample} -o {output} 
-
 		"""
 rule vcf2GL:
 	input: outDir + "/var/primitives.vcf.gz"
@@ -544,11 +547,11 @@ rule mergeGL:
 		"""
 
 rule vcf2GL_VD:
-        input: outDir + "/var/perpopvar/vdonly.vcf"
+        input: outDir + "/var/perpopvar/vdonly.vcf.gz"
         output: temp(outDir + "/ngsadmix/vdGL/{chromosome}.BEAGLE.GL")
         shell:
                 """
-                vcftools --vcf {input} --BEAGLE-GL --chr {wildcards.chromosome} --stdout > {output}
+                vcftools --gzvcf {input} --BEAGLE-GL --chr {wildcards.chromosome} --stdout > {output}
                 """
 
 rule mergeGL_VD:
@@ -560,11 +563,11 @@ rule mergeGL_VD:
                 """
 
 rule vcf2GL_VJ:
-        input: outDir + "/var/perpopvar/vjonly.vcf"
+        input: outDir + "/var/perpopvar/vjonly.vcf.gz"
         output: temp(outDir + "/ngsadmix/vjGL/{chromosome}.BEAGLE.GL")
         shell:
                 """
-                vcftools --vcf {input} --BEAGLE-GL --chr {wildcards.chromosome} --stdout > {output}
+                vcftools --gzvcf {input} --BEAGLE-GL --chr {wildcards.chromosome} --stdout > {output}
                 """
 
 rule mergeGL_VJ:
@@ -576,11 +579,11 @@ rule mergeGL_VJ:
                 """
 
 rule vcf2GL_exclude:
-        input: outDir + "/var/perpopvar/exclude-vsp.vcf"
+        input: outDir + "/var/perpopvar/exclude_vsp.vcf.gz"
         output: temp(outDir + "/ngsadmix/38GL/{chromosome}.BEAGLE.GL")
         shell:
                 """
-                vcftools --vcf {input} --BEAGLE-GL --chr {wildcards.chromosome} --stdout > {output}
+                vcftools --gzvcf {input} --BEAGLE-GL --chr {wildcards.chromosome} --stdout > {output}
                 """
 
 rule mergeGL_exclude:
