@@ -50,14 +50,15 @@ for regionmt in REGIONSMT:
 ## Pseudo rule for build-target
 rule all:
 	input: 	expand(outDir + "/var/singlevcf/{sample}.vcf", sample = SAMPLES),
-		expand(outDir + "/ngsadmix/all44/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES),
-		outDir + "/ngsadmix/all44/sevenchr.BEAGLE.GL",
-		expand(outDir + "/ngsadmix/vdGL/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES),
-		outDir + "/ngsadmix/vdGL/vd_sevenchr.BEAGLE.GL",
-		expand(outDir + "/ngsadmix/vjGL/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES),
-		outDir + "/ngsadmix/vdGL/vj_sevenchr.BEAGLE.GL",
-		expand(outDir + "/ngsadmix/38GL/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES),
-		outDir + "/ngsadmix/38GL/38_sevenchr.BEAGLE.GL"
+		expand(outDir + "/var/singlevcf/{sample}.vcf.gz", sample = SAMPLES)
+		#expand(outDir + "/ngsadmix/all44/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES),
+		#outDir + "/ngsadmix/all44/sevenchr.BEAGLE.GL",
+		#expand(outDir + "/ngsadmix/vdGL/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES),
+		#outDir + "/ngsadmix/vdGL/vd_sevenchr.BEAGLE.GL",
+		#expand(outDir + "/ngsadmix/vjGL/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES),
+		#outDir + "/ngsadmix/vdGL/vj_sevenchr.BEAGLE.GL",
+		#expand(outDir + "/ngsadmix/38GL/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES),
+		#outDir + "/ngsadmix/38GL/38_sevenchr.BEAGLE.GL"
 		
 ##---- PART1 ---- Check the host identity by mapping reads on honey bee reference genome
 ## Use only mitochondrial DNA to verify host identity
@@ -403,9 +404,129 @@ rule popstats:
 # rule snipre:
 # 	input: rules.silentReplacement.output, rules.fixedPolymorphic.output, rules.parseSilentReplacement.output
 # 	output: "../out/bayesian_results.csv"
-		
-###NEED TO WRITE THESE PART WITHING SNAKEMAKE		
+				
+##---- PART4 ---- Getting sequences for mtDNA phylogenies and for demographic inferences
+rule mtDNA_ngm:
+        input:
+                read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
+                read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
+        threads: 12
+        output:
+                alignment = temp(outDir + "/alignments-new/ngm_mtDNA/{sample}.bam"),
+                index = temp(outDir + "/alignments-new/ngm_mtDNA/{sample}.bam.bai")
+        shell:
+                """
+		ngm -t {threads} -b  -1 {input.read1} -2 {input.read2} -r {vdmtDNA} --rg-id {wildcards.sample} --rg-sm {wildcards.sample} --rg-pl ILLUMINA --rg-lb {wildcards.sample} | samtools view -Su -F4 -q10 | samtools sort - -m 55G -T {SCRATCH}/ngm_mtDNA/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
+                samtools index {output.alignment}
+                """
 
+rule mtDNA_freeBayes:
+        input:
+                expand(outDir + "/alignments-new/ngm_mtDNA/{sample}.bam", sample = SAMPLES)
+        output:
+                temp(outDir + "/var/ngm_mtDNA/split_mtDNA/freebayes_mtDNA.{regionmt}.vcf")
+        params:
+                span = lambda wildcards: REGIONSMT[wildcards.regionmt],
+                bams = lambda wildcards, input: os.path.dirname(input[0]) + "/*.bam",
+                missing = lambda wildcards, input: len(input) * 0.9
+        shell:
+                """
+		 for i in {params.bams}; do name=$(basename $i .bam); if [[ $name == VJ* ]] ; then echo $name VJ; else echo $name VD; fi ; done > {outDir}/var/pops_mtDNA.txt
+                freebayes --ploidy 1 --min-alternate-fraction 0.2 --use-best-n-alleles 4 -m 5 -q 5 --populations {outDir}/var/pops_mtDNA.txt -b {params.bams} {params.span} -f {vdmtDNA} | vcffilter -f "QUAL > 20 & NS > {params.missing}" > {output}
+                """
+
+rule mtDNA_mergeVCF:
+        input:
+                expand(outDir + "/var/ngm_mtDNA/split_mtDNA/freebayes_mtDNA.{regionmt}.vcf", regionmt = REGIONSMT)
+        output:
+                temp(outDir + "/var/ngm_mtDNA/raw_mtDNA.vcf")
+        shell:
+                """
+		(grep "^#" {input[0]} ; cat {input} | grep -v "^#" ) | vcfuniq  > {output}
+                """
+
+		
+rule mtDNA_filterVCF:
+        input:
+                rules.mtDNA_mergeVCF.output
+        output:
+                vcf = outDir + "/var/ngm_mtDNA/filtered_mtDNA.vcf"
+        shell:
+                """
+		perl  -ne 'print "$1\\n" if /DP=(\d+)/'  {input} > {outDir}/var/ngm_mtDNA/depth_mtDNA.txt
+                sort -n {outDir}/var/ngm_mtDNA/depth_mtDNA.txt | uniq -c | awk '{{print $2,$1}}' | eplot -d -r [200:2000] 2>/dev/null | tee
+                Nind=$(grep -m1 "^#C" {input}  | cut -f10- |wc -w)
+                coverageCutoff=$(awk -v Nind=$Nind '{{sum+=$1}} END {{print "DP < "(sum / NR / Nind + sqrt(sum / NR / Nind) * 3 ) * Nind}}' {outDir}/var/ngm_mtDNA/depth_mtDNA.txt)
+                echo Using coverage cutoff $coverageCutoff
+                vcffilter -s -f \"$coverageCutoff\" {input} | vcftools --vcf - --max-alleles 2 --recode --stdout > {output}
+                """
+		
+###using vcflib
+## I used finally only the rawmtDNA.vcf fasta file and checked manually for problem that could appear with gap == alignment good
+rule vcf2fasta_mtdna:
+		input: outDir + "/var/ngm_mtDNA/raw_mtDNA.vcf"
+		output: outDir + "/var/ngm_mtDNA/fasta/{sample}.fasta"
+		shell: 
+			"""
+			vcf2fasta -f {vdmtDNA} -P1 > {output}
+			"""
+
+			
+##Be careful, GATK version 4.0.0 have a slight different program option than the 3.0 version. As example, FastaAlternateReferenceMaker is not available in 4.0.0.
+##using GATK 4.0.0
+rule selectVariant:
+	input: outDir + "/var/primitives.vcf.gz"
+	output: indiv= temp(outDir + "/var/singlevcf/{sample}.vcf")
+		bgzip= temp(outDir + "/var/singlevcf/{sample}.vcf.gz")
+	shell: 
+		"""
+		gatk SelectVariants -R {vdRef} --variant {input} --output {output.indiv} -sn {wildcards.sample}
+		bgzip -c {input.indiv} > {output.bgzip}
+		"""
+
+rule destructorvcf:
+	input: outDir + "/var/primitives.vcf.gz"
+        output: destructor = temp(outDir + "/var/perpopvar/vdonly.vcf")
+        shell:
+                """
+                gatk SelectVariants -R {vdRef} --variant {input} --output {output.destructor} --exclude-sample-expressions "VJ" --exclude-sample-expressions "VD78"
+                """
+
+rule jacobsonivcf:
+        input: outDir + "/var/primitives.vcf.gz"
+        output: jacobsoni = temp(outDir + "/var/perpopvar/vjonly.vcf")
+        shell:
+                """
+                gatk SelectVariants -R {vdRef} --variant {input} --output {output.jacobsoni} --exclude-sample-expressions "VD" --exclude-sample-expressions "VJ028"
+                """
+
+rule exclude_Vsp_vcf:
+        input: outDir + "/var/primitives.vcf.gz"
+        output: vdvjdake = temp(outDir + "/var/perpopvar/exclude-vsp.vcf")
+        shell:
+                """
+                gatk SelectVariants -R {vdRef} --variant {input} --output {output.vdvjdake} --exclude-sample-expressions "VD78" --exclude-sample-expressions "VJ028"
+                """
+
+# Cut the big vcf file to load it easily into igv and decide with regions to choose for future IMa2 runs
+rule selectVarChrom:
+        input: outDir + "/var/primitives.vcf.gz"
+        output: temp(outDir + "/var/chrmvcf/{chromosome}.vcf")
+        shell:
+                """
+                gatk SelectVariants -R {vdRef} --variant {input} --output {output} -L {wildcards.chromosome}
+                """
+
+### Before this step we need to remove the excess vcf header here
+##using GATK 3.8
+rule fastaMaker:
+	input: outDir + "/var/singlevcf/{sample}.vcf"
+	output: temp(outDir + "/fasta/{sample}.fasta")
+	shell: 
+		""""
+		java -jar /apps/unit/MikheyevU/Maeva/GATK/GenomeAnalysisTK.jar -T FastaAlternateReferenceMaker -R {vdRef} -L "BEIS01000001.1:20000-30000" -V {input} -IUPAC {wildcard.sample} -o {output} 
+
+		"""
 rule vcf2GL:
 	input: outDir + "/var/primitives.vcf.gz"
 	output: temp(outDir + "/ngsadmix/all44/{chromosome}.BEAGLE.GL")
@@ -476,124 +597,3 @@ rule mergeGL_exclude:
 #		params: k = "2"
 #		shell: "NGSadmix -P {threads} -likes {input} -K {params.k} -outfiles {output} -minMaf 0.1
 
-
-##---- PART4 ---- Getting sequences for mtDNA phylogenies and for demographic inferences
-rule mtDNA_ngm:
-        input:
-                read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
-                read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
-        threads: 12
-        output:
-                alignment = temp(outDir + "/alignments-new/ngm_mtDNA/{sample}.bam"),
-                index = temp(outDir + "/alignments-new/ngm_mtDNA/{sample}.bam.bai")
-        shell:
-                """
-		ngm -t {threads} -b  -1 {input.read1} -2 {input.read2} -r {vdmtDNA} --rg-id {wildcards.sample} --rg-sm {wildcards.sample} --rg-pl ILLUMINA --rg-lb {wildcards.sample} | samtools view -Su -F4 -q10 | samtools sort - -m 55G -T {SCRATCH}/ngm_mtDNA/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
-                samtools index {output.alignment}
-                """
-
-rule mtDNA_freeBayes:
-        input:
-                expand(outDir + "/alignments-new/ngm_mtDNA/{sample}.bam", sample = SAMPLES)
-        output:
-                temp(outDir + "/var/ngm_mtDNA/split_mtDNA/freebayes_mtDNA.{regionmt}.vcf")
-        params:
-                span = lambda wildcards: REGIONSMT[wildcards.regionmt],
-                bams = lambda wildcards, input: os.path.dirname(input[0]) + "/*.bam",
-                missing = lambda wildcards, input: len(input) * 0.9
-        shell:
-                """
-		 for i in {params.bams}; do name=$(basename $i .bam); if [[ $name == VJ* ]] ; then echo $name VJ; else echo $name VD; fi ; done > {outDir}/var/pops_mtDNA.txt
-                freebayes --ploidy 1 --min-alternate-fraction 0.2 --use-best-n-alleles 4 -m 5 -q 5 --populations {outDir}/var/pops_mtDNA.txt -b {params.bams} {params.span} -f {vdmtDNA} | vcffilter -f "QUAL > 20 & NS > {params.missing}" > {output}
-                """
-
-rule mtDNA_mergeVCF:
-        input:
-                expand(outDir + "/var/ngm_mtDNA/split_mtDNA/freebayes_mtDNA.{regionmt}.vcf", regionmt = REGIONSMT)
-        output:
-                temp(outDir + "/var/ngm_mtDNA/raw_mtDNA.vcf")
-        shell:
-                """
-		(grep "^#" {input[0]} ; cat {input} | grep -v "^#" ) | vcfuniq  > {output}
-                """
-
-		
-rule mtDNA_filterVCF:
-        input:
-                rules.mtDNA_mergeVCF.output
-        output:
-                vcf = outDir + "/var/ngm_mtDNA/filtered_mtDNA.vcf"
-        shell:
-                """
-		perl  -ne 'print "$1\\n" if /DP=(\d+)/'  {input} > {outDir}/var/ngm_mtDNA/depth_mtDNA.txt
-                sort -n {outDir}/var/ngm_mtDNA/depth_mtDNA.txt | uniq -c | awk '{{print $2,$1}}' | eplot -d -r [200:2000] 2>/dev/null | tee
-                Nind=$(grep -m1 "^#C" {input}  | cut -f10- |wc -w)
-                coverageCutoff=$(awk -v Nind=$Nind '{{sum+=$1}} END {{print "DP < "(sum / NR / Nind + sqrt(sum / NR / Nind) * 3 ) * Nind}}' {outDir}/var/ngm_mtDNA/depth_mtDNA.txt)
-                echo Using coverage cutoff $coverageCutoff
-                vcffilter -s -f \"$coverageCutoff\" {input} | vcftools --vcf - --max-alleles 2 --recode --stdout > {output}
-                """
-		
-
-###using vcflib
-## I used finally only the rawmtDNA.vcf fasta file and checked manually for problem that could appear with gap == alignment good
-rule vcf2fasta_mtdna:
-		input: outDir + "/var/ngm_mtDNA/raw_mtDNA.vcf"
-		output: outDir + "/var/ngm_mtDNA/fasta/{sample}.fasta"
-		shell: 
-			"""
-			vcf2fasta -f {vdmtDNA} -P1 > {output}
-			"""
-
-##Be careful, GATK version 4.0.0 have a slight different program option than the 3.0 version. As example, FastaAlternateReferenceMaker is not available in 4.0.0.
-##using GATK 4.0.0
-rule selectVariant:
-	input: outDir + "/var/primitives.vcf.gz"
-	output: temp(outDir + "/var/singlevcf/{sample}.vcf")
-	shell: 
-		"""
-		gatk SelectVariants -R {vdRef} --variant {input} --output {output} -sn {wildcards.sample}
-		"""
-
-rule destructorvcf:
-	input: outDir + "/var/primitives.vcf.gz"
-        output: destructor = temp(outDir + "/var/perpopvar/vdonly.vcf")
-        shell:
-                """
-                gatk SelectVariants -R {vdRef} --variant {input} --output {output.destructor} --exclude-sample-expressions "VJ" --exclude-sample-expressions "VD78"
-                """
-
-rule jacobsonivcf:
-        input: outDir + "/var/primitives.vcf.gz"
-        output: jacobsoni = temp(outDir + "/var/perpopvar/vjonly.vcf")
-        shell:
-                """
-                gatk SelectVariants -R {vdRef} --variant {input} --output {output.jacobsoni} --exclude-sample-expressions "VD" --exclude-sample-expressions "VJ028"
-                """
-
-rule exclude_Vsp_vcf:
-        input: outDir + "/var/primitives.vcf.gz"
-        output: vdvjdake = temp(outDir + "/var/perpopvar/exclude-vsp.vcf")
-        shell:
-                """
-                gatk SelectVariants -R {vdRef} --variant {input} --output {output.vdvjdake} --exclude-sample-expressions "VD78" --exclude-sample-expressions "VJ028"
-                """
-
-# Cut the big vcf file to load it easily into igv and decide with regions to choose for future IMa2 runs
-rule selectVarChrom:
-        input: outDir + "/var/primitives.vcf.gz"
-        output: temp(outDir + "/var/chrmvcf/{chromosome}.vcf")
-        shell:
-                """
-                gatk SelectVariants -R {vdRef} --variant {input} --output {output} -L {wildcards.chromosome}
-                """
-
-### Before this step we need to remove the excess vcf header here
-##using GATK 3.8
-rule fastaMaker:
-	input: outDir + "/var/singlevcf/{sample}.vcf"
-	output: temp(outDir + "/fasta/{sample}.fasta")
-	shell: 
-		""""
-		java -jar /apps/unit/MikheyevU/Maeva/GATK/GenomeAnalysisTK.jar -T FastaAlternateReferenceMaker -R {vdRef} -L "BEIS01000001.1:20000-30000" -V {input} -IUPAC {wildcard.sample} -o {output} 
-
-		"""
