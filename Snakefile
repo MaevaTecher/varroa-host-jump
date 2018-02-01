@@ -49,12 +49,17 @@ for regionmt in REGIONSMT:
 
 ## Pseudo rule for build-target
 rule all:
-	input: 	expand(outDir + "/ngsadmix/vdGL/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES),
-		outDir + "/ngsadmix/vdGL/vd_sevenchr.BEAGLE.GL",
+	input: 	expand(outDir + "/var/singlevcf/{sample}.vcf.gz", sample = SAMPLES),
+		outDir + "/var/perpopvar/vdonly.vcf.gz",
+		outDir + "/var/perpopvar/vjonly.vcf.gz",
+		outDir + "/var/perpopvar/exclude_vsp.vcf.gz",
+		expand(outDir + "/var/chrmvcf/{chromosome}.vcf.gz", chromosome = CHROMOSOMES),
+		expand(outDir + "/ngsadmix/vdGL/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES),
+		#outDir + "/ngsadmix/vdGL/vd_sevenchr.BEAGLE.GL",
 		expand(outDir + "/ngsadmix/vjGL/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES),
-		outDir + "/ngsadmix/vdGL/vj_sevenchr.BEAGLE.GL",
-		expand(outDir + "/ngsadmix/38GL/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES),
-		outDir + "/ngsadmix/38GL/38_sevenchr.BEAGLE.GL"
+		#outDir + "/ngsadmix/vdGL/vj_sevenchr.BEAGLE.GL",
+		expand(outDir + "/ngsadmix/38GL/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES)
+		#outDir + "/ngsadmix/38GL/38_sevenchr.BEAGLE.GL"
 		
 ##---- PART1 ---- Check the host identity by mapping reads on honey bee reference genome
 ## Use only mitochondrial DNA to verify host identity
@@ -478,6 +483,7 @@ rule selectVariant:
 		"""
 		gatk SelectVariants -R {vdRef} --variant {input} --output {output.indiv} -sn {wildcards.sample}
 		bgzip -c {output.indiv} > {output.bgzip}
+		tabix -p vcf {output.bgzip}
 		"""
 
 rule destructorvcf:
@@ -488,6 +494,7 @@ rule destructorvcf:
                 """
                 gatk SelectVariants -R {vdRef} --variant {input} --output {output.destructor} --exclude-sample-expressions "VJ" --exclude-sample-expressions "VD78"
                 bgzip -c {output.destructor} > {output.bgzip}
+		tabix -p vcf {output.bgzip}
 		"""
 
 rule jacobsonivcf:
@@ -498,7 +505,8 @@ rule jacobsonivcf:
                 """
                 gatk SelectVariants -R {vdRef} --variant {input} --output {output.jacob} --exclude-sample-expressions "VD" --exclude-sample-expressions "VJ028"
                 bgzip -c {output.jacob} > {output.bgzip}
-                """
+                tabix -p vcf {output.bgzip}
+		"""
 
 rule noVsp_vcf:
         input: outDir + "/var/primitives.vcf.gz"
@@ -508,7 +516,8 @@ rule noVsp_vcf:
                 """
                 gatk SelectVariants -R {vdRef} --variant {input} --output {output.vdvjdake} --exclude-sample-expressions "VD78" --exclude-sample-expressions "VJ028"
                 bgzip -c {output.vdvjdake} > {output.bgzip}
-                """
+                tabix -p vcf {output.bgzip}
+		"""
 
 # Cut the big vcf file to load it easily into igv and decide with regions to choose for future IMa2 runs
 rule selectVarChrom:
@@ -517,9 +526,10 @@ rule selectVarChrom:
                 bgzip = temp(outDir + "/var/chrmvcf/{chromosome}.vcf.gz")
         shell:
                 """
-                gatk SelectVariants -R {vdRef} --variant {input} --output {output.vdvjdake} -L {wildcards.chromosome}
+                gatk SelectVariants -R {vdRef} --variant {input} --output {output.chrom} -L {wildcards.chromosome}
                 bgzip -c {output.chrom} > {output.bgzip}
-                """
+                tabix -p vcf {output.bgzip}
+		"""
 
 ### Before this step we need to remove the excess vcf header here
 ##using GATK 3.8
