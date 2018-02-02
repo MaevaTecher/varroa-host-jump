@@ -476,38 +476,47 @@ rule selectVariant:
 		tabix -p vcf {output.bgzip}
 		"""
 
+#rule destructorvcf:
+#	input: outDir + "/var/primitives.vcf.gz"
+#       output: destructor = outDir + "/var/perpopvar/vdonly.vcf",
+#		bgzip = outDir + "/var/perpopvar/vdonly.vcf.gz"
+#	shell:
+#               """
+#               gatk SelectVariants -R {vdRef} --variant {input} --output {output.destructor} --exclude-sample-expressions "VJ" --exclude-sample-expressions "VD78"
+#               bgzip -c {output.destructor} > {output.bgzip}
+#		tabix -p vcf {output.bgzip}
+#		"""
+
 rule destructorvcf:
-	input: outDir + "/var/primitives.vcf.gz"
-        output: destructor = outDir + "/var/perpopvar/vdonly.vcf",
-		bgzip = outDir + "/var/perpopvar/vdonly.vcf.gz"
+	input: variant = outDir + "/var/primitives.vcf.gz",
+		sample = outDir + "/var/vdonly.txt"
+	output: destructor = outDir + "/var/perpopvar/vdonly.vcf.gz",
 	shell:
-                """
-                gatk SelectVariants -R {vdRef} --variant {input} --output {output.destructor} --exclude-sample-expressions "VJ" --exclude-sample-expressions "VD78"
-                bgzip -c {output.destructor} > {output.bgzip}
-		tabix -p vcf {output.bgzip}
 		"""
+		bcftools view -Oz -S {input.sample} {input.variant} > {output.destructor}
+		
+		
+#rule jacobsonivcf:
+#        input: outDir + "/var/primitives.vcf.gz"
+#        output: jacob = outDir + "/var/perpopvar/vjonly.vcf",
+#                bgzip = outDir + "/var/perpopvar/vjonly.vcf.gz"
+#        shell:
+#                """
+#                gatk SelectVariants -R {vdRef} --variant {input} --output {output.jacob} --exclude-sample-expressions "VD" --exclude-sample-expressions "VJ028"
+#                bgzip -c {output.jacob} > {output.bgzip}
+#                tabix -p vcf {output.bgzip}
+#		"""
 
-rule jacobsonivcf:
-        input: outDir + "/var/primitives.vcf.gz"
-        output: jacob = outDir + "/var/perpopvar/vjonly.vcf",
-                bgzip = outDir + "/var/perpopvar/vjonly.vcf.gz"
-        shell:
-                """
-                gatk SelectVariants -R {vdRef} --variant {input} --output {output.jacob} --exclude-sample-expressions "VD" --exclude-sample-expressions "VJ028"
-                bgzip -c {output.jacob} > {output.bgzip}
-                tabix -p vcf {output.bgzip}
-		"""
-
-rule noVsp_vcf:
-        input: outDir + "/var/primitives.vcf.gz"
-        output: vdvjdake = outDir + "/var/perpopvar/exclude_vsp.vcf",
-                bgzip = outDir + "/var/perpopvar/exclude_vsp.vcf.gz"
-        shell:
-                """
-                gatk SelectVariants -R {vdRef} --variant {input} --output {output.vdvjdake} --exclude-sample-expressions "VD78" --exclude-sample-expressions "VJ028"
-                bgzip -c {output.vdvjdake} > {output.bgzip}
-                tabix -p vcf {output.bgzip}
-		"""
+#rule noVsp_vcf:
+#        input: outDir + "/var/primitives.vcf.gz"
+#        output: vdvjdake = outDir + "/var/perpopvar/exclude_vsp.vcf",
+#                bgzip = outDir + "/var/perpopvar/exclude_vsp.vcf.gz"
+#        shell:
+#                """
+#                gatk SelectVariants -R {vdRef} --variant {input} --output {output.vdvjdake} --exclude-sample-expressions "VD78" --exclude-sample-expressions "VJ028"
+#                bgzip -c {output.vdvjdake} > {output.bgzip}
+#                tabix -p vcf {output.bgzip}
+#		"""
 
 ## Cut the big vcf file to load it easily into igv and decide with regions to choose for future IMa2 runs
 rule selectVarChrom:
