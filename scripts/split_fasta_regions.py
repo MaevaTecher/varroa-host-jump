@@ -47,8 +47,8 @@ def split_fasta(f, n):
 			outbins[-1].append(myrec(rec.name, rec.start, rec.stop))
 			runningSum += rec.stop - rec.start
 	outdict = dict(zip(map(lambda x: str(x),range(len(outbins))), outbins))			
-	for i in outdict:
-	 	print(" ".join(map(lambda x: str(x), outdict[i])))
+#	for i in outdict:
+#	 	print(" ".join(map(lambda x: str(x), outdict[i])))
 	return(outdict)
 
 if __name__ == "__main__":
