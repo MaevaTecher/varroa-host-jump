@@ -47,8 +47,13 @@ for regionmt in REGIONSMT:
 
 ## Pseudo rule for build-target
 rule all:
-	input: 	expand(outDir + "/ngsadmix/all44/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES),
-                expand(outDir + "/ngsadmix/vdGL/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES)
+	input: 	expand(outDir + "/alignments-new/ngm/{sample}.bam", sample = SAMPLES), 
+		expand(outDir + "/alignments-new/ngm/{sample}.bam.bai", sample = SAMPLES),
+		expand(outDir + "/alignments-new/bowtie2/{sample}.bam", sample = SAMPLES), 
+		expand(outDir + "/alignments-new/bowtie2/{sample}.bam.bai", sample = SAMPLES),
+		expand(outDir + "/reads_unmapped_new/{sample}.1", sample = SAMPLES),
+		expand(outDir + "/reads_unmapped_new/{sample}.2", sample = SAMPLES)
+                #expand(outDir + "/ngsadmix/vdGL/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES)
 		
 ##---- PART1 ---- Check the host identity by mapping reads on honey bee reference genome
 ## Use only mitochondrial DNA to verify host identity
@@ -485,16 +490,7 @@ rule selectVariant:
 #               gatk SelectVariants -R {vdRef} --variant {input} --output {output.destructor} --exclude-sample-expressions "VJ" --exclude-sample-expressions "VD78"
 #               bgzip -c {output.destructor} > {output.bgzip}
 #		tabix -p vcf {output.bgzip}
-#		"""
-
-rule destructorvcf:
-	input: variant = outDir + "/var/primitives.vcf.gz",
-		sample = outDir + "/var/vdonly.txt"
-	output: destructor = outDir + "/var/perpopvar/vdonly.vcf.gz",
-	shell:
-		"""
-		bcftools view -Oz -S {input.sample} {input.variant} > {output.destructor}
-		
+#		"""	
 		
 #rule jacobsonivcf:
 #        input: outDir + "/var/primitives.vcf.gz"
