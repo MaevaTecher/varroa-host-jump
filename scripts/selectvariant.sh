@@ -15,6 +15,7 @@
 
 reference=/work/MikheyevU/Maeva/varroa-jump/ref/destructor/vd.fasta
 varroavcf=/work/MikheyevU/Maeva/varroa-jump/data/var/primitives.vcf.gz
-#indiv="VJ983_1"
+interval= "BEIS01000007.1:26600000-26690000"
+output= "cut7.2"
 
-gatk SelectVariants -R $reference --variant $varroavcf --output /work/MikheyevU/Maeva/varroa-jump/data/var/chr7.vcf -L "BEIS01000007.1"
+gatk SelectVariants -R $reference --variant $varroavcf --output /work/MikheyevU/Maeva/varroa-jump/data/var/$output -L $interval
