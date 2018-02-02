@@ -48,18 +48,7 @@ for regionmt in REGIONSMT:
 ## Pseudo rule for build-target
 rule all:
 	input: 	expand(outDir + "/ngsadmix/all44/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES),
-		expand(outDir + "/ngsadmix/test/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES)
-		#expand(outDir + "/var/singlevcf/{sample}.vcf.gz", sample = SAMPLES),
-		#outDir + "/var/perpopvar/vdonly.vcf.gz",
-		#outDir + "/var/perpopvar/vjonly.vcf.gz",
-		#outDir + "/var/perpopvar/exclude_vsp.vcf.gz",
-		#expand(outDir + "/var/chrmvcf/{chromosome}.vcf.gz", chromosome = CHROMOSOMES),
-		#expand(outDir + "/ngsadmix/vdGL/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES),
-		#outDir + "/ngsadmix/vdGL/vd_sevenchr.BEAGLE.GL",
-		#expand(outDir + "/ngsadmix/vjGL/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES),
-		#outDir + "/ngsadmix/vdGL/vj_sevenchr.BEAGLE.GL",
-		#expand(outDir + "/ngsadmix/38GL/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES)
-		#outDir + "/ngsadmix/38GL/38_sevenchr.BEAGLE.GL"
+                expand(outDir + "/ngsadmix/vdGL/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES)
 		
 ##---- PART1 ---- Check the host identity by mapping reads on honey bee reference genome
 ## Use only mitochondrial DNA to verify host identity
@@ -487,50 +476,50 @@ rule selectVariant:
 		tabix -p vcf {output.bgzip}
 		"""
 
-#rule destructorvcf:
-#	input: outDir + "/var/primitives.vcf.gz"
-#        output: destructor = outDir + "/var/perpopvar/vdonly.vcf",
-#		bgzip = outDir + "/var/perpopvar/vdonly.vcf.gz"
-#	shell:
-#                """
-#                gatk SelectVariants -R {vdRef} --variant {input} --output {output.destructor} --exclude-sample-expressions "VJ" --exclude-sample-expressions "VD78"
-#                bgzip -c {output.destructor} > {output.bgzip}
-#		tabix -p vcf {output.bgzip}
-#		"""
+rule destructorvcf:
+	input: outDir + "/var/primitives.vcf.gz"
+        output: destructor = outDir + "/var/perpopvar/vdonly.vcf",
+		bgzip = outDir + "/var/perpopvar/vdonly.vcf.gz"
+	shell:
+                """
+                gatk SelectVariants -R {vdRef} --variant {input} --output {output.destructor} --exclude-sample-expressions "VJ" --exclude-sample-expressions "VD78"
+                bgzip -c {output.destructor} > {output.bgzip}
+		tabix -p vcf {output.bgzip}
+		"""
 
-#rule jacobsonivcf:
-#        input: outDir + "/var/primitives.vcf.gz"
-#        output: jacob = outDir + "/var/perpopvar/vjonly.vcf",
-#                bgzip = outDir + "/var/perpopvar/vjonly.vcf.gz"
-#        shell:
-#                """
-#                gatk SelectVariants -R {vdRef} --variant {input} --output {output.jacob} --exclude-sample-expressions "VD" --exclude-sample-expressions "VJ028"
-#                bgzip -c {output.jacob} > {output.bgzip}
-#                tabix -p vcf {output.bgzip}
-#		"""
+rule jacobsonivcf:
+        input: outDir + "/var/primitives.vcf.gz"
+        output: jacob = outDir + "/var/perpopvar/vjonly.vcf",
+                bgzip = outDir + "/var/perpopvar/vjonly.vcf.gz"
+        shell:
+                """
+                gatk SelectVariants -R {vdRef} --variant {input} --output {output.jacob} --exclude-sample-expressions "VD" --exclude-sample-expressions "VJ028"
+                bgzip -c {output.jacob} > {output.bgzip}
+                tabix -p vcf {output.bgzip}
+		"""
 
-#rule noVsp_vcf:
-#        input: outDir + "/var/primitives.vcf.gz"
-#        output: vdvjdake = outDir + "/var/perpopvar/exclude_vsp.vcf",
-#                bgzip = outDir + "/var/perpopvar/exclude_vsp.vcf.gz"
-#        shell:
-#                """
-#                gatk SelectVariants -R {vdRef} --variant {input} --output {output.vdvjdake} --exclude-sample-expressions "VD78" --exclude-sample-expressions "VJ028"
-#                bgzip -c {output.vdvjdake} > {output.bgzip}
-#                tabix -p vcf {output.bgzip}
-#		"""
+rule noVsp_vcf:
+        input: outDir + "/var/primitives.vcf.gz"
+        output: vdvjdake = outDir + "/var/perpopvar/exclude_vsp.vcf",
+                bgzip = outDir + "/var/perpopvar/exclude_vsp.vcf.gz"
+        shell:
+                """
+                gatk SelectVariants -R {vdRef} --variant {input} --output {output.vdvjdake} --exclude-sample-expressions "VD78" --exclude-sample-expressions "VJ028"
+                bgzip -c {output.vdvjdake} > {output.bgzip}
+                tabix -p vcf {output.bgzip}
+		"""
 
-# Cut the big vcf file to load it easily into igv and decide with regions to choose for future IMa2 runs
-#rule selectVarChrom:
-#        input: outDir + "/var/primitives.vcf.gz"
-#        output: chrom = temp(outDir + "/var/chrmvcf/{chromosome}.vcf"),
-#                bgzip = temp(outDir + "/var/chrmvcf/{chromosome}.vcf.gz")
-#        shell:
-#                """
-#                gatk SelectVariants -R {vdRef} --variant {input} --output {output.chrom} -L {wildcards.chromosome}
-#                bgzip -c {output.chrom} > {output.bgzip}
-#                tabix -p vcf {output.bgzip}
-#		"""
+## Cut the big vcf file to load it easily into igv and decide with regions to choose for future IMa2 runs
+rule selectVarChrom:
+        input: outDir + "/var/primitives.vcf.gz"
+        output: chrom = temp(outDir + "/var/chrmvcf/{chromosome}.vcf"),
+                bgzip = temp(outDir + "/var/chrmvcf/{chromosome}.vcf.gz")
+        shell:
+                """
+                gatk SelectVariants -R {vdRef} --variant {input} --output {output.chrom} -L {wildcards.chromosome}
+                bgzip -c {output.chrom} > {output.bgzip}
+                tabix -p vcf {output.bgzip}
+		"""
 
 ### Before this step we need to remove the excess vcf header here
 ##using GATK 3.8
@@ -546,16 +535,8 @@ rule vcf2GL:
 	output: temp(outDir + "/ngsadmix/all44/{chromosome}.BEAGLE.GL")
 	shell:
 		"""
-		vcftools --gzvcf {input} --BEAGLE-GL --chr {wildcards.chromosome} --stdout > {output}
+		vcftools --gzvcf {input} --chr {wildcards.chromosome} --out /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/all44/{wildcards.chromosome} --BEAGLE-GL
 		"""
-
-rule vcf2GLTEST:
-	input: outDir + "/var/primitives.vcf.gz"
-        output: temp(outDir + "/ngsadmix/test/{chromosome}.BEAGLE.GL")
-        shell:
-                """
-                vcftools --gzvcf {input} --BEAGLE-GL --chr {wildcards.chromosome} --out {wildcards.chromosome}
-                """
 
 rule mergeGL:
 	input: expand(outDir + "/ngsadmix/all44/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES)
@@ -565,53 +546,22 @@ rule mergeGL:
 		(head -1 {input[0]}; for i in {input} do; cat $i | sed 1d; done) > {output}
 		"""
 
-#rule vcf2GL_VD:
-#        input: outDir + "/var/perpopvar/vdonly.vcf.gz"
-#        output: temp(outDir + "/ngsadmix/vdGL/{chromosome}.BEAGLE.GL")
-#        shell:
-#                """
-#                vcftools --gzvcf {input} --BEAGLE-GL --chr {wildcards.chromosome} --stdout > {output}
-#                """
-
-#rule mergeGL_VD:
-#        input: expand(outDir + "/ngsadmix/vdGL/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES)
-#        output: outDir + "/ngsadmix/vdGL/vd_sevenchr.BEAGLE.GL"
-#        shell:
-#                """
-#                (head -1 {input[0]}; for i in {input} do; cat $i | sed 1d; done) > {output}
-#                """
-
-#rule vcf2GL_VJ:
-#        input: outDir + "/var/perpopvar/vjonly.vcf.gz"
-#        output: temp(outDir + "/ngsadmix/vjGL/{chromosome}.BEAGLE.GL")
-#        shell:
-#                """
-#                vcftools --gzvcf {input} --BEAGLE-GL --chr {wildcards.chromosome} --stdout > {output}
-#                """
-
-#rule mergeGL_VJ:
-#        input: expand(outDir + "/ngsadmix/vjGL/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES)
-#        output: outDir + "/ngsadmix/vdGL/vj_sevenchr.BEAGLE.GL"
-#        shell:
-#                """
-#                (head -1 {input[0]}; for i in {input} do; cat $i | sed 1d; done) > {output}
-#                """
-
-#rule vcf2GL_exclude:
-#        input: outDir + "/var/perpopvar/exclude_vsp.vcf.gz"
-#        output: temp(outDir + "/ngsadmix/38GL/{chromosome}.BEAGLE.GL")
-#        shell:
-#                """
-#                vcftools --gzvcf {input} --BEAGLE-GL --chr {wildcards.chromosome} --stdout > {output}
-#                """
-
-#rule mergeGL_exclude:
-#        input: expand(outDir + "/ngsadmix/38GL/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES)
-#        output: outDir + "/ngsadmix/38GL/38_sevenchr.BEAGLE.GL"
-#        shell:
-#                """
-#                (head -1 {input[0]}; for i in {input} do; cat $i | sed 1d; done) > {output}
-#                """
+rule vcf2GL_VD:
+	input: outDir + "/var/perpopvar/vdonly.vcf.gz"
+	output: temp(outDir + "/ngsadmix/vdGL/{chromosome}.BEAGLE.GL")
+	shell:
+		"""
+		vcftools --gzvcf {input} --chr {wildcards.chromosome} --out /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/vdGL/{wildcards.chromosome} --BEAGLE-GL
+		"""
+		
+rule mergeGL_VD:
+	input: expand(outDir + "/ngsadmix/vdGL/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES)
+	output: outDir + "/ngsadmix/vdGL/sevenchr.BEAGLE.GL"
+	shell:
+		"""
+		(head -1 {input[0]}; for i in {input} do; cat $i | sed 1d; done) > {output}
+		"""
+		
 #rule NGSadmix:
 #		input: outDir + "/[PATH]/xxx.BEAGLE.GL"
 #		threads: 12
