@@ -95,30 +95,36 @@ rule removeHost:
 rule checkmellifera:
 	input:
 		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
-		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz"
+		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
 	output: alignment = temp(outDir + "/hostbee/mellifera/{sample}.bam"),
 		index = temp(outDir + "/hostbee/mellifera/{sample}.bam.bai")
-	shell: """bowtie2 -p {threads} --very-sensitive-local --sam-rg ID:{wildcards.sample} --sam-rg LB:Nextera --sam-rg SM:{wildcards.sample} --sam-rg PL:ILLUMINA -x {melliferamt} -1 {input.read1} -2 {input.read2} | samtools view -Su -q20 -F4 - | samtools sort - -m 55G -T {SCRATCH}/bowtie/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
+	shell: 
+		"""
+		bowtie2 -p {threads} --very-sensitive-local --sam-rg ID:{wildcards.sample} --sam-rg LB:Nextera --sam-rg SM:{wildcards.sample} --sam-rg PL:ILLUMINA -x {melliferamt} -1 {input.read1} -2 {input.read2} | samtools view -Su -q20 -F4 - | samtools sort - -m 55G -T {SCRATCH}/bowtie/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
 		samtools index {output.alignment}
 	       """
 		
 rule checkcerana:
 	input:
 		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
-		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz"
+		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
 	output: alignment = temp(outDir + "/hostbee/cerana/{sample}.bam"),
                 index = temp(outDir + "/hostbee/cerana/{sample}.bam.bai")
-	shell: """bowtie2 -p {threads} --very-sensitive-local --sam-rg ID:{wildcards.sample} --sam-rg LB:Nextera --sam-rg SM:{wildcards.sample} --sam-rg PL:ILLUMINA -x {ceranamt} -1 {input.read1} -2 {input.read2} | samtools view -Su -F4 - | samtools sort - -m 55G -T {SCRATCH}/bowtie/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
+	shell: 
+		"""
+		bowtie2 -p {threads} --very-sensitive-local --sam-rg ID:{wildcards.sample} --sam-rg LB:Nextera --sam-rg SM:{wildcards.sample} --sam-rg PL:ILLUMINA -x {ceranamt} -1 {input.read1} -2 {input.read2} | samtools view -Su -F4 - | samtools sort - -m 55G -T {SCRATCH}/bowtie/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
                 samtools index {output.alignment}
                """
 
 rule checkflorea:
         input:
                 read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
-                read2 = outDir + "/reads/{sample}-R2_001.fastq.gz"
+                read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
         output: alignment = temp(outDir + "/hostbee/florea/{sample}.bam"),
                 index = temp(outDir + "/hostbee/florea/{sample}.bam.bai")
-        shell: """bowtie2 -p {threads} --very-sensitive-local --sam-rg ID:{wildcards.sample} --sam-rg LB:Nextera --sam-rg SM:{wildcards.sample} --sam-rg PL:ILLUMINA -x {floreamt} -1 {input.read1} -2 {input.read2} | samtools view -Su -F4 - | samtools sort - -m 55G -T {SCRATCH}/bowtie/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
+        shell: 
+		"""
+		bowtie2 -p {threads} --very-sensitive-local --sam-rg ID:{wildcards.sample} --sam-rg LB:Nextera --sam-rg SM:{wildcards.sample} --sam-rg PL:ILLUMINA -x {floreamt} -1 {input.read1} -2 {input.read2} | samtools view -Su -F4 - | samtools sort - -m 55G -T {SCRATCH}/bowtie/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
                 samtools index {output.alignment}
                """
 
@@ -469,16 +475,16 @@ rule vcf2fasta_mtdna:
 			
 ##Be careful, GATK version 4.0.0 have a slight different program option than the 3.0 version. As example, FastaAlternateReferenceMaker is not available in 4.0.0.
 ##using GATK 4.0.0
-#rule selectVariant:
-#	input: outDir + "/var/primitives.vcf.gz"
-#	output: indiv = temp(outDir + "/var/singlevcf/{sample}.vcf"),
-#		bgzip = temp(outDir + "/var/singlevcf/{sample}.vcf.gz")
-#	shell: 
-#		"""
-#		gatk SelectVariants -R {vdRef} --variant {input} --output {output.indiv} -sn {wildcards.sample}
-#		bgzip -c {output.indiv} > {output.bgzip}
-#		tabix -p vcf {output.bgzip}
-#		"""
+rule selectVariant:
+	input: outDir + "/var/primitives.vcf.gz"
+	output: indiv = temp(outDir + "/var/singlevcf/selectvariants/{sample}.vcf"),
+		bgzip = temp(outDir + "/var/singlevcf/selectvariants/{sample}.vcf.gz")
+	shell: 
+		"""
+		gatk SelectVariants -R {vdRef} --variant {input} --output {output.indiv} -sn {wildcards.sample}
+		bgzip -c {output.indiv} > {output.bgzip}
+		tabix -p vcf {output.bgzip}
+		"""
 
 rule bcftools_indiv:
 	input: outDir + "/var/primitives.vcf.gz"
@@ -511,12 +517,9 @@ rule bcftools_chrom:
 		"""
 		
 rule bcftools_Ima2:
-        input: variant = outDir + "/var/primitives.vcf.gz",
-		thechosenone = outDir + "/ima2/imindiv"
-        output: temp(outDir + "/ima2/{locus}.vcf.gz")
-        shell:
-                """
-                bcftools view -Oz -S {input.thechosenone} -r {wildcards.locus} {input.variant} > {output}
+        input: variant= outDir + "/var/primitives.vcf.gz", chosen= outDir + "/ima2/imindiv.txt"
+	output: temp(outDir + "/ima2/{locus}.vcf.gz")
+	shell:"""bcftools view -Oz -S {input.chosen} -r {wildcards.locus} {input.variant} > {output}
 		tabix -p vcf {output}
 		"""
 
