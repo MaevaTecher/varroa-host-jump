@@ -49,10 +49,7 @@ for regionmt in REGIONSMT:
 ## Pseudo rule for build-target
 rule all:
 	input: 	expand(outDir + "/alignments-new/ngm/{sample}.bam", sample = SAMPLES), 
-		expand(outDir + "/alignments-new/ngm/{sample}.bam.bai", sample = SAMPLES),
-		expand(outDir + "/var/singlevcf/{sample}.vcf.gz", sample = SAMPLES),
-		expand(outDir + "/var/chrmvcf/bcftools/{chromosome}.vcf.gz", chromosome = CHROMOSOMES),
-		expand(outDir + "/ima2/{locus}.vcf.gz", locus = LOCI)
+		expand(outDir + "/alignments-new/ngm/{sample}.bam.bai", sample = SAMPLES)
 		
 ##---- PART1 ---- Check the host identity by mapping reads on honey bee reference genome
 ## Use only mitochondrial DNA to verify host identity
@@ -95,38 +92,38 @@ rule removeHost:
 rule checkmellifera:
 	input:
 		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
-		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
+		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz"
 	output: alignment = temp(outDir + "/hostbee/mellifera/{sample}.bam"),
 		index = temp(outDir + "/hostbee/mellifera/{sample}.bam.bai")
 	shell: 
 		"""
 		bowtie2 -p {threads} --very-sensitive-local --sam-rg ID:{wildcards.sample} --sam-rg LB:Nextera --sam-rg SM:{wildcards.sample} --sam-rg PL:ILLUMINA -x {melliferamt} -1 {input.read1} -2 {input.read2} | samtools view -Su -q20 -F4 - | samtools sort - -m 55G -T {SCRATCH}/bowtie/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
 		samtools index {output.alignment}
-	       """
+	    	"""
 		
 rule checkcerana:
 	input:
 		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
-		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
+		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz"
 	output: alignment = temp(outDir + "/hostbee/cerana/{sample}.bam"),
                 index = temp(outDir + "/hostbee/cerana/{sample}.bam.bai")
 	shell: 
 		"""
 		bowtie2 -p {threads} --very-sensitive-local --sam-rg ID:{wildcards.sample} --sam-rg LB:Nextera --sam-rg SM:{wildcards.sample} --sam-rg PL:ILLUMINA -x {ceranamt} -1 {input.read1} -2 {input.read2} | samtools view -Su -F4 - | samtools sort - -m 55G -T {SCRATCH}/bowtie/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
                 samtools index {output.alignment}
-               """
+               	"""
 
 rule checkflorea:
         input:
                 read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
-                read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
+                read2 = outDir + "/reads/{sample}-R2_001.fastq.gz"
         output: alignment = temp(outDir + "/hostbee/florea/{sample}.bam"),
                 index = temp(outDir + "/hostbee/florea/{sample}.bam.bai")
         shell: 
 		"""
 		bowtie2 -p {threads} --very-sensitive-local --sam-rg ID:{wildcards.sample} --sam-rg LB:Nextera --sam-rg SM:{wildcards.sample} --sam-rg PL:ILLUMINA -x {floreamt} -1 {input.read1} -2 {input.read2} | samtools view -Su -F4 - | samtools sort - -m 55G -T {SCRATCH}/bowtie/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
                 samtools index {output.alignment}
-               """
+               	"""
 
 ##---- PART2 ---- Exploratory analysis on reads that only mapped on Varroa genomes + variant calling
 
@@ -155,24 +152,6 @@ rule bowtie2:
 		bowtie2 -p {threads} --very-sensitive-local --sam-rg ID:{wildcards.sample} --sam-rg LB:Nextera --sam-rg SM:{wildcards.sample} --sam-rg PL:ILLUMINA  --un-conc-gz  {outDir}/reads_unmapped_new/{wildcards.sample} -x {varroaBowtieIndex} -1 {input.read1} -2 {input.read2} | samtools view -Su - | samtools sort - -m 55G -T {SCRATCH}/bowtie/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
 		samtools index {output.alignment}
 		"""
-
-#FIXME: move into botwie2 code, simplify botwi2 rule in cluster.json
-# collect unmapped reads for host screening
-# rule collectUnmapped:
-# 	input:
-# 		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
-# 		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
-# 	threads: 12
-# 	output: 
-# 		read1 = outDir + "/reads_unmapped/{sample}.1.fastq.gz",
-# 		read2 = outDir + "/reads_unmapped/{sample}.2.fastq.gz",
-# 	shell:
-# 		"""
-# 		module load bowtie2/2.2.6 
-# 		bowtie2 -p {threads} --very-sensitive-local -x {varroaBowtieIndex} -1 {input.read1} -2 {input.read2} --un-conc-gz  {outDir}/reads_unmapped/{wildcards.sample} > /dev/null
-# 		mv {outDir}/reads_unmapped/{wildcards.sample}.1 {output.read1}
-# 		mv {outDir}/reads_unmapped/{wildcards.sample}.2 {output.read2}				
-# 		"""		
 
 rule kraken:
 	input: outDir + "/reads_unmapped/{sample}.1.fastq.gz", outDir + "/reads_unmapped/{sample}.2.fastq.gz"
@@ -517,9 +496,13 @@ rule bcftools_chrom:
 		"""
 		
 rule bcftools_Ima2:
-        input: variant= outDir + "/var/primitives.vcf.gz", chosen= outDir + "/ima2/imindiv.txt"
+	input:
+		variant = outDir + "/var/primitives.vcf.gz",
+		chosen = outDir + "/ima2/imindiv.txt"
 	output: temp(outDir + "/ima2/{locus}.vcf.gz")
-	shell:"""bcftools view -Oz -S {input.chosen} -r {wildcards.locus} {input.variant} > {output}
+	shell:
+		"""
+		bcftools view -Oz -S {input.chosen} -r {wildcards.locus} {input.variant} > {output}
 		tabix -p vcf {output}
 		"""
 
