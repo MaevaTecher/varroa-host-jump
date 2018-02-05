@@ -50,11 +50,9 @@ for regionmt in REGIONSMT:
 rule all:
 	input: 	expand(outDir + "/alignments-new/ngm/{sample}.bam", sample = SAMPLES), 
 		expand(outDir + "/alignments-new/ngm/{sample}.bam.bai", sample = SAMPLES),
-		expand(outDir + "/alignments-new/bowtie2/{sample}.bam", sample = SAMPLES), 
-		expand(outDir + "/alignments-new/bowtie2/{sample}.bam.bai", sample = SAMPLES),
-		expand(outDir + "/reads_unmapped_new/{sample}.1", sample = SAMPLES),
-		expand(outDir + "/reads_unmapped_new/{sample}.2", sample = SAMPLES)
-                #expand(outDir + "/ngsadmix/vdGL/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES)
+		expand(outDir + "/var/singlevcf/{sample}.vcf.gz", sample = SAMPLES),
+		expand(outDir + "/var/chrmvcf/bcftools/{chromosome}.vcf.gz", chromosome = CHROMOSOMES),
+		expand(outDir + "/ima2/{locus}.vcf.gz", locus = LOCI)
 		
 ##---- PART1 ---- Check the host identity by mapping reads on honey bee reference genome
 ## Use only mitochondrial DNA to verify host identity
@@ -471,60 +469,55 @@ rule vcf2fasta_mtdna:
 			
 ##Be careful, GATK version 4.0.0 have a slight different program option than the 3.0 version. As example, FastaAlternateReferenceMaker is not available in 4.0.0.
 ##using GATK 4.0.0
-rule selectVariant:
+#rule selectVariant:
+#	input: outDir + "/var/primitives.vcf.gz"
+#	output: indiv = temp(outDir + "/var/singlevcf/{sample}.vcf"),
+#		bgzip = temp(outDir + "/var/singlevcf/{sample}.vcf.gz")
+#	shell: 
+#		"""
+#		gatk SelectVariants -R {vdRef} --variant {input} --output {output.indiv} -sn {wildcards.sample}
+#		bgzip -c {output.indiv} > {output.bgzip}
+#		tabix -p vcf {output.bgzip}
+#		"""
+
+rule bcftools_indiv:
 	input: outDir + "/var/primitives.vcf.gz"
-	output: indiv = temp(outDir + "/var/singlevcf/{sample}.vcf"),
-		bgzip = temp(outDir + "/var/singlevcf/{sample}.vcf.gz")
+	output: temp(outDir + "/var/singlevcf/{sample}.vcf.gz")
 	shell: 
 		"""
-		gatk SelectVariants -R {vdRef} --variant {input} --output {output.indiv} -sn {wildcards.sample}
-		bgzip -c {output.indiv} > {output.bgzip}
-		tabix -p vcf {output.bgzip}
+		bcftools view -Oz -s {wildcards.sample} {input} > {output}
+		tabix -p vcf {output}
 		"""
-
-#rule destructorvcf:
-#	input: outDir + "/var/primitives.vcf.gz"
-#       output: destructor = outDir + "/var/perpopvar/vdonly.vcf",
-#		bgzip = outDir + "/var/perpopvar/vdonly.vcf.gz"
-#	shell:
-#               """
-#               gatk SelectVariants -R {vdRef} --variant {input} --output {output.destructor} --exclude-sample-expressions "VJ" --exclude-sample-expressions "VD78"
-#               bgzip -c {output.destructor} > {output.bgzip}
-#		tabix -p vcf {output.bgzip}
-#		"""	
-		
-#rule jacobsonivcf:
-#        input: outDir + "/var/primitives.vcf.gz"
-#        output: jacob = outDir + "/var/perpopvar/vjonly.vcf",
-#                bgzip = outDir + "/var/perpopvar/vjonly.vcf.gz"
-#        shell:
-#                """
-#                gatk SelectVariants -R {vdRef} --variant {input} --output {output.jacob} --exclude-sample-expressions "VD" --exclude-sample-expressions "VJ028"
-#                bgzip -c {output.jacob} > {output.bgzip}
-#                tabix -p vcf {output.bgzip}
-#		"""
-
-#rule noVsp_vcf:
-#        input: outDir + "/var/primitives.vcf.gz"
-#        output: vdvjdake = outDir + "/var/perpopvar/exclude_vsp.vcf",
-#                bgzip = outDir + "/var/perpopvar/exclude_vsp.vcf.gz"
-#        shell:
-#                """
-#                gatk SelectVariants -R {vdRef} --variant {input} --output {output.vdvjdake} --exclude-sample-expressions "VD78" --exclude-sample-expressions "VJ028"
-#                bgzip -c {output.vdvjdake} > {output.bgzip}
-#                tabix -p vcf {output.bgzip}
-#		"""
 
 ## Cut the big vcf file to load it easily into igv and decide with regions to choose for future IMa2 runs
 rule selectVarChrom:
         input: outDir + "/var/primitives.vcf.gz"
-        output: chrom = temp(outDir + "/var/chrmvcf/{chromosome}.vcf"),
-                bgzip = temp(outDir + "/var/chrmvcf/{chromosome}.vcf.gz")
+        output: chrom = temp(outDir + "/var/chrmvcf/selectvariants/{chromosome}.vcf"),
+                bgzip = temp(outDir + "/var/chrmvcf/selectvariants/{chromosome}.vcf.gz")
         shell:
                 """
                 gatk SelectVariants -R {vdRef} --variant {input} --output {output.chrom} -L {wildcards.chromosome}
                 bgzip -c {output.chrom} > {output.bgzip}
                 tabix -p vcf {output.bgzip}
+		"""
+		
+rule bcftools_chrom:
+        input: outDir + "/var/primitives.vcf.gz"
+        output: temp(outDir + "/var/chrmvcf/bcftools/{chromosome}.vcf.gz")
+        shell:
+                """
+                bcftools view -Oz -r {wildcards.chromosome} {input} > {output}
+		tabix -p vcf {output}
+		"""
+		
+rule bcftools_Ima2:
+        input: variant = outDir + "/var/primitives.vcf.gz",
+		thechosenone = outDir + "/ima2/imindiv"
+        output: temp(outDir + "/ima2/{locus}.vcf.gz")
+        shell:
+                """
+                bcftools view -Oz -S {input.thechosenone} -r {wildcards.locus} {input.variant} > {output}
+		tabix -p vcf {output}
 		"""
 
 ### Before this step we need to remove the excess vcf header here
