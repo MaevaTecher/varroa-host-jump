@@ -54,8 +54,9 @@ for regionmt in REGIONSMT:
 ## Pseudo rule for build-target
 rule all:
 	input: 	#expand(outDir + "/ima2/nuclearloci/{locus}.vcf.gz", locus = LOCI),
-		expand(outDir + "/ima2/nuclearloci/eight/{candidate}-new.vcf", candidate = CANDIDATE),
-		expand(outDir + "/ima2/nuclearloci/eight/fasta/{imavarroa}_{candidate}.fasta", candidate = CANDIDATE, imavarroa = IMAVARROA)
+		#expand(outDir + "/ima2/nuclearloci/eight/{candidate}-new.vcf", candidate = CANDIDATE),
+		#expand(outDir + "/ima2/nuclearloci/eight/fasta/{imavarroa}_{candidate}.fasta", candidate = CANDIDATE, imavarroa = IMAVARROA),
+                expand(outDir + "/ima2/input/{candidate}.u", candidate = CANDIDATE)
 
 ##---- PART1 ---- Check the host identity by mapping reads on honey bee reference genome
 ## Use only mitochondrial DNA to verify host identity
@@ -562,13 +563,14 @@ rule fastaMaker:
 		"""
 #for the moment I did by hand to change the header
 #using sed -i.bak "1 s/^.*$/$new_header/" inputfile
+#cat the fasta by hand too
 
 rule pgdspider:
-	input: 	sequence = outDir + "/ima2/XX.fasta",
+	input: 	fasta = outDir + "/ima2/nuclearloci/eight/fasta/{candidate}.fasta",
 		formula = outDir + "/ima2/fasta2Ima2.spid"
-	output: outDir + "/ima2/varroa49loci.u"
+	output: temp(outDir + "/ima2/input/{candidate}.u")
 	shell:
 		"""
-		java -Xmx1024m -Xms512m -jar /apps/unit/MikheyevU/Maeva/PGDSpider_2.1.1.3/PGDSpider2-cli.jar -inputfile {input.sequence} -inputformat FASTA -output {output} -outputformat IMA2 -spid {input.formula}
+		java -Xmx1024m -Xms512m -jar /apps/unit/MikheyevU/Maeva/PGDSpider_2.1.1.3/PGDSpider2-cli.jar -inputfile {input.fasta} -inputformat FASTA -output {output} -outputformat IMA2 -spid {input.formula}
 		"""
 
