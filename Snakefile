@@ -48,13 +48,7 @@ for regionmt in REGIONSMT:
 
 ## Pseudo rule for build-target
 rule all:
-	input: 	expand(outDir + "/ngsadmix/all44/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES),
-		expand(outDir + "/var/subset/singlevcf/selectvariants/{sample}.vcf", sample = SAMPLES),
-		expand(outDir + "/var/subset/singlevcf/selectvariants/{sample}.vcf.gz", sample = SAMPLES),
-		expand(outDir + "/var/subset/singlevcf/bcftools/{sample}.vcf.gz", sample = SAMPLES),
-		expand(outDir + "/var/subset/chromosome/selectvariants/{chromosome}.vcf", chromosome = CHROMOSOMES),
-                expand(outDir + "/var/subset/chromosome/selectvariants/{chromosome}.vcf.gz", chromosome = CHROMOSOMES),
-		expand(outDir + "/var/subset/chromosome/bcftools/{chromosome}.vcf.gz", chromosome = CHROMOSOMES)
+	input: 	expand(outDir + "/ima2/nuclearloci/{locus}.vcf.gz", locus = LOCI)
 		
 ##---- PART1 ---- Check the host identity by mapping reads on honey bee reference genome
 ## Use only mitochondrial DNA to verify host identity
@@ -527,7 +521,15 @@ rule bcftools_chrom:
 		"""
 		
 rule getIMvcf:
-	input: outDir + "/var/primitives.vcf.gz" 
+	input: 	variant = outDir + "/var/primitives.vcf.gz",
+		indiv = outDir + "/ima2/imindiv.txt"
+	output:	temp(outDir + "/ima2/nuclearloci/{locus}.vcf.gz")
+	shell:
+		"""
+		bcftools view -Oz -S {input.indiv} -r {wildcards.locus} {input.variant} > {output}
+		tabix -p vcf {output}
+		"""
+
 ### Before this step we need to remove the excess vcf header here
 ##using GATK 3.8
 rule fastaMaker:
@@ -537,3 +539,13 @@ rule fastaMaker:
 		""""
 		java -jar /apps/unit/MikheyevU/Maeva/GATK/GenomeAnalysisTK.jar -T FastaAlternateReferenceMaker -R {vdRef} -L {wildcards.locus} -V {input} -IUPAC {wildcards.sample} -o {output} 
 		"""
+
+rule pgdspider:
+	input: 	sequence = outDir + "/ima2/XX.fasta",
+		formula = outDir + "/ima2/fasta2Ima2.spid"
+	output: outDir + "/ima2/varroa49loci.u"
+	shell:
+		"""
+		java -Xmx1024m -Xms512m -jar /apps/unit/MikheyevU/Maeva/PGDSpider_2.1.1.3/PGDSpider2-cli.jar -inputfile {input.sequence} -inputformat FASTA -output {output} -outputformat IMA2 -spid {input.formula}
+		"""
+
