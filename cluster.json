@@ -57,9 +57,9 @@
     },
     "nextgenmap":
     {
-        "cpus-per-task" : 12,
+        "cpus-per-task" : 6,
         "partition" : "compute",
-        "mem" : "80G",
+        "mem" : "110G",
         "time": "2-00:00:00"
     },
     "ngmVJ":

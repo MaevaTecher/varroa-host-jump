@@ -1,11 +1,12 @@
 ## Population genetic analysis of Varroa on native and introduced hosts
 from scripts.split_fasta_regions import split_fasta
 from snakemake.utils import R
+import getpass
 
 ## Set path for input files and fasta reference genome
 outDir = "/work/MikheyevU/Maeva/varroa-jump/data"
 refDir = "/work/MikheyevU/Maeva/varroa-jump/ref" 
-SCRATCH  = "/work/scratch/maeva"
+SCRATCH  = "/work/scratch/" + getpass.getuser()
 
 ## Honey bee references from Apis mellifera & Apis cerana
 hostBeeBowtieIndex = refDir + "/bees/hostbee"
@@ -53,11 +54,10 @@ for regionmt in REGIONSMT:
 
 ## Pseudo rule for build-target
 rule all:
-	input: 	#expand(outDir + "/ima2/nuclearloci/{locus}.vcf.gz", locus = LOCI),
+	input: outDir + "/var/ngm/filtered_phased.vcf"	#expand(outDir + "/ima2/nuclearloci/{locus}.vcf.gz", locus = LOCI),
 		#expand(outDir + "/ima2/nuclearloci/eight/{candidate}-new.vcf", candidate = CANDIDATE),
 		#expand(outDir + "/ima2/nuclearloci/eight/fasta/{imavarroa}_{candidate}.fasta", candidate = CANDIDATE, imavarroa = IMAVARROA),
-                expand(outDir + "/alignments-new/ngm/{sample}.bam", sample = SAMPLES),
-		expand(outDir + "/alignments-new/ngm/{sample}.bam.bai", sample = SAMPLES)
+        
 
 ##---- PART1 ---- Check the host identity by mapping reads on honey bee reference genome
 ## Use only mitochondrial DNA to verify host identity
@@ -186,14 +186,14 @@ rule nextgenmap:
 	input:
 		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
 		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
-	threads: 12
+	threads: 6
 	output: 
 		alignment = temp(outDir + "/alignments-new/ngm/{sample}.bam"), 
 		index = temp(outDir + "/alignments-new/ngm/{sample}.bam.bai")
 	shell:
 		"""
 		module load NextGenMap/0.5.0 samtools/1.3.1 VariantBam/1.4.3
-		ngm -t {threads} -b  -1 {input.read1} -2 {input.read2} -r {vdRef} --rg-id {wildcards.sample} --rg-sm {wildcards.sample} --rg-pl ILLUMINA --rg-lb {wildcards.sample} | samtools sort - -m 80G -T {SCRATCH}/ngm/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
+		ngm -t {threads} -b  -1 {input.read1} -2 {input.read2} -r {vdRef} --rg-id {wildcards.sample} --rg-sm {wildcards.sample} --rg-pl ILLUMINA --rg-lb {wildcards.sample} | samtools sort - -m 50G -T {SCRATCH}/ngm/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
 		samtools index {output.alignment}
 		"""
 
@@ -228,6 +228,7 @@ rule freeBayes:
 		freebayes --min-alternate-fraction 0.2 --use-best-n-alleles 4 -m 5 -q 5 --populations {outDir}/var/pops.txt -b {params.bams} {params.span}  -f {vdRef} | vcffilter  -f "QUAL > 20 & NS > {params.missing}" > {output}
 		"""
 
+
 rule mergeVCF:
 	input: 
 		expand(outDir + "/var/{{aligner}}/split/freebayes.{region}.vcf", region = REGIONS)
@@ -256,6 +257,20 @@ rule filterVCF:
 		coverageCutoff=$(awk -v Nind=$Nind '{{sum+=$1}} END {{print "DP < "(sum / NR / Nind + sqrt(sum / NR / Nind) * 3 ) * Nind}}' {outDir}/var/{wildcards.aligner}/depth.txt)
 		echo Using coverage cutoff $coverageCutoff
 		vcffilter -s -f \"$coverageCutoff\" {input} | vcftools --vcf - --exclude-bed ref/destructor/masking_coordinates --max-alleles 2 --recode --stdout > {output}
+		"""
+
+rule whatshap:
+	input: 
+		vcf = outDir + "/var/ngm/filtered.vcf",
+		bams = expand(outDir + "/alignments-new/ngm/{sample}.bam", sample = SAMPLES)
+	output:
+		outDir + "/var/ngm/filtered_phased.vcf"
+	resources: mem=100, time = 60*24*7
+	threads: 1
+	shell:
+		"""
+		module load miniconda
+		whatshap phase -o {output} {input.vcf} {input.bams}
 		"""
 
 rule chooseMapper:
