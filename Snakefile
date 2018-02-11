@@ -54,7 +54,7 @@ for regionmt in REGIONSMT:
 
 ## Pseudo rule for build-target
 rule all:
-	input: outDir + "/var/ngm/filtered_phased.vcf"	#expand(outDir + "/ima2/nuclearloci/{locus}.vcf.gz", locus = LOCI),
+	input: expand(outDir + "/var/ngm/phased/{chromosome}/{individual}.txt", chromosome = CHROMOSOMES, individual = SAMPLES)	#expand(outDir + "/ima2/nuclearloci/{locus}.vcf.gz", locus = LOCI),
 		#expand(outDir + "/ima2/nuclearloci/eight/{candidate}-new.vcf", candidate = CANDIDATE),
 		#expand(outDir + "/ima2/nuclearloci/eight/fasta/{imavarroa}_{candidate}.fasta", candidate = CANDIDATE, imavarroa = IMAVARROA),
         
@@ -264,14 +264,26 @@ rule whatshap:
 		vcf = outDir + "/var/ngm/filtered.vcf",
 		bams = expand(outDir + "/alignments-new/ngm/{sample}.bam", sample = SAMPLES)
 	output:
-		outDir + "/var/ngm/filtered_phased.vcf"
+		outDir + "/var/ngm/filtered_phased_{chromosome}.vcf"
 	resources: mem=100, time = 60*24*7
 	threads: 1
 	shell:
 		"""
 		module load miniconda
-		whatshap phase -o {output} {input.vcf} {input.bams}
+		whatshap phase --chromosome {wildcards.chromosome} -o {output} {input.vcf} {input.bams}
 		"""
+
+rule whatshapReport:
+	input: rules.whatshap.output
+	output: outDir + "/var/ngm/phased/{chromosome}/{individual}.txt"
+	resources: mem=100, time = 60*24*7
+	threads: 1
+	shell:
+		"""
+		module load miniconda
+		whatshap stats --sample {wildcards.individual} --chromosome {wildcards.chromosome} --block-list {output} {input}
+		"""
+
 
 rule chooseMapper:
 	# The results are very similar between the two mappers, so we're going with the one that has the greatest number of variants
