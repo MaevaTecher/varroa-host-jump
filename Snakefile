@@ -1,11 +1,12 @@
 ## Population genetic analysis of Varroa on native and introduced hosts
 from scripts.split_fasta_regions import split_fasta
 from snakemake.utils import R
+import getpass
 
 ## Set path for input files and fasta reference genome
 outDir = "/work/MikheyevU/Maeva/varroa-jump/data"
 refDir = "/work/MikheyevU/Maeva/varroa-jump/ref" 
-SCRATCH  = "/work/scratch/maeva"
+SCRATCH  = "/work/scratch/" + getpass.getuser()
 
 ## Honey bee references from Apis mellifera & Apis cerana
 hostBeeBowtieIndex = refDir + "/bees/hostbee"
@@ -26,12 +27,7 @@ vdmtDNA = refDir + "/destructor/mtdnamite/VDAJ493124.fasta"
 ## For IM analysis
 CHROMOSOMES = ["BEIS01000001.1", "BEIS01000002.1", "BEIS01000003.1", "BEIS01000004.1", "BEIS01000005.1", "BEIS01000006.1", "BEIS01000007.1"] 
 
-LOCI = ["BEIS01000001.1:14000-24000", "BEIS01000001.1:7844000-7854000", "BEIS01000001.1:8495000-8505000", "BEIS01000001.1:10560000-10570000", "BEIS01000001.1:16107000-16117000", "BEIS01000001.1:35682000-35692000", "BEIS01000001.1:35702000-35712000","BEIS01000001.1:43798000-43808000", "BEIS01000001.1:49243000-49253000", "BEIS01000001.1:75533000-75543000", "BEIS01000002.1:22933000-22943000","BEIS01000002.1:25684000-25694000", "BEIS01000002.1:34008000-34018000", "BEIS01000002.1:34045000-34055000", "BEIS01000002.1:45932000-45942000","BEIS01000002.1:54791000-54801000", "BEIS01000002.1:54807000-54817000", "BEIS01000002.1:54823000-54833000", "BEIS01000003.1:27614000-27624000","BEIS01000003.1:27634000-27644000", "BEIS01000003.1:41207000-41217000", "BEIS01000003.1:41243000-41253000", "BEIS01000003.1:49103000-49113000","BEIS01000003.1:49771000-49781000", "BEIS01000003.1:54454000-54464000", "BEIS01000003.1:54481000-54491000", "BEIS01000003.1:54922000-54932000","BEIS01000003.1:55117000-55127000", "BEIS01000003.1:55247000-55257000", "BEIS01000003.1:55274000-55284000", "BEIS01000003.1:55415000-55425000","BEIS01000003.1:55582000-55592000", "BEIS01000003.1:55886000-55896000", "BEIS01000003.1:55937000-55947000", "BEIS01000003.1:55970000-55980000", "BEIS01000003.1:56008000-56018000", "BEIS01000003.1:56194000-56204000", "BEIS01000003.1:56207000-56217000", "BEIS01000004.1:18985000-18995000", "BEIS01000004.1:31669000-31679000", "BEIS01000004.1:32793000-32803000", "BEIS01000004.1:40297000-40307000", "BEIS01000005.1:34848000-34858000", "BEIS01000006.1:26794000-26804000", "BEIS01000006.1:30619000-30629000", "BEIS01000007.1:8850000-8860000", "BEIS01000007.1:35687000-35697000", "BEIS01000419.1:0-10000", "BEIS01000861.1:0-10000"]
-
-CANDIDATE = ["BEIS01000001.1:14000-24000", "BEIS01000001.1:10560000-10570000", "BEIS01000001.1:43798000-43808000", "BEIS01000002.1:34008000-34018000", "BEIS01000005.1:34848000-34858000", "BEIS01000006.1:26794000-26804000", "BEIS01000006.1:30619000-30629000", "BEIS01000007.1:35687000-35697000"]
-
 IMAVARROA = ["VD654_1", "VD657_1", "VD658_2", "VD622_1", "VD625_2", "VD639_1", "VJ325_1", "VJ333_1", "VJ341_1"]
-
 
 krakenDB = "/work/MikheyevU/kraken_db"
 
@@ -55,7 +51,7 @@ for regionmt in REGIONSMT:
 
 ## Pseudo rule for build-target
 rule all:
-	input: 	#expand(outDir + "/ima2/nuclearloci/{locus}.vcf.gz", locus = LOCI),
+	input: expand(outDir + "/var/ngm/phased/{chromosome}/{individual}.txt", chromosome = CHROMOSOMES, individual = SAMPLES)	#expand(outDir + "/ima2/nuclearloci/{locus}.vcf.gz", locus = LOCI),
 		#expand(outDir + "/ima2/nuclearloci/eight/{candidate}-new.vcf", candidate = CANDIDATE),
 		#expand(outDir + "/ima2/nuclearloci/eight/fasta/{imavarroa}_{candidate}.fasta", candidate = CANDIDATE, imavarroa = IMAVARROA),
                 expand(outDir + "/alignments/ngm/{sample}.bam", sample = SAMPLES),
@@ -189,15 +185,14 @@ rule nextgenmap:
 	input:
 		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
 		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
-	threads: 12
+	threads: 6
 	output: 
 		alignment = temp(outDir + "/alignments/ngm/{sample}.bam"), 
 		index = temp(outDir + "/alignments/ngm/{sample}.bam.bai")
 	shell:
 		"""
 		module load NextGenMap/0.5.0 samtools/1.3.1 VariantBam/1.4.3
-		ngm -t {threads} -b  -1 {input.read1} -2 {input.read2} -r {vdRef} --rg-id {wildcards.sample} --rg-sm {wildcards.sample} --rg-pl ILLUMINA --rg-lb {wildcards.sample} | samtools sort - -m 80G -T {SCRATCH}/ngm/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
-
+		ngm -t {threads} -b  -1 {input.read1} -2 {input.read2} -r {vdRef} --rg-id {wildcards.sample} --rg-sm {wildcards.sample} --rg-pl ILLUMINA --rg-lb {wildcards.sample} | samtools sort - -m 50G -T {SCRATCH}/ngm/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
 		samtools index {output.alignment}
 		"""
 
@@ -232,6 +227,7 @@ rule freeBayes:
 		freebayes --min-alternate-fraction 0.2 --use-best-n-alleles 4 -m 5 -q 5 --populations {outDir}/var/pops.txt -b {params.bams} {params.span}  -f {vdRef} | vcffilter  -f "QUAL > 20 & NS > {params.missing}" > {output}
 		"""
 
+
 rule mergeVCF:
 	input: 
 		expand(outDir + "/var/{{aligner}}/split/freebayes.{region}.vcf", region = REGIONS)
@@ -261,6 +257,32 @@ rule filterVCF:
 		echo Using coverage cutoff $coverageCutoff
 		vcffilter -s -f \"$coverageCutoff\" {input} | vcftools --vcf - --exclude-bed ref/destructor/masking_coordinates --max-alleles 2 --recode --stdout > {output}
 		"""
+
+rule whatshap:
+	input: 
+		vcf = outDir + "/var/ngm/filtered.vcf",
+		bams = expand(outDir + "/alignments-new/ngm/{sample}.bam", sample = SAMPLES)
+	output:
+		outDir + "/var/ngm/filtered_phased_{chromosome}.vcf"
+	resources: mem=100, time = 60*24*7
+	threads: 1
+	shell:
+		"""
+		module load miniconda
+		whatshap phase --chromosome {wildcards.chromosome} -o {output} {input.vcf} {input.bams}
+		"""
+
+rule whatshapReport:
+	input: rules.whatshap.output
+	output: outDir + "/var/ngm/phased/{chromosome}/{individual}.txt"
+	resources: mem=100, time = 60*24*7
+	threads: 1
+	shell:
+		"""
+		module load miniconda
+		whatshap stats --sample {wildcards.individual} --chromosome {wildcards.chromosome} --block-list {output} {input}
+		"""
+
 
 rule chooseMapper:
 	# The results are very similar between the two mappers, so we're going with the one that has the greatest number of variants
