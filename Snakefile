@@ -27,6 +27,7 @@ vdmtDNA = refDir + "/destructor/mtdnamite/VDAJ493124.fasta"
 ## For IM analysis
 CHROMOSOMES = ["BEIS01000001.1", "BEIS01000002.1", "BEIS01000003.1", "BEIS01000004.1", "BEIS01000005.1", "BEIS01000006.1", "BEIS01000007.1"] 
 IMAVARROA = ["VD654_1", "VD657_1", "VD658_2", "VD622_1", "VD625_2", "VD639_1", "VJ325_1", "VJ333_1", "VJ341_1"]
+TESTLOCI = ["BEIS01000001.1:15106332-15118046", "", "", "", "", "", "", "", "", "", "", "", "", ""]
 
 KCLUSTERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 
