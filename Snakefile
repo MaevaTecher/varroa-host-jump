@@ -27,7 +27,6 @@ vdmtDNA = refDir + "/destructor/mtdnamite/VDAJ493124.fasta"
 ## For IM analysis
 CHROMOSOMES = ["BEIS01000001.1", "BEIS01000002.1", "BEIS01000003.1", "BEIS01000004.1", "BEIS01000005.1", "BEIS01000006.1", "BEIS01000007.1"] 
 IMAVARROA = ["VD654_1", "VD657_1", "VD658_2", "VD622_1", "VD625_2", "VD639_1", "VJ325_1", "VJ333_1", "VJ341_1"]
-TESTLOCI = ["BEIS01000001.1:15106332-15118046", "", "", "", "", "", "", "", "", "", "", "", "", ""]
 
 KCLUSTERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 
@@ -259,6 +258,7 @@ rule ngmVJ:
 #		vcffilter -s -f \"$coverageCutoff\" {input} | vcftools --vcf - --exclude-bed ref/destructor/masking_coordinates --max-alleles 2 --recode --stdout > {output}
 #		"""
 
+### PHASING Part 
 rule whatshap:
 	input: 
 		vcf = outDir + "/var/ngm/filtered.vcf",
@@ -284,6 +284,29 @@ rule whatshapReport:
 		whatshap stats --sample {wildcards.individual} --chromosome {wildcards.chromosome} --block-list {output} {input}
 		"""
 
+# #awk -v OFS="\t" '($0~/0\/0/) || ($0~/1\/1/) {if($9!~/:PS/) $9=$9":PS"; gsub(/0\/0/, "0|0"); gsub(/1\/1/, "1|1"); print; next} {print}'
+
+## TAKEN from your script to merge everything
+# merge results from phasing, and remove undetermined species
+#rule mergePhased:
+#        input: expand(outDir + "/var/ngm/filtered_phased_{chromosome}.vcf", chromosome = CHROMOSOMES)
+#        output:
+#                vcf = outDir + "/var/ngm/phased.vcf",
+#                bed = outDir + "/var/ngm/phased.bed"
+#        resources: mem=10, time = 60
+#        threads: 1
+#        params: chroms = " ".join(CHROMOSOMES)
+#        shell:
+#                """
+#                module load vcftools
+#                (head -10000 {input[0]} |grep "^#" ;
+#                for i in {params.chroms}; do vcftools --vcf {outDir}/var/ngm/filtered_phased_"$i".vcf --chr $i --recode --stdout --mac 1 --remove-indels --remove {refDir}/sp.txt | grep -v "^#" ; done ) > {output.vcf} && [[ -s {output.vcf} ]]
+#                python3 scripts/longestBlock.py {output.vcf} > {output.bed} && [[ -s {output.bed} ]]
+#                """
+
+#rule getHaps:
+#        input: outDir + "/var/ngm/phased.bed"
+ #       output
 
 #rule chooseMapper:
 	# The results are very similar between the two mappers, so we're going with the one that has the greatest number of variants
@@ -600,7 +623,7 @@ rule exclude_admix:
                 NGSadmix -P {threads} -likes {input} -K {wildcards.kcluster} -outfiles /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/exclude-vsp/run/38indv_{wildcards.kcluster} -minMaf 0.1
                 """
 
-### FOR DEMOGRAPHIC
+### FOR DEMOGRAPHIC INFERENCES
 ##using GATK 4.0.0
 rule selectVariant:
 	input: outDir + "/var/primitives-sort.vcf.gz"
