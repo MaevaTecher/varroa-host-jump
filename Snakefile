@@ -53,8 +53,8 @@ for regionmt in REGIONSMT:
 
 ## Pseudo rule for build-target
 rule all:
-<<<<<<< HEAD
-	input: dynamic(outDir + "/var/ngm/phasedRegions/{phasedRegion}.fasta")#expand(outDir + "/ima2/nuclearloci/{locus}.vcf.gz", locus = LOCI),
+	input: 	dynamic(outDir + "/var/ngm/phasedRegions/{phasedRegion}.fasta")
+		#expand(outDir + "/ima2/nuclearloci/{locus}.vcf.gz", locus = LOCI),
 		#expand(outDir + "/ima2/nuclearloci/eight/{candidate}-new.vcf", candidate = CANDIDATE),
 		#expand(outDir + "/ima2/nuclearloci/eight/fasta/{imavarroa}_{candidate}.fasta", candidate = CANDIDATE, imavarroa = IMAVARROA),
 		#expand(outDir + "/ngsadmix/all44/run/all44_{kcluster}.fopt.gz", kcluster = KCLUSTERS),
