@@ -26,11 +26,6 @@ vjRef = refDir + "/jacobsoni/vj.fasta"
 vdmtDNABowtieIndex = refDir + "/destructor/mtdnamite/vdnavajas"
 vdmtDNA = refDir + "/destructor/mtdnamite/VDAJ493124.fasta"
 
-<<<<<<< HEAD
-
-=======
-## For IM analysis
->>>>>>> 3ec3cbe64cc01720d30e161891b3f26c27af2a41
 CHROMOSOMES = ["BEIS01000001.1", "BEIS01000002.1", "BEIS01000003.1", "BEIS01000004.1", "BEIS01000005.1", "BEIS01000006.1", "BEIS01000007.1"] 
 IMAVARROA = ["VD654_1", "VD657_1", "VD658_2", "VD622_1", "VD625_2", "VD639_1", "VJ325_1", "VJ333_1", "VJ341_1"]
 
@@ -62,13 +57,10 @@ rule all:
 	input: dynamic(outDir + "/var/ngm/phasedRegions/{phasedRegion}.fasta")#expand(outDir + "/ima2/nuclearloci/{locus}.vcf.gz", locus = LOCI),
 		#expand(outDir + "/ima2/nuclearloci/eight/{candidate}-new.vcf", candidate = CANDIDATE),
 		#expand(outDir + "/ima2/nuclearloci/eight/fasta/{imavarroa}_{candidate}.fasta", candidate = CANDIDATE, imavarroa = IMAVARROA),
-        
-=======
-	input: 	expand(outDir + "/ngsadmix/all44/run/all44_{kcluster}.fopt.gz", kcluster = KCLUSTERS),
-		expand(outDir + "/ngsadmix/vdonly/run/vd_{kcluster}.fopt.gz", kcluster = KCLUSTERS),
-		expand(outDir + "/ngsadmix/vjonly/run/vj_{kcluster}.fopt.gz", kcluster = KCLUSTERS),
-		expand(outDir + "/ngsadmix/exclude-vsp/run/38indv_{kcluster}.fopt.gz", kcluster = KCLUSTERS)
->>>>>>> 3ec3cbe64cc01720d30e161891b3f26c27af2a41
+		#expand(outDir + "/ngsadmix/all44/run/all44_{kcluster}.fopt.gz", kcluster = KCLUSTERS),
+		#expand(outDir + "/ngsadmix/vdonly/run/vd_{kcluster}.fopt.gz", kcluster = KCLUSTERS),
+		#expand(outDir + "/ngsadmix/vjonly/run/vj_{kcluster}.fopt.gz", kcluster = KCLUSTERS),
+		#expand(outDir + "/ngsadmix/exclude-vsp/run/38indv_{kcluster}.fopt.gz", kcluster = KCLUSTERS)
 
 ##---- PART1 ---- Check the host identity by mapping reads on honey bee reference genome
 ## Use only mitochondrial DNA to verify host identity
@@ -305,7 +297,6 @@ rule mergePhased:
 		python3 scripts/longestBlock.py <(zcat {output.vcf}) > {output.bed} && [[ -s {output.bed} ]]
 		"""
 
-<<<<<<< HEAD
 rule getHaps:
 	#note, there are some gaps in the assemblies, these are replaced by As for IMA2
 	input: 
@@ -326,34 +317,7 @@ rule getHaps:
 		done < {input.bed}
 		"""
 
-rule chooseMapper:
-=======
-# #awk -v OFS="\t" '($0~/0\/0/) || ($0~/1\/1/) {if($9!~/:PS/) $9=$9":PS"; gsub(/0\/0/, "0|0"); gsub(/1\/1/, "1|1"); print; next} {print}'
-
-## TAKEN from your script to merge everything
-# merge results from phasing, and remove undetermined species
-#rule mergePhased:
-#        input: expand(outDir + "/var/ngm/filtered_phased_{chromosome}.vcf", chromosome = CHROMOSOMES)
-#        output:
-#                vcf = outDir + "/var/ngm/phased.vcf",
-#                bed = outDir + "/var/ngm/phased.bed"
-#        resources: mem=10, time = 60
-#        threads: 1
-#        params: chroms = " ".join(CHROMOSOMES)
-#        shell:
-#                """
-#                module load vcftools
-#                (head -10000 {input[0]} |grep "^#" ;
-#                for i in {params.chroms}; do vcftools --vcf {outDir}/var/ngm/filtered_phased_"$i".vcf --chr $i --recode --stdout --mac 1 --remove-indels --remove {refDir}/sp.txt | grep -v "^#" ; done ) > {output.vcf} && [[ -s {output.vcf} ]]
-#                python3 scripts/longestBlock.py {output.vcf} > {output.bed} && [[ -s {output.bed} ]]
-#                """
-
-#rule getHaps:
-#        input: outDir + "/var/ngm/phased.bed"
- #       output
-
 #rule chooseMapper:
->>>>>>> 3ec3cbe64cc01720d30e161891b3f26c27af2a41
 	# The results are very similar between the two mappers, so we're going with the one that has the greatest number of variants
 #	input:
 #		ngm = outDir + "/var/ngm/filtered.vcf", 
@@ -670,93 +634,78 @@ rule exclude_admix:
 
 ### FOR DEMOGRAPHIC INFERENCES
 ##using GATK 4.0.0
-rule selectVariant:
-	input: outDir + "/var/primitives-sort.vcf.gz"
-	output: indiv = temp(outDir + "/var/subset/singlevcf/selectvariants/{sample}.vcf"),
-		bgzip = temp(outDir + "/var/subset/singlevcf/selectvariants/{sample}.vcf.gz")
-	shell: 
-		"""
-		gatk SelectVariants -R {vdRef} --variant {input} --output {output.indiv} -sn {wildcards.sample}
-		bgzip -c {output.indiv} > {output.bgzip}
-		tabix -p vcf {output.bgzip}
-		"""
+#rule selectVariant:
+#	input: outDir + "/var/primitives-sort.vcf.gz"
+#	output: indiv = temp(outDir + "/var/subset/singlevcf/selectvariants/{sample}.vcf"),
+#		bgzip = temp(outDir + "/var/subset/singlevcf/selectvariants/{sample}.vcf.gz")
+#	shell: 
+#		"""
+#		gatk SelectVariants -R {vdRef} --variant {input} --output {output.indiv} -sn {wildcards.sample}
+#		bgzip -c {output.indiv} > {output.bgzip}
+#		tabix -p vcf {output.bgzip}
+#		"""
+
 ##I use bcftools as SelectVariant does not output GL flag with the previous command
-rule bcftools_indiv:
-	input: outDir + "/var/primitives-sort.vcf.gz"
-	output: temp(outDir + "/var/subset/singlevcf/bcftools/{sample}.vcf.gz")
-	shell: 
-		"""
-		bcftools view -Oz -s {wildcards.sample} {input} > {output}
-		tabix -p vcf {output}
-		"""
+#rule bcftools_indiv:
+#	input: outDir + "/var/primitives-sort.vcf.gz"
+#	output: temp(outDir + "/var/subset/singlevcf/bcftools/{sample}.vcf.gz")
+#	shell: 
+#		"""
+#		bcftools view -Oz -s {wildcards.sample} {input} > {output}
+#		tabix -p vcf {output}
+#		"""
 
 ## Cut the big vcf file to load it easily into igv and decide with regions to choose for future IMa2 runs
-rule selectVarChrom:
-        input: outDir + "/var/primitives-sort.vcf.gz"
-        output: chrom = temp(outDir + "/var/subset/chromosome/selectvariants/{chromosome}.vcf"),
-                bgzip = temp(outDir + "/var/subset/chromosome/selectvariants/{chromosome}.vcf.gz")
-        shell:
-                """
-                gatk SelectVariants -R {vdRef} --variant {input} --output {output.chrom} -L {wildcards.chromosome}
-                bgzip -c {output.chrom} > {output.bgzip}
-                tabix -p vcf {output.bgzip}
-		"""
+#rule selectVarChrom:
+#        input: outDir + "/var/primitives-sort.vcf.gz"
+#        output: chrom = temp(outDir + "/var/subset/chromosome/selectvariants/{chromosome}.vcf"),
+#                bgzip = temp(outDir + "/var/subset/chromosome/selectvariants/{chromosome}.vcf.gz")
+#        shell:
+#               """
+#                gatk SelectVariants -R {vdRef} --variant {input} --output {output.chrom} -L {wildcards.chromosome}
+#                bgzip -c {output.chrom} > {output.bgzip}
+#                tabix -p vcf {output.bgzip}
+#		"""
 		
-rule bcftools_chrom:
-        input: outDir + "/var/primitives-sort.vcf.gz"
-        output: temp(outDir + "/var/subset/chromosome/bcftools/{chromosome}.vcf.gz")
-        shell:
-                """
-                bcftools view -Oz -r {wildcards.chromosome} {input} > {output}
-		tabix -p vcf {output}
-		"""
+#rule bcftools_chrom:
+#        input: outDir + "/var/primitives-sort.vcf.gz"
+#        output: temp(outDir + "/var/subset/chromosome/bcftools/{chromosome}.vcf.gz")
+#        shell:
+#                """
+#                bcftools view -Oz -r {wildcards.chromosome} {input} > {output}
+#		tabix -p vcf {output}
+#		"""
 		
-rule getIMvcf:
-	input: 	variant = outDir + "/var/primitives-sort.vcf.gz",
-		indiv = outDir + "/ima2/imindiv.txt"
-	output:	subset = temp(outDir + "/ima2/nuclearloci/{locus}.vcf.gz"),
-		stats = temp(outDir + "/ima2/nuclearloci/{locus}.out")
-	shell:
-		"""
-		bcftools view -Oz -S {input.indiv} -r {wildcards.locus} {input.variant} > {output.subset}
-		tabix -p vcf {output.subset}
-		bcftools stats {output.subset} > {output.stats} 
-		"""
+#rule getIMvcf:
+#	input: 	variant = outDir + "/var/primitives-sort.vcf.gz",
+#		indiv = outDir + "/ima2/imindiv.txt"
+#	output:	subset = temp(outDir + "/ima2/nuclearloci/{locus}.vcf.gz"),
+#		stats = temp(outDir + "/ima2/nuclearloci/{locus}.out")
+#	shell:
+#		"""
+#		bcftools view -Oz -S {input.indiv} -r {wildcards.locus} {input.variant} > {output.subset}
+#		tabix -p vcf {output.subset}
+#		bcftools stats {output.subset} > {output.stats} 
+#		"""
 
 ## after getting the vcf only for the samples selected in IMa2 I cheched how many SNPs, only 8 loci remaining 
 # the only potential loci were keep in good folder
 # It is not adapated for a future snakemake automatic run but put here just for you to check my steps
 
-rule headerchange:
-	input: outDir + "/ima2/nuclearloci/good/{candidate}.vcf.gz"
-	output: temp(outDir + "/ima2/nuclearloci/eight/{candidate}-new.vcf")
-	shell:
-		"""
-		zcat {input} | sed '2,1490d' > {output}
-		"""
+#rule headerchange:
+#	input: outDir + "/ima2/nuclearloci/good/{candidate}.vcf.gz"
+#	output: temp(outDir + "/ima2/nuclearloci/eight/{candidate}-new.vcf")
+#	shell:
+#		"""
+#		zcat {input} | sed '2,1490d' > {output}
+#		"""
 
 ### Before this step we need to remove the excess vcf header here
 ##using GATK 3.8
-rule fastaMaker:
-	input: outDir + "/ima2/nuclearloci/eight/{candidate}-new.vcf"
-	output: temp(outDir + "/ima2/nuclearloci/eight/fasta/{imavarroa}_{candidate}.fasta")
-	shell: 
-		"""
-		java -jar /apps/unit/MikheyevU/Maeva/GATK/GenomeAnalysisTK.jar -T FastaAlternateReferenceMaker -R {vdRef} -L {wildcards.candidate} -V {input} -IUPAC {wildcards.imavarroa} -o {output}
-		"""
-#for the moment I did by hand to change the header
-#using sed -i.bak "1 s/^.*$/$new_header/" inputfile
-#cat the fasta by hand too
-
-### FIX ME -- NOT ABLE TO CONVERT IN COMMAND LINE DUE TO ERR ChartByteConverter nor found
-## WORK with the GUI version
-#rule pgdspider:
-#	input: 	fasta = outDir + "/ima2/nuclearloci/eight/fasta/{candidate}.fasta",
-#		formula = outDir + "/ima2/fasta2Ima2.spid"
-#	output: temp(outDir + "/ima2/input/{candidate}.u")
-#	shell:
+#rule fastaMaker:
+#	input: outDir + "/ima2/nuclearloci/eight/{candidate}-new.vcf"
+#	output: temp(outDir + "/ima2/nuclearloci/eight/fasta/{imavarroa}_{candidate}.fasta")
+#	shell: 
 #		"""
-#		module load java-jdk/1.8.0_20
-#		java -Xmx1024m -Xms512m -jar /apps/unit/MikheyevU/Maeva/PGDSpider_2.1.1.3/PGDSpider2-cli.jar -inputfile {input.fasta} -inputformat FASTA -output {output} -outputformat IMA2 -spid {input.formula}
+#		java -jar /apps/unit/MikheyevU/Maeva/GATK/GenomeAnalysisTK.jar -T FastaAlternateReferenceMaker -R {vdRef} -L {wildcards.candidate} -V {input} -IUPAC {wildcards.imavarroa} -o {output}
 #		"""
-
