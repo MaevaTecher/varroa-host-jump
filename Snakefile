@@ -3,6 +3,8 @@ from scripts.split_fasta_regions import split_fasta
 from snakemake.utils import R
 import getpass
 
+localrules: getHaps, all
+
 ## Set path for input files and fasta reference genome
 outDir = "/work/MikheyevU/Maeva/varroa-jump/data"
 refDir = "/work/MikheyevU/Maeva/varroa-jump/ref" 
@@ -23,6 +25,7 @@ vdRef = refDir + "/destructor/vd.fasta"
 vjRef = refDir + "/jacobsoni/vj.fasta"
 vdmtDNABowtieIndex = refDir + "/destructor/mtdnamite/vdnavajas"
 vdmtDNA = refDir + "/destructor/mtdnamite/VDAJ493124.fasta"
+
 
 CHROMOSOMES = ["BEIS01000001.1", "BEIS01000002.1", "BEIS01000003.1", "BEIS01000004.1", "BEIS01000005.1", "BEIS01000006.1", "BEIS01000007.1"] 
 
@@ -54,7 +57,7 @@ for regionmt in REGIONSMT:
 
 ## Pseudo rule for build-target
 rule all:
-	input: expand(outDir + "/var/ngm/phased/{chromosome}/{individual}.txt", chromosome = CHROMOSOMES, individual = SAMPLES)	#expand(outDir + "/ima2/nuclearloci/{locus}.vcf.gz", locus = LOCI),
+	input: dynamic(outDir + "/var/ngm/phasedRegions/{phasedRegion}.fasta")#expand(outDir + "/ima2/nuclearloci/{locus}.vcf.gz", locus = LOCI),
 		#expand(outDir + "/ima2/nuclearloci/eight/{candidate}-new.vcf", candidate = CANDIDATE),
 		#expand(outDir + "/ima2/nuclearloci/eight/fasta/{imavarroa}_{candidate}.fasta", candidate = CANDIDATE, imavarroa = IMAVARROA),
         
@@ -264,7 +267,7 @@ rule whatshap:
 		vcf = outDir + "/var/ngm/filtered.vcf",
 		bams = expand(outDir + "/alignments-new/ngm/{sample}.bam", sample = SAMPLES)
 	output:
-		outDir + "/var/ngm/filtered_phased_{chromosome}.vcf"
+		temp(outDir + "/var/ngm/filtered_phased_{chromosome}.vcf")
 	resources: mem=100, time = 60*24*7
 	threads: 1
 	shell:
@@ -273,17 +276,44 @@ rule whatshap:
 		whatshap phase --chromosome {wildcards.chromosome} -o {output} {input.vcf} {input.bams}
 		"""
 
-rule whatshapReport:
-	input: rules.whatshap.output
-	output: outDir + "/var/ngm/phased/{chromosome}/{individual}.txt"
-	resources: mem=100, time = 60*24*7
+# #awk -v OFS="\t" '($0~/0\/0/) || ($0~/1\/1/) {if($9!~/:PS/) $9=$9":PS"; gsub(/0\/0/, "0|0"); gsub(/1\/1/, "1|1"); print; next} {print}'
+
+# merge results from phasing, and remove undetermined species
+rule mergePhased:
+	input: expand(outDir + "/var/ngm/filtered_phased_{chromosome}.vcf", chromosome = CHROMOSOMES)
+	output: 
+		vcf = outDir + "/var/ngm/phased.vcf.gz",
+		bed = outDir + "/var/ngm/phased.bed"
+	resources: mem=10, time = 60
 	threads: 1
+	params: chroms = " ".join(CHROMOSOMES)
 	shell:
 		"""
-		module load miniconda
-		whatshap stats --sample {wildcards.individual} --chromosome {wildcards.chromosome} --block-list {output} {input}
+		module load vcftools samtools
+		for i in {params.chroms}; do vcftools --vcf {outDir}/var/ngm/filtered_phased_"$i".vcf --chr $i --recode --stdout --mac 1 --max-missing 1 --remove-indels --remove {refDir}/sp.txt  ; done | awk '($0~/^#/) && (a!=1) {{print; next}} $0!~/^#/ {{a=1; print}} '| bgzip > {output.vcf} && [[ -s {output.vcf} ]]
+		tabix -p vcf {output.vcf}
+		python3 scripts/longestBlock.py <(zcat {output.vcf}) > {output.bed} && [[ -s {output.bed} ]]
 		"""
 
+rule getHaps:
+	#note, there are some gaps in the assemblies, these are replaced by As for IMA2
+	input: 
+		vcf = outDir + "/var/ngm/phased.vcf.gz",
+		bed = outDir + "/var/ngm/phased.bed"
+	output: outDir + "/var/ngm/phasedRegions/regions.txt" 
+	params: samples = IMAVARROA, outDir = outDir + "/var/ngm/phasedRegions"
+	shell:
+		"""
+		module load bcftools samtools
+		while read line; do
+  			region=$(echo $line | awk '{{print $1":"$2"-"$3}}')
+  			for sample in {params.samples}; do				
+				samtools faidx {vdRef} $region | bcftools consensus -s $sample -H 1 {input.vcf} | tr N A | awk -v name=$sample"_1" 'NR == 1 {{print ">"name}} NR > 1 {{print}}' >> {params.outDir}/$region.fasta
+  				samtools faidx {vdRef} $region | bcftools consensus -s $sample -H 2 {input.vcf} | tr N A | awk -v name=$sample"_2" 'NR == 1 {{print ">"name}} NR > 1 {{print}}' >> {params.outDir}/$region.fasta
+  			done
+  			echo $region >> {output}
+		done < {input.bed}
+		"""
 
 rule chooseMapper:
 	# The results are very similar between the two mappers, so we're going with the one that has the greatest number of variants
