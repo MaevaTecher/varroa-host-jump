@@ -27,7 +27,8 @@ vdmtDNABowtieIndex = refDir + "/destructor/mtdnamite/vdnavajas"
 vdmtDNA = refDir + "/destructor/mtdnamite/VDAJ493124.fasta"
 
 CHROMOSOMES = ["BEIS01000001.1", "BEIS01000002.1", "BEIS01000003.1", "BEIS01000004.1", "BEIS01000005.1", "BEIS01000006.1", "BEIS01000007.1"] 
-IMAVARROA = ["VD654_1", "VD657_1", "VD658_2", "VD622_1", "VD625_2", "VD639_1", "VJ325_1", "VJ333_1", "VJ341_1"]
+IMAVARROA = ["VD654_1", "VD658_2", "VD622_1", "VD641_1", "VD646_1", "VJ325_1", "VJ333_1", "VJ341_1"]
+LOCI = ["L002_C1", "L003_C1", "L004_C1", "L006_C1", "L007_C1", "L010_C1", "L011_C1", "L012_C1", "L016_C1", "L018_C1", "L019_C1", "L022_C1", "L023_C1", "L024_C1", "L026_C1", "L028_C1", "L025_C1", "L029_C1", "L030_C1", "L031_C1", "L033_C1", "L034_C1", "L035_C1", "L038_C2", "L039_C2", "L040_C2", "L044_C2", "L045_C2", "L046_C2", "L047_C2", "L050_C2", "L051_C2", "L052_C2", "L053_C2", "L056_C2", "L057_C2", "L060_C2", "L061_C2", "L062_C2", "L064_C2", "L065_C3", "L066_C3", "L067_C3", "L068_C3", "L069_C3", "L070_C3", "L072_C3", "L073_C3", "L075_C3", "L076_C3", "L077_C3", "L078_C3", "L081_C3", "L082_C4", "L083_C4", "L084_C4", "L087_C4", "L092_C4", "L094_C4", "L096_C4", "L097_C4", "L098_C4", "L099_C4", "L103_C5", "L104_C5", "L105_C5", "L106_C5", "L107_C5", "L108_C5", "L109_C5", "L114_C6", "L117_C6", "L118_C6", "L119_C6", "L121_C6", "L122_C6", "L124_C6", "L125_C6", "L128_C6", "L130_C7", "L131_C7", "L132_C7", "L133_C7", "L136_C7", "L138_C7", "L139_C7", "L140_C7", "L141_C7", "L143_C7", "L144_C7", "L129_C7"]
 
 KCLUSTERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 
@@ -53,7 +54,8 @@ for regionmt in REGIONSMT:
 
 ## Pseudo rule for build-target
 rule all:
-	input: 	dynamic(outDir + "/var/ngm/phasedRegions/{phasedRegion}.fasta")
+	input: 	expand(outDir + "/ima2/nuclearloci/{locus}.u", locus = LOCI)
+		#outDir + "/phasedRegions/regions.txt"
 		#expand(outDir + "/ima2/nuclearloci/{locus}.vcf.gz", locus = LOCI),
 		#expand(outDir + "/ima2/nuclearloci/eight/{candidate}-new.vcf", candidate = CANDIDATE),
 		#expand(outDir + "/ima2/nuclearloci/eight/fasta/{imavarroa}_{candidate}.fasta", candidate = CANDIDATE, imavarroa = IMAVARROA),
@@ -302,8 +304,8 @@ rule getHaps:
 	input: 
 		vcf = outDir + "/var/ngm/phased.vcf.gz",
 		bed = outDir + "/var/ngm/phased.bed"
-	output: outDir + "/var/ngm/phasedRegions/regions.txt" 
-	params: samples = IMAVARROA, outDir = outDir + "/var/ngm/phasedRegions"
+	output: outDir + "/phasedRegions/regions.txt" 
+	params: samples = IMAVARROA, outDir = outDir + "/phasedRegions"
 	shell:
 		"""
 		module load bcftools samtools
@@ -315,6 +317,15 @@ rule getHaps:
   			done
   			echo $region >> {output}
 		done < {input.bed}
+		"""
+
+rule IMa2input:
+	input: 	fasta = outDir + "/phasedRegions/{locus}.fasta",
+		formula = outDir + "/ima2/fasta2Ima2.spid"
+	output:	temp(outDir + "/ima2/nuclearloci/{locus}.u")
+	shell:
+		"""
+		java -Xmx1024m -Xms512m -jar /apps/unit/MikheyevU/Maeva/PGDSpider_2.1.1.3/PGDSpider2-cli.jar -inputfile {input.fasta} -inputformat FASTA -outputfile {output} -outputformat IMA2 -spid {input.formula} 
 		"""
 
 #rule chooseMapper:
