@@ -30,9 +30,13 @@ CHROMOSOMES = ["BEIS01000001.1", "BEIS01000002.1", "BEIS01000003.1", "BEIS010000
 
 IMA36 = ["VD212", "VD149", "VD642_1","VD651_1", "VD577_1","VD654_1", "VD658_2","VD657_1", "VD676_2","VD153_2", "VD159_1","VD150_2", "VD474_1","VD639_1", "VD625_2","VD622_1", "VD641_1","VD646_1", "VJ333_1","VJ341_1", "VJ347_1","VJ363_1", "VJ325_1","VJ565_2", "VJ950_1","VJ854_1","VJ853_4_V2", "VJ983_1","VJ856_1", "VJ857_2","VJ852_3_V2", "VJ847","VJ953_2","VJ952_1", "VJ955_1", "VJ954_2"]
 
+IMA3POP = ["VD212", "VD149", "VD642_1","VD651_1", "VD577_1","VD654_1", "VD658_2","VD657_1", "VD676_2","VD153_2", "VD159_1","VD150_2", "VD474_1","VD639_1", "VD625_2","VD622_1", "VD641_1","VD646_1", "VJ333_1","VJ341_1", "VJ347_1","VJ363_1", "VJ325_1","VJ565_2", "VJ950_1","VJ854_1","VJ853_4_V2", "VJ983_1"]
+
 IMADESTR18 = ["VD212", "VD149", "VD642_1","VD651_1", "VD577_1","VD654_1", "VD658_2","VD657_1", "VD676_2","VD153_2", "VD159_1","VD150_2", "VD474_1","VD639_1", "VD625_2","VD622_1", "VD641_1","VD646_1"]
 
 IMADESTR17 = ["VD149", "VD642_1","VD651_1", "VD577_1","VD654_1", "VD658_2","VD657_1", "VD676_2","VD153_2", "VD159_1","VD150_2", "VD474_1","VD639_1", "VD625_2","VD622_1", "VD641_1","VD646_1"]
+
+IMAJACOB18 = ["VJ333_1","VJ341_1", "VJ347_1","VJ363_1", "VJ325_1","VJ565_2", "VJ950_1","VJ854_1","VJ853_4_V2", "VJ983_1", "VJ856_1", "VJ857_2","VJ852_3_V2", "VJ847","VJ953_2","VJ952_1", "VJ955_1", "VJ954_2"]
 
 LOCI = ["L001_C1", "L002_C1", "L003_C1", "L004_C1", "L005_C1", "L006_C1", "L007_C1", "L008_C1", "L009_C1", "L010_C1", "L011_C1", "L012_C1", "L013_C1", "L014_C1", "L015_C1", "L016_C1", "L017_C1", "L018_C1", "L019_C1", "L020_C1", "L021_C1", "L022_C1", "L023_C1", "L024_C1", "L025_C1", "L026_C1", "L027_C1", "L028_C1", "L029_C1", "L030_C1", "L031_C1", "L032_C1", "L033_C1", "L034_C1", "L035_C1", "L036_C1", "L037_C1", "L038_C2", "L039_C2", "L040_C2", "L041_C2", "L042_C2", "L043_C2", "L044_C2", "L045_C2", "L046_C2", "L047_C2", "L048_C2", "L049_C2", "L050_C2", "L051_C2", "L052_C2", "L053_C2", "L054_C2", "L055_C2", "L056_C2", "L057_C2", "L058_C2", "L059_C2", "L060_C2", "L061_C2", "L062_C2", "L063_C2", "L064_C2", "L065_C3", "L066_C3", "L067_C3", "L068_C3", "L069_C3", "L070_C3", "L071_C3", "L072_C3", "L073_C3", "L074_C3", "L075_C3", "L076_C3", "L077_C3", "L078_C3", "L079_C3", "L080_C3", "L081_C3", "L082_C4", "L083_C4", "L084_C4", "L085_C4", "L086_C4", "L087_C4", "L088_C4", "L089_C4", "L090_C4", "L091_C4", "L092_C4", "L093_C4", "L094_C4", "L095_C4", "L096_C4", "L097_C4", "L098_C4", "L099_C4", "L100_C4", "L101_C4", "L102_C5", "L103_C5", "L104_C5", "L105_C5", "L106_C5", "L107_C5", "L108_C5", "L109_C5", "L110_C5", "L111_C5", "L112_C5", "L113_C6", "L114_C6", "L115_C6", "L116_C6", "L117_C6", "L118_C6", "L119_C6", "L120_C6", "L121_C6", "L122_C6", "L123_C6", "L124_C6", "L125_C6", "L126_C6", "L127_C6", "L128_C6", "L129_C7", "L130_C7", "L131_C7", "L132_C7", "L133_C7", "L134_C7", "L135_C7", "L136_C7", "L137_C7", "L138_C7", "L139_C7", "L140_C7", "L141_C7", "L142_C7", "L143_C7", "L144_C7", "L145_C7"]
 
@@ -60,12 +64,12 @@ for regionmt in REGIONSMT:
 
 ## Pseudo rule for build-target
 rule all:
-	input: 	outDir + "/phasedRegions/regions.txt",
-		#expand(outDir + "/ima2/nuclearloci/{locus}.u", locus = LOCI),
-		expand(outDir + "/ngsadmix/all44/run2/all44_{kcluster}.fopt.gz", kcluster = KCLUSTERS),
-		expand(outDir + "/ngsadmix/vdonly/run2/vd_{kcluster}.fopt.gz", kcluster = KCLUSTERS),
-		expand(outDir + "/ngsadmix/vjonly/run2/vj_{kcluster}.fopt.gz", kcluster = KCLUSTERS),
-		expand(outDir + "/ngsadmix/exclude-vsp/run2/38indv_{kcluster}.fopt.gz", kcluster = KCLUSTERS)
+	input: 	outDir + "/phasedRegions/regions.txt"
+		#expand(outDir + "/ima2/nuclearloci/vj18/{locus}.u", locus = LOCI),
+		#expand(outDir + "/ngsadmix/all44/run5/all44_{kcluster}.fopt.gz", kcluster = KCLUSTERS),
+		#expand(outDir + "/ngsadmix/vdonly/run5/vd_{kcluster}.fopt.gz", kcluster = KCLUSTERS),
+		#expand(outDir + "/ngsadmix/vjonly/run5/vj_{kcluster}.fopt.gz", kcluster = KCLUSTERS),
+		#expand(outDir + "/ngsadmix/exclude-vsp/run5/38indv_{kcluster}.fopt.gz", kcluster = KCLUSTERS)
 
 ##---- PART1 ---- Check the host identity by mapping reads on honey bee reference genome
 ## Use only mitochondrial DNA to verify host identity
@@ -308,7 +312,7 @@ rule getHaps:
 		vcf = outDir + "/var/ngm/phased.vcf.gz",
 		bed = outDir + "/var/ngm/phased.bed"
 	output: outDir + "/phasedRegions/regions.txt" 
-	params: samples = IMADESTR18, outDir = outDir + "/phasedRegions"
+	params: samples = IMA3POP, outDir = outDir + "/phasedRegions"
 	shell:
 		"""
 		module load bcftools samtools
@@ -323,11 +327,11 @@ rule getHaps:
 		"""
 
 ## here I just launch the script renameloci.sh in scripts
-#
+
 rule IMa2input:
 	input: 	fasta = outDir + "/phasedRegions/{locus}.fasta",
 		formula = outDir + "/ima2/fasta2Ima2.spid"
-	output:	temp(outDir + "/ima2/nuclearloci/{locus}.u")
+	output:	temp(outDir + "/ima2/nuclearloci/vj18/{locus}.u")
 	shell:
 		"""
 		java -Xmx1024m -Xms512m -jar /apps/unit/MikheyevU/Maeva/PGDSpider_2.1.1.3/PGDSpider2-cli.jar -inputfile {input.fasta} -inputformat FASTA -outputfile {output} -outputformat IMA2 -spid {input.formula} 
@@ -336,7 +340,13 @@ rule IMa2input:
 #rule IMa2_header:
 #	input:	expand(outDir + "/ima2/nuclearloci/{locus}.u", locus = LOCI)
 #	output:	temp(outDir + "/ima2/nuclearloci/36ind/{locus}.u")
+#	params: locus = LOCI, outDir = outDir + "/ima2/nuclearloci/36ind"
 #	shell:
+#		"""
+#		for locus in {params.locus}; do
+#		awk 'NR > 5 { print }' {input} | sed 's/Locus_1  72 /{locusname}  20   18   20  18  /g' > {output}
+#		done
+#		"""
 
 rule IMa2p:
 	input:	outDir + "/ima2/input/144loci_36ind.u"
@@ -577,10 +587,10 @@ rule mergeGL:
 rule NGSadmix:
         input: outDir + "/ngsadmix/all44/sevenchr.BEAGLE.GL"
         threads: 12
-        output: temp(outDir + "/ngsadmix/all44/run2/all44_{kcluster}.fopt.gz")
+        output: temp(outDir + "/ngsadmix/all44/run5/all44_{kcluster}.fopt.gz")
         shell:
                 """
-                NGSadmix -P {threads} -likes {input} -K {wildcards.kcluster} -outfiles /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/all44/run2/all44_{wildcards.kcluster} -minMaf 0.1
+                NGSadmix -P {threads} -likes {input} -K {wildcards.kcluster} -outfiles /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/all44/run5/all44_{wildcards.kcluster} -minMaf 0.1
                 """
 
 ### JUST VARROA DESTRUCTOR INDIV
@@ -603,10 +613,10 @@ rule vdonly_mergeGL:
 rule vdonly_admix:
         input: outDir + "/ngsadmix/vdonly/vdonly.BEAGLE.GL"
         threads: 12
-        output: temp(outDir + "/ngsadmix/vdonly/run2/vd_{kcluster}.fopt.gz")
+        output: temp(outDir + "/ngsadmix/vdonly/run5/vd_{kcluster}.fopt.gz")
         shell:
                 """
-                NGSadmix -P {threads} -likes {input} -K {wildcards.kcluster} -outfiles /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/vdonly/run2/vd_{wildcards.kcluster} -minMaf 0.1
+                NGSadmix -P {threads} -likes {input} -K {wildcards.kcluster} -outfiles /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/vdonly/run5/vd_{wildcards.kcluster} -minMaf 0.1
                 """
 
 ### JUST VARROA JACOBSONI INDIV
@@ -629,10 +639,10 @@ rule vjonly_mergeGL:
 rule vjonly_admix:
         input: outDir + "/ngsadmix/vjonly/vjonly.BEAGLE.GL"
         threads: 12
-        output: temp(outDir + "/ngsadmix/vjonly/run2/vj_{kcluster}.fopt.gz")
+        output: temp(outDir + "/ngsadmix/vjonly/run5/vj_{kcluster}.fopt.gz")
         shell:
                 """
-                NGSadmix -P {threads} -likes {input} -K {wildcards.kcluster} -outfiles /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/vjonly/run2/vj_{wildcards.kcluster} -minMaf 0.1
+                NGSadmix -P {threads} -likes {input} -K {wildcards.kcluster} -outfiles /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/vjonly/run5/vj_{wildcards.kcluster} -minMaf 0.1
                 """
 
 ### REMOVE THE INDIV VARROA SP
@@ -655,10 +665,10 @@ rule exclude_mergeGL:
 rule exclude_admix:
         input: outDir + "/ngsadmix/exclude-vsp/38indv.BEAGLE.GL"
         threads: 12
-        output: temp(outDir + "/ngsadmix/exclude-vsp/run2/38indv_{kcluster}.fopt.gz")
+        output: temp(outDir + "/ngsadmix/exclude-vsp/run5/38indv_{kcluster}.fopt.gz")
         shell:
                 """
-                NGSadmix -P {threads} -likes {input} -K {wildcards.kcluster} -outfiles /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/exclude-vsp/run2/38indv_{wildcards.kcluster} -minMaf 0.1
+                NGSadmix -P {threads} -likes {input} -K {wildcards.kcluster} -outfiles /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/exclude-vsp/run5/38indv_{wildcards.kcluster} -minMaf 0.1
                 """
 
 ### FOR DEMOGRAPHIC INFERENCES
