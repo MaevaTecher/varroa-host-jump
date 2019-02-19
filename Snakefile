@@ -1,53 +1,45 @@
-## Population genetic analysis of Varroa on native and introduced hosts
+## Population genetic analysis of Varroa mites infected original and new bee hosts
 from scripts.split_fasta_regions import split_fasta
 from snakemake.utils import R
 import getpass
 
 localrules: getHaps, all
 
-## Set path for input files and fasta reference genome
+### Set path for input files folders
 outDir = "/work/MikheyevU/Maeva/varroa-jump/data"
-refDir = "/work/MikheyevU/Maeva/varroa-jump/ref" 
+refDir = "/work/MikheyevU/Maeva/varroa-jump/ref2019" 
 SCRATCH  = "/work/scratch/" + getpass.getuser()
+krakenDB = "/work/MikheyevU/kraken_db"
 
-## Honey bee references from Apis mellifera & Apis cerana
+### ------------------------------------------------------------
+###  REFERENCE GENOMES HONEY BEE HOSTS AND VARROA MITES
+### ------------------------------------------------------------
+
+# bowtie2-build Amel_HAv3.fasta,ACSNU2.0.fasta hostbee
 hostBeeBowtieIndex = refDir + "/bees/hostbee"
-hostBeeMtBowtieIndex = refDir + "/bees/mtdna"
-hostBowtiemellifera = refDir + "/bees/mellifera"
-hostBowtiecerana = refDir + "/bees/cerana"
-ceranamt = refDir + "/bees/mtdnabee/ceranamtDNA"
-melliferamt = refDir + "/bees/mtdnabee/melliferamtDNA"
-floreamt = refDir + "/bees/mtdnabee/floreamtDNA"
 
-## Varroa destructor and V. jacobosni references
-varroaBowtieIndex = refDir + "/destructor/vd"
-vdRef = refDir + "/destructor/vd.fasta"
-vjRef = refDir + "/jacobsoni/vj.fasta"
-vdmtDNABowtieIndex = refDir + "/destructor/mtdnamite/vdnavajas"
-vdmtDNA = refDir + "/destructor/mtdnamite/VDAJ493124.fasta"
+# bowtie2-build NC_001566.fasta,NC_014295.fasta hostbeemtDNA
+hostBeeMtBowtieIndex = refDir + "/bees/mtDNA/hostbeemtDNA"
+
+# Varroa destructor genome with chromosome named BEIS0100XXXX.1 
+# bowtie2-build vdes_3.0.fasta vdes_3
+vdRef = refDir + "/destructor/vdes_3.0.fasta"
+varroaBowtieIndex = refDir + "/destructor/vdes_3"
+
+# bowtie2-build AJ493124.fasta vdnavajas
+vdmtDNA = refDir + "/destructor/mtDNA/AJ493124.fasta"
+vdmtDNABowtieIndex = refDir + "/destructor/mtDNA/vdnavajas"
 
 CHROMOSOMES = ["BEIS01000001.1", "BEIS01000002.1", "BEIS01000003.1", "BEIS01000004.1", "BEIS01000005.1", "BEIS01000006.1", "BEIS01000007.1"] 
 
-IMA36 = ["VD212", "VD149", "VD642_1","VD651_1", "VD577_1","VD654_1", "VD658_2","VD657_1", "VD676_2","VD153_2", "VD159_1","VD150_2", "VD474_1","VD639_1", "VD625_2","VD622_1", "VD641_1","VD646_1", "VJ333_1","VJ341_1", "VJ347_1","VJ363_1", "VJ325_1","VJ565_2", "VJ950_1","VJ854_1","VJ853_4_V2", "VJ983_1","VJ856_1", "VJ857_2","VJ852_3_V2", "VJ847","VJ953_2","VJ952_1", "VJ955_1", "VJ954_2"]
-
-IMA3POP = ["VD212", "VD149", "VD642_1","VD651_1", "VD577_1","VD654_1", "VD658_2","VD657_1", "VD676_2","VD153_2", "VD159_1","VD150_2", "VD474_1","VD639_1", "VD625_2","VD622_1", "VD641_1","VD646_1", "VJ333_1","VJ341_1", "VJ347_1","VJ363_1", "VJ325_1","VJ565_2", "VJ950_1","VJ854_1","VJ853_4_V2", "VJ983_1"]
-
-IMADESTR18 = ["VD212", "VD149", "VD642_1","VD651_1", "VD577_1","VD654_1", "VD658_2","VD657_1", "VD676_2","VD153_2", "VD159_1","VD150_2", "VD474_1","VD639_1", "VD625_2","VD622_1", "VD641_1","VD646_1"]
-
-IMADESTR17 = ["VD149", "VD642_1","VD651_1", "VD577_1","VD654_1", "VD658_2","VD657_1", "VD676_2","VD153_2", "VD159_1","VD150_2", "VD474_1","VD639_1", "VD625_2","VD622_1", "VD641_1","VD646_1"]
-
-IMAJACOB18 = ["VJ333_1","VJ341_1", "VJ347_1","VJ363_1", "VJ325_1","VJ565_2", "VJ950_1","VJ854_1","VJ853_4_V2", "VJ983_1", "VJ856_1", "VJ857_2","VJ852_3_V2", "VJ847","VJ953_2","VJ952_1", "VJ955_1", "VJ954_2"]
-
-LOCI = ["L001_C1", "L002_C1", "L003_C1", "L004_C1", "L005_C1", "L006_C1", "L007_C1", "L008_C1", "L009_C1", "L010_C1", "L011_C1", "L012_C1", "L013_C1", "L014_C1", "L015_C1", "L016_C1", "L017_C1", "L018_C1", "L019_C1", "L020_C1", "L021_C1", "L022_C1", "L023_C1", "L024_C1", "L025_C1", "L026_C1", "L027_C1", "L028_C1", "L029_C1", "L030_C1", "L031_C1", "L032_C1", "L033_C1", "L034_C1", "L035_C1", "L036_C1", "L037_C1", "L038_C2", "L039_C2", "L040_C2", "L041_C2", "L042_C2", "L043_C2", "L044_C2", "L045_C2", "L046_C2", "L047_C2", "L048_C2", "L049_C2", "L050_C2", "L051_C2", "L052_C2", "L053_C2", "L054_C2", "L055_C2", "L056_C2", "L057_C2", "L058_C2", "L059_C2", "L060_C2", "L061_C2", "L062_C2", "L063_C2", "L064_C2", "L065_C3", "L066_C3", "L067_C3", "L068_C3", "L069_C3", "L070_C3", "L071_C3", "L072_C3", "L073_C3", "L074_C3", "L075_C3", "L076_C3", "L077_C3", "L078_C3", "L079_C3", "L080_C3", "L081_C3", "L082_C4", "L083_C4", "L084_C4", "L085_C4", "L086_C4", "L087_C4", "L088_C4", "L089_C4", "L090_C4", "L091_C4", "L092_C4", "L093_C4", "L094_C4", "L095_C4", "L096_C4", "L097_C4", "L098_C4", "L099_C4", "L100_C4", "L101_C4", "L102_C5", "L103_C5", "L104_C5", "L105_C5", "L106_C5", "L107_C5", "L108_C5", "L109_C5", "L110_C5", "L111_C5", "L112_C5", "L113_C6", "L114_C6", "L115_C6", "L116_C6", "L117_C6", "L118_C6", "L119_C6", "L120_C6", "L121_C6", "L122_C6", "L123_C6", "L124_C6", "L125_C6", "L126_C6", "L127_C6", "L128_C6", "L129_C7", "L130_C7", "L131_C7", "L132_C7", "L133_C7", "L134_C7", "L135_C7", "L136_C7", "L137_C7", "L138_C7", "L139_C7", "L140_C7", "L141_C7", "L142_C7", "L143_C7", "L144_C7", "L145_C7"]
-
-KCLUSTERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
-
-krakenDB = "/work/MikheyevU/kraken_db"
+### ------------------------------------------------------------
+### PARAMETERS FOR GENOMIC ANALYSES
+### ------------------------------------------------------------
 
 ## Input fastq.gz files generated by whole genome sequencing from 44 individuals
 SAMPLES, = glob_wildcards(outDir + "/reads/{sample}-R1_001.fastq.gz")
 
-## Creation of parameters for splitting reference genome and cut off computation time
+## Splitting Varroa destructor reference genome to call variants in parallel
 SPLITS = range(200)
 REGIONS = split_fasta(vdRef, len(SPLITS))  # dictionary with regions to be called, with keys in SPLITS
 Q = (20, 40) # 99 and 99.99% mapping accuracy
@@ -62,17 +54,26 @@ for regionmt in REGIONSMT:
         for idx,i in enumerate(REGIONSMT[regionmt]):
                 REGIONSMT[regionmt][idx] = " -r " + str(i)
 
-## Pseudo rule for build-target
+## Numbers of clusters for NGSadmix analyses
+KCLUSTERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+
+### ------------------------------------------------------------
+### PSEUDO RULE FOR BUILD-TARGET
+### ------------------------------------------------------------
+
+## Change target here depending on the output and step you will like to run up to
 rule all:
-	input: 	outDir + "/phasedRegions/regions.txt"
-		#expand(outDir + "/ima2/nuclearloci/vj18/{locus}.u", locus = LOCI),
-		#expand(outDir + "/ngsadmix/all44/run5/all44_{kcluster}.fopt.gz", kcluster = KCLUSTERS),
-		#expand(outDir + "/ngsadmix/vdonly/run5/vd_{kcluster}.fopt.gz", kcluster = KCLUSTERS),
+	input: 	expand(outDir + "/meta/hosts/{sample}-20.txt", sample = SAMPLES),
+		outDir + "/var/primitives.vcf.gz",
+		outDir + "/var/ngm_mtDNA/filtered_mtDNA.vcf"
 		#expand(outDir + "/ngsadmix/vjonly/run5/vj_{kcluster}.fopt.gz", kcluster = KCLUSTERS),
 		#expand(outDir + "/ngsadmix/exclude-vsp/run5/38indv_{kcluster}.fopt.gz", kcluster = KCLUSTERS)
 
-##---- PART1 ---- Check the host identity by mapping reads on honey bee reference genome
-## Use only mitochondrial DNA to verify host identity
+### ------------------------------------------------------------
+### PART 1 CHECK HONEY BEE HOST IDENTITY
+### ------------------------------------------------------------
+
+## Mapping samples reads onto A. mellifera and A. cerana reference mtDNA genomes
 rule checkHost:
 	input:
 		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
@@ -107,51 +108,16 @@ rule removeHost:
 		module load bowtie2/2.2.6 samtools/1.3.1
 		bowtie2 -p {threads} -x {hostBeeBowtieIndex} -1  {input.read1} -2 {input.read2}  | samtools view -S -f12 | awk '{{print "@"$1"\\n"$10"\\n+\\n"$11}}' | gzip > {output}
 		"""
-		
-# Use mtDNA to verify host identity
-rule checkmellifera:
-	input:
-		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
-		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz"
-	output: alignment = temp(outDir + "/hostbee/mellifera/{sample}.bam"),
-		index = temp(outDir + "/hostbee/mellifera/{sample}.bam.bai")
-	shell: 
-		"""
-		bowtie2 -p {threads} --very-sensitive-local --sam-rg ID:{wildcards.sample} --sam-rg LB:Nextera --sam-rg SM:{wildcards.sample} --sam-rg PL:ILLUMINA -x {melliferamt} -1 {input.read1} -2 {input.read2} | samtools view -Su -q20 -F4 - | samtools sort - -m 55G -T {SCRATCH}/bowtie/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
-		samtools index {output.alignment}
-	    	"""
-		
-rule checkcerana:
-	input:
-		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
-		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz"
-	output: alignment = temp(outDir + "/hostbee/cerana/{sample}.bam"),
-                index = temp(outDir + "/hostbee/cerana/{sample}.bam.bai")
-	shell: 
-		"""
-		bowtie2 -p {threads} --very-sensitive-local --sam-rg ID:{wildcards.sample} --sam-rg LB:Nextera --sam-rg SM:{wildcards.sample} --sam-rg PL:ILLUMINA -x {ceranamt} -1 {input.read1} -2 {input.read2} | samtools view -Su -F4 - | samtools sort - -m 55G -T {SCRATCH}/bowtie/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
-                samtools index {output.alignment}
-               	"""
-
-rule checkflorea:
-        input:
-                read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
-                read2 = outDir + "/reads/{sample}-R2_001.fastq.gz"
-        output: alignment = temp(outDir + "/hostbee/florea/{sample}.bam"),
-                index = temp(outDir + "/hostbee/florea/{sample}.bam.bai")
-        shell:
-                """
-                bowtie2 -p {threads} --very-sensitive-local --sam-rg ID:{wildcards.sample} --sam-rg LB:Nextera --sam-rg SM:{wildcards.sample} --sam-rg PL:ILLUMINA -x {floreamt} -1 {input.read1} -2 {input.read2} | samtools view -Su -F4 - | samtools sort - -m 55G -T {SCRATCH}/bowtie/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
-                samtools index {output.alignment}
-                """
-
-##---- PART2 ---- Exploratory analysis on reads that only mapped on Varroa genomes + variant calling
-
 rule mashtree:
-	input: expand(outDir + "/sketches/{sample}.fastq.gz", sample = SAMPLES)
-	output: tree = outDir + "/sketches/varroa.dnd", matrix = outDir + "/sketches/varroa.phylip"
-	threads: 12
-	shell: "mashtree.pl --genomesize 500000000 --mindepth 2 --tempdir /work/MikheyevU/Maeva/varroahost/scratch --numcpus {threads} --outmatrix {output.matrix} {input} > {output.tree}"
+        input: expand(outDir + "/sketches/{sample}.fastq.gz", sample = SAMPLES)
+        output: tree = outDir + "/sketches/varroa.dnd", matrix = outDir + "/sketches/varroa.phylip"
+        threads: 12
+        shell: "mashtree.pl --genomesize 500000000 --mindepth 2 --tempdir /work/MikheyevU/Maeva/varroahost/scratch --numcpus {threads} --outmatrix {output.matrix} {input} > {output.tree}"
+
+
+### ------------------------------------------------------------
+### PART 2 MAPPING READS ON VARROA GENOME AND VARIANT CALLING
+### ------------------------------------------------------------
 
 ## Here reads will be mapped using either bowtie2 or ngm, then test which one is the best
 ## on whole genome
@@ -161,15 +127,15 @@ rule bowtie2:
 		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
 	threads: 12
 	output: 
-		alignment = temp(outDir + "/alignments-new/bowtie2/{sample}.bam"), 
-		index = temp(outDir + "/alignments-new/bowtie2/{sample}.bam.bai"),
-		read1 = outDir + "/reads_unmapped_new/{sample}.1",
-		read2 = outDir + "/reads_unmapped_new/{sample}.2"
+		alignment = temp(outDir + "/alignments/bowtie2/{sample}.bam"), 
+		index = temp(outDir + "/alignments/bowtie2/{sample}.bam.bai"),
+		read1 = outDir + "/reads_unmapped/{sample}.1",
+		read2 = outDir + "/reads_unmapped/{sample}.2"
 
 	shell:
 		"""
 		module load bowtie2/2.2.6 samtools/1.3.1 VariantBam/1.4.3
-		bowtie2 -p {threads} --very-sensitive-local --sam-rg ID:{wildcards.sample} --sam-rg LB:Nextera --sam-rg SM:{wildcards.sample} --sam-rg PL:ILLUMINA  --un-conc-gz  {outDir}/reads_unmapped_new/{wildcards.sample} -x {varroaBowtieIndex} -1 {input.read1} -2 {input.read2} | samtools view -Su - | samtools sort - -m 55G -T {SCRATCH}/bowtie/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
+		bowtie2 -p {threads} --very-sensitive-local --sam-rg ID:{wildcards.sample} --sam-rg LB:Nextera --sam-rg SM:{wildcards.sample} --sam-rg PL:ILLUMINA  --un-conc-gz  {outDir}/reads_unmapped/{wildcards.sample} -x {varroaBowtieIndex} -1 {input.read1} -2 {input.read2} | samtools view -Su - | samtools sort - -m 55G -T {SCRATCH}/bowtie/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
 		samtools index {output.alignment}
 		"""
 
@@ -209,203 +175,175 @@ rule nextgenmap:
 		ngm -t {threads} -b  -1 {input.read1} -2 {input.read2} -r {vdRef} --rg-id {wildcards.sample} --rg-sm {wildcards.sample} --rg-pl ILLUMINA --rg-lb {wildcards.sample} | samtools sort - -m 50G -T {SCRATCH}/ngm/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
 		samtools index {output.alignment}
 		"""
-
-rule ngmVJ:
-	input:
-		read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
-		read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
-	threads: 12
+	
+rule freeBayes:
+	input: 
+		expand(outDir + "/alignments/{{aligner}}/{sample}.bam", sample = SAMPLES)
 	output: 
-		alignment = temp(outDir + "/alignments-new/ngm_vj/{sample}.bam"), 
-		index = temp(outDir + "/alignments-new/ngm_vj/{sample}.bam.bai")
+		temp(outDir + "/var/{aligner}/split/freebayes.{region}.vcf")
+	params: 
+		span = lambda wildcards: REGIONS[wildcards.region],
+		bams = lambda wildcards, input: os.path.dirname(input[0]) + "/*.bam",
+		missing = lambda wildcards, input: len(input) * 0.9
 	shell:
 		"""
-		module load NextGenMap/0.5.0 samtools/1.3.1 VariantBam/1.4.3
-		ngm -t {threads} -b  -1 {input.read1} -2 {input.read2} -r {vjRef} --rg-id {wildcards.sample} --rg-sm {wildcards.sample} --rg-pl ILLUMINA --rg-lb {wildcards.sample} | samtools sort - -m 80G -T {SCRATCH}/ngm_vj/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
-		samtools index {output.alignment}
+		module load freebayes/1.1.0 vcftools/0.1.12b vcflib/1.0.0-rc1
+		for i in {params.bams}; do name=$(basename $i .bam); if [[ $name == VJ* ]] ; then echo $name VJ; else echo $name VD; fi ; done > {outDir}/var/pops.txt
+		freebayes --min-alternate-fraction 0.2 --use-best-n-alleles 4 -m 5 -q 5 --populations {outDir}/var/pops.txt -b {params.bams} {params.span}  -f {vdRef} | vcffilter  -f "QUAL > 20 & NS > {params.missing}" > {output}
 		"""
-		
-#rule freeBayes:
-#	input: 
-#		expand(outDir + "/alignments-new/{{aligner}}/{sample}.bam", sample = SAMPLES)
-#	output: 
-#		temp(outDir + "/var/{aligner}/split/freebayes.{region}.vcf")
-#	params: 
-#		span = lambda wildcards: REGIONS[wildcards.region],
-#		bams = lambda wildcards, input: os.path.dirname(input[0]) + "/*.bam",
-#		missing = lambda wildcards, input: len(input) * 0.9
-#	shell:
-#		"""
-#		module load freebayes/1.1.0 vcftools/0.1.12b vcflib/1.0.0-rc1
-#		for i in {params.bams}; do name=$(basename $i .bam); if [[ $name == VJ* ]] ; then echo $name VJ; else echo $name VD; fi ; done > {outDir}/var/pops.txt
-#		freebayes --min-alternate-fraction 0.2 --use-best-n-alleles 4 -m 5 -q 5 --populations {outDir}/var/pops.txt -b {params.bams} {params.span}  -f {vdRef} | vcffilter  -f "QUAL > 20 & NS > {params.missing}" > {output}
-#		"""
 
+rule mergeVCF:
+	input: 
+		expand(outDir + "/var/{{aligner}}/split/freebayes.{region}.vcf", region = REGIONS)
+	output:
+		temp(outDir + "/var/{aligner}/raw.vcf")
+	shell:
+		"""
+		module load vcflib/1.0.0-rc1
+		(grep "^#" {input[0]} ; cat {input} | grep -v "^#" ) | vcfuniq  > {output}
+		"""
 
-#rule mergeVCF:
-#	input: 
-#		expand(outDir + "/var/{{aligner}}/split/freebayes.{region}.vcf", region = REGIONS)
-#	output:
-#		temp(outDir + "/var/{aligner}/raw.vcf")
-#	shell:
-#		"""
-#		module load vcflib/1.0.0-rc1
-#		(grep "^#" {input[0]} ; cat {input} | grep -v "^#" ) | vcfuniq  > {output}
-#		"""
-
-#rule filterVCF:
+rule filterVCF:
 	# see http://ddocent.com//filtering/
 	# filter DP  + 3*sqrt(DP) https://arxiv.org/pdf/1404.0929.pdf
 	# also sites with more than two variants
-#	input:
-#		rules.mergeVCF.output
-#	output:
-#		vcf = outDir + "/var/{aligner}/filtered.vcf"
-#	shell:
-#		"""
-#		module load vcftools/0.1.12b vcflib/1.0.0-rc1 eplot/2.08
-#		perl  -ne 'print "$1\\n" if /DP=(\d+)/'  {input} > {outDir}/var/{wildcards.aligner}/depth.txt
-#		sort -n {outDir}/var/{wildcards.aligner}/depth.txt | uniq -c | awk '{{print $2,$1}}' | eplot -d -r [200:2000] 2>/dev/null | tee 
-#		Nind=$(grep -m1 "^#C" {input}  | cut -f10- |wc -w)
-#		coverageCutoff=$(awk -v Nind=$Nind '{{sum+=$1}} END {{print "DP < "(sum / NR / Nind + sqrt(sum / NR / Nind) * 3 ) * Nind}}' {outDir}/var/{wildcards.aligner}/depth.txt)
-#		echo Using coverage cutoff $coverageCutoff
-#		vcffilter -s -f \"$coverageCutoff\" {input} | vcftools --vcf - --exclude-bed ref/destructor/masking_coordinates --max-alleles 2 --recode --stdout > {output}
-#		"""
-
-### PHASING Part 
-rule whatshap:
-	input: 
-		vcf = outDir + "/var/ngm/filtered.vcf",
-		bams = expand(outDir + "/alignments-new/ngm/{sample}.bam", sample = SAMPLES)
+	input:
+		rules.mergeVCF.output
 	output:
-		temp(outDir + "/var/ngm/filtered_phased_{chromosome}.vcf")
-	resources: mem=100, time = 60*24*7
-	threads: 1
+		vcf = outDir + "/var/{aligner}/filtered.vcf"
 	shell:
 		"""
-		module load miniconda
-		whatshap phase --chromosome {wildcards.chromosome} -o {output} {input.vcf} {input.bams}
+		module load vcftools/0.1.12b vcflib/1.0.0-rc1 eplot/2.08
+		perl  -ne 'print "$1\\n" if /DP=(\d+)/'  {input} > {outDir}/var/{wildcards.aligner}/depth.txt
+		sort -n {outDir}/var/{wildcards.aligner}/depth.txt | uniq -c | awk '{{print $2,$1}}' | eplot -d -r [200:2000] 2>/dev/null | tee 
+		Nind=$(grep -m1 "^#C" {input}  | cut -f10- |wc -w)
+		coverageCutoff=$(awk -v Nind=$Nind '{{sum+=$1}} END {{print "DP < "(sum / NR / Nind + sqrt(sum / NR / Nind) * 3 ) * Nind}}' {outDir}/var/{wildcards.aligner}/depth.txt)
+		echo Using coverage cutoff $coverageCutoff
+		vcffilter -s -f \"$coverageCutoff\" {input} | vcftools --vcf - --exclude-bed ref/destructor/masking_coordinates --max-alleles 2 --recode --stdout > {output}
 		"""
 
-# #awk -v OFS="\t" '($0~/0\/0/) || ($0~/1\/1/) {if($9!~/:PS/) $9=$9":PS"; gsub(/0\/0/, "0|0"); gsub(/1\/1/, "1|1"); print; next} {print}'
-
-# merge results from phasing, and remove undetermined species
-rule mergePhased:
-	input: expand(outDir + "/var/ngm/filtered_phased_{chromosome}.vcf", chromosome = CHROMOSOMES)
-	output: 
-		vcf = outDir + "/var/ngm/phased.vcf.gz",
-		bed = outDir + "/var/ngm/phased.bed"
-	resources: mem=10, time = 60
-	threads: 1
-	params: chroms = " ".join(CHROMOSOMES)
-	shell:
-		"""
-		module load vcftools samtools
-		for i in {params.chroms}; do vcftools --vcf {outDir}/var/ngm/filtered_phased_"$i".vcf --chr $i --recode --stdout --mac 1 --max-missing 1 --remove-indels --remove {refDir}/sp.txt  ; done | awk '($0~/^#/) && (a!=1) {{print; next}} $0!~/^#/ {{a=1; print}} '| bgzip > {output.vcf} && [[ -s {output.vcf} ]]
-		tabix -p vcf {output.vcf}
-		python3 scripts/longestBlock.py <(zcat {output.vcf}) > {output.bed} && [[ -s {output.bed} ]]
-		"""
-
-rule getHaps:
-	#note, there are some gaps in the assemblies, these are replaced by As for IMA2
-	input: 
-		vcf = outDir + "/var/ngm/phased.vcf.gz",
-		bed = outDir + "/var/ngm/phased.bed"
-	output: outDir + "/phasedRegions/regions.txt" 
-	params: samples = IMA3POP, outDir = outDir + "/phasedRegions"
-	shell:
-		"""
-		module load bcftools samtools
-		while read line; do
-  			region=$(echo $line | awk '{{print $1":"$2"-"$3}}')
-  			for sample in {params.samples}; do				
-				samtools faidx {vdRef} $region | bcftools consensus -s $sample -H 1 {input.vcf} | tr N A | awk -v name=$sample"_1" 'NR == 1 {{print ">"name}} NR > 1 {{print}}' >> {params.outDir}/$region.fasta
-  				samtools faidx {vdRef} $region | bcftools consensus -s $sample -H 2 {input.vcf} | tr N A | awk -v name=$sample"_2" 'NR == 1 {{print ">"name}} NR > 1 {{print}}' >> {params.outDir}/$region.fasta
-  			done
-  			echo $region >> {output}
-		done < {input.bed}
-		"""
-
-## here I just launch the script renameloci.sh in scripts
-
-rule IMa2input:
-	input: 	fasta = outDir + "/phasedRegions/{locus}.fasta",
-		formula = outDir + "/ima2/fasta2Ima2.spid"
-	output:	temp(outDir + "/ima2/nuclearloci/vj18/{locus}.u")
-	shell:
-		"""
-		java -Xmx1024m -Xms512m -jar /apps/unit/MikheyevU/Maeva/PGDSpider_2.1.1.3/PGDSpider2-cli.jar -inputfile {input.fasta} -inputformat FASTA -outputfile {output} -outputformat IMA2 -spid {input.formula} 
-		"""
-
-#rule IMa2_header:
-#	input:	expand(outDir + "/ima2/nuclearloci/{locus}.u", locus = LOCI)
-#	output:	temp(outDir + "/ima2/nuclearloci/36ind/{locus}.u")
-#	params: locus = LOCI, outDir = outDir + "/ima2/nuclearloci/36ind"
-#	shell:
-#		"""
-#		for locus in {params.locus}; do
-#		awk 'NR > 5 { print }' {input} | sed 's/Locus_1  72 /{locusname}  20   18   20  18  /g' > {output}
-#		done
-#		"""
-
-rule IMa2p:
-	input:	outDir + "/ima2/input/144loci_36ind.u"
-	output: outDir + "/ima2/runall/144l_36i_run1.out"
-	shell:
-		"""
-		/apps/unit/MikheyevU/Maeva/IMgui-linux-x64/resources/app/IMa/IMa2 -b 10000 -l 10000 -hfg -hn 5 -ha 0.99 -hb 0.3 -i{input} -o{output} -q 50 -m 100 -t 200
-		"""
-
-#rule chooseMapper:
+rule chooseMapper:
 	# The results are very similar between the two mappers, so we're going with the one that has the greatest number of variants
-#	input:
-#		ngm = outDir + "/var/ngm/filtered.vcf", 
-#		bowtie2 = outDir + "/var/bowtie2/filtered.vcf", 
-#	output:
-#		bgzip = outDir + "/var/filtered.vcf.gz",
-#		primitives = outDir + "/var/primitives.vcf.gz"
-#	shell:
-#		"""
-#		module load samtools/1.3.1 vcflib/1.0.0-rc1
-#		ngm=$(grep -vc "^#" {input.ngm})
-#		bowtie2=$(grep -vc "^#" {input.bowtie2})
-#		echo ngm has $ngm snps vs $bowtie2 for bowtie2 
-#		if [[ $ngm -gt $bowtie2 ]]; then
-#			echo choosing ngm
-#			bgzip -c {input.ngm} > {output.bgzip}
-#			vcftools --vcf {input.ngm} --recode --remove-indels --stdout | vcfallelicprimitives | bgzip > {output.primitives}
-#		else
-#			echo choosing bowtie2
-#			bgzip -c {input.bowtie2} > {output.bgzip}
-#			vcftools --vcf {input.bowtie2} --recode --remove-indels --stdout | vcfallelicprimitives  | bgzip > {output.primitives}
-#		fi
-#		tabix -p vcf {output.bgzip} && tabix -p vcf {output.primitives}
-#		"""
+	input:
+		ngm = outDir + "/var/ngm/filtered.vcf", 
+		bowtie2 = outDir + "/var/bowtie2/filtered.vcf", 
+	output:
+		bgzip = outDir + "/var/filtered.vcf.gz",
+		primitives = outDir + "/var/primitives.vcf.gz"
+	shell:
+		"""
+		module load samtools/1.3.1 vcflib/1.0.0-rc1
+		ngm=$(grep -vc "^#" {input.ngm})
+		bowtie2=$(grep -vc "^#" {input.bowtie2})
+		echo ngm has $ngm snps vs $bowtie2 for bowtie2 
+		if [[ $ngm -gt $bowtie2 ]]; then
+			echo choosing ngm
+			bgzip -c {input.ngm} > {output.bgzip}
+			vcftools --vcf {input.ngm} --recode --remove-indels --stdout | vcfallelicprimitives | bgzip > {output.primitives}
+		else
+			echo choosing bowtie2
+			bgzip -c {input.bowtie2} > {output.bgzip}
+			vcftools --vcf {input.bowtie2} --recode --remove-indels --stdout | vcfallelicprimitives  | bgzip > {output.primitives}
+		fi
+		tabix -p vcf {output.bgzip} && tabix -p vcf {output.primitives}
+		"""
 
 # At this point we go with ngm, which produces a bit more variants
 
-#rule VCF012:
+rule VCF012:
 	# convert vcf to R data frame with meta-data 
 	# remove maf 0.1, since we don't have much power for them
-#	input: 
-#		vcf = outDir + "/var/filtered.vcf.gz",
-#		ref = refDir + "/varroa.txt"
-#	output: "data/R/{species}.txt"
-#	shell: 
-#		"""
-#		module load vcftools/0.1.12b
-#		vcftools --gzvcf {input.vcf} --012 --mac 1 --keep <(awk -v species={wildcards.species} '$3==toupper(species) {{print $1 }}' {input.ref}) --maf 0.1 --out data/R/{wildcards.species}
+	input: 
+		vcf = outDir + "/var/filtered.vcf.gz",
+		ref = refDir + "/varroa.txt"
+	output: outDir + "/R/{species}.txt"
+	shell: 
+		"""
+		module load vcftools/0.1.12b
+		vcftools --gzvcf {input.vcf} --012 --mac 1 --keep <(awk -v species={wildcards.species} '$3==toupper(species) {{print $1 }}' {input.ref}) --maf 0.1 --out data/R/{wildcards.species}
 		# transpose loci to columns
-#		(echo -ne "id\\thost\\tspecies\\t"; cat data/R/{wildcards.species}.012.pos | tr "\\t" "_" | tr "\\n" "\\t" | sed 's/\\t$//'; echo) > {output}
+		(echo -ne "id\\thost\\tspecies\\t"; cat data/R/{wildcards.species}.012.pos | tr "\\t" "_" | tr "\\n" "\\t" | sed 's/\\t$//'; echo) > {output}
 		# take fedHost and species columns and append them to the genotype data file
-#		paste <(awk 'NR==FNR {{a[$1]=$1"\\t"$4"\\t"$3; next}} $1 in a {{print a[$1]}}' {input.ref} data/R/{wildcards.species}.012.indv) <(cat data/R/{wildcards.species}.012  | cut -f2-) | sed 's/-1/9/g' >> {output}
-#		"""
+		paste <(awk 'NR==FNR {{a[$1]=$1"\\t"$4"\\t"$3; next}} $1 in a {{print a[$1]}}' {input.ref} data/R/{wildcards.species}.012.indv) <(cat data/R/{wildcards.species}.012  | cut -f2-) | sed 's/-1/9/g' >> {output}
+		"""
 
 ## The vcf file generated by freebayes and filtered by vcftools have too much details in the header which is incompatible with further use for gatk
 ## Erase all lines in primitives.vcf.gz between ##fileformat=VCFv4.2 up to #CHROM...
 
-##---- PART3 ---- Analysis on whole genome vcf file, finding Fst outliers, population differentiation and structure analysis
-#overall distance matrix
+
+#### ------------------------------------------------------------
+#### PART 3 MAPPING READS ON VARROA MITOGENOME AND VARIANT CALLING
+#### ------------------------------------------------------------
+
+rule mtDNA_ngm:
+        input:
+                read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
+                read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
+        threads: 12
+        output:
+                alignment = temp(outDir + "/alignments/ngm_mtDNA/{sample}.bam"),
+                index = temp(outDir + "/alignments/ngm_mtDNA/{sample}.bam.bai")
+        shell:
+                """
+                ngm -t {threads} -b  -1 {input.read1} -2 {input.read2} -r {vdmtDNA} --rg-id {wildcards.sample} --rg-sm {wildcards.sample} --rg-pl ILLUMINA --rg-lb {wildcards.sample} | samtools view -Su -F4 -q10 | samtools sort - -m 55G -T {SCRATCH}/ngm_mtDNA/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
+                samtools index {output.alignment}
+                """
+
+rule mtDNA_freeBayes:
+        input:
+                expand(outDir + "/alignments/ngm_mtDNA/{sample}.bam", sample = SAMPLES)
+        output:
+                temp(outDir + "/var/ngm_mtDNA/split_mtDNA/freebayes_mtDNA.{regionmt}.vcf")
+        params:
+                span = lambda wildcards: REGIONSMT[wildcards.regionmt],
+                bams = lambda wildcards, input: os.path.dirname(input[0]) + "/*.bam",
+                missing = lambda wildcards, input: len(input) * 0.9
+        shell:
+                """
+                 for i in {params.bams}; do name=$(basename $i .bam); if [[ $name == VJ* ]] ; then echo $name VJ; else echo $name VD; fi ; done > {outDir}/var/pops_mtDNA.txt
+                freebayes --ploidy 1 --min-alternate-fraction 0.2 --use-best-n-alleles 4 -m 5 -q 5 --populations {outDir}/var/pops_mtDNA.txt -b {params.bams} {params.span} -f {vdmtDNA} | vcffilter -f "QUAL > 20 & NS > {params.missing}" > {output}
+                """
+
+rule mtDNA_mergeVCF:
+        input:
+                expand(outDir + "/var/ngm_mtDNA/split_mtDNA/freebayes_mtDNA.{regionmt}.vcf", regionmt = REGIONSMT)
+        output:
+                temp(outDir + "/var/ngm_mtDNA/raw_mtDNA.vcf")
+        shell:
+                """
+                (grep "^#" {input[0]} ; cat {input} | grep -v "^#" ) | vcfuniq  > {output}
+                """
+
+rule mtDNA_filterVCF:
+        input:
+                rules.mtDNA_mergeVCF.output
+        output:
+                vcf = outDir + "/var/ngm_mtDNA/filtered_mtDNA.vcf"
+        shell:
+               """
+                perl  -ne 'print "$1\\n" if /DP=(\d+)/'  {input} > {outDir}/var/ngm_mtDNA/depth_mtDNA.txt
+               sort -n {outDir}/var/ngm_mtDNA/depth_mtDNA.txt | uniq -c | awk '{{print $2,$1}}' | eplot -d -r [200:2000] 2>/dev/null | tee
+               Nind=$(grep -m1 "^#C" {input}  | cut -f10- |wc -w)
+               coverageCutoff=$(awk -v Nind=$Nind '{{sum+=$1}} END {{print "DP < "(sum / NR / Nind + sqrt(sum / NR / Nind) * 3 ) * Nind}}' {outDir}/var/ngm_mtDNA/depth_mtDNA.txt)
+               echo Using coverage cutoff $coverageCutoff
+               vcffilter -s -f \"$coverageCutoff\" {input} | vcftools --vcf - --max-alleles 2 --recode --stdout > {output}
+               """
+
+## Checking with Sanger sequencing it is better to not filter the vcf mtDNA
+###using vcflib
+### I used finally only the rawmtDNA.vcf fasta file and checked manually for problem that could appear with gap == alignment good
+rule vcf2fasta_mtdna:
+                input: outDir + "/var/ngm_mtDNA/raw_mtDNA.vcf"
+                output: outDir + "/var/ngm_mtDNA/fasta/{sample}.fasta"
+                shell:
+                        """
+                        vcf2fasta -f {vdmtDNA} -P1 > {output}
+                        """
+
+##### ------------------------------------------------------------
+##### PART 4 ANALYSES FST, POPULATION DIFFERENTIATION & STRUCTURE
+##### ------------------------------------------------------------
+
 rule VCF2Dis:
 	input: outDir + "/var/filtered.vcf.gz"
 	output: outDir + "/var/filtered.mat"
@@ -418,14 +356,24 @@ rule outflankFst:
 	output: 
 		outDir + "/R/{species}.outflank.rds"
 	shell:
-		"Rscript --vanilla scripts/outflank.R {input} {output}"
+		"""
+		module load R/3.4.2
+		Rscript --vanilla /work/MikheyevU/Maeva/varroa-jump/scripts/outflank.R {input} {output}
+		"""
 
 rule popstats:
 	input:
 		vcf = outDir + "/var/filtered.vcf.gz",
 		ref = refDir + "/varroa.txt"
 	output:
-		dFst = outDir + "/R/dFst.txt", jFst = outDir + "/R/jFst.txt", dcStats =outDir + outDir + "/R/dcStats.txt", dmStats = outDir + "/R/dmStats.txt", jcStats = outDir + "/R/jcStats.txt", jmStats = outDir + "/R/jmStats.txt", dpFst = outDir + "/R/dpFst.txt", jpFst = outDir + "/R/jpFst.txt"
+		dFst = outDir + "/R/dFst.txt",
+		jFst = outDir + "/R/jFst.txt",
+		dcStats = outDir + "/R/dcStats.txt",
+		dmStats = outDir + "/R/dmStats.txt",
+		jcStats = outDir + "/R/jcStats.txt",
+		jmStats = outDir + "/R/jmStats.txt",
+		dpFst = outDir + "/R/dpFst.txt",
+		jpFst = outDir + "/R/jpFst.txt"
 	threads: 8
 	resources: mem=20, time=12*60
 	shell:
@@ -492,73 +440,11 @@ rule popstats:
 # 	input: rules.silentReplacement.output, rules.fixedPolymorphic.output, rules.parseSilentReplacement.output
 # 	output: "../out/bayesian_results.csv"
 				
-##---- PART4 ---- Getting sequences for mtDNA phylogenies and for demographic inferences
-rule mtDNA_ngm:
-        input:
-                read1 = outDir + "/reads/{sample}-R1_001.fastq.gz",
-                read2 = outDir + "/reads/{sample}-R2_001.fastq.gz",
-        threads: 12
-        output:
-                alignment = temp(outDir + "/alignments-new/ngm_mtDNA/{sample}.bam"),
-                index = temp(outDir + "/alignments-new/ngm_mtDNA/{sample}.bam.bai")
-        shell:
-                """
-		ngm -t {threads} -b  -1 {input.read1} -2 {input.read2} -r {vdmtDNA} --rg-id {wildcards.sample} --rg-sm {wildcards.sample} --rg-pl ILLUMINA --rg-lb {wildcards.sample} | samtools view -Su -F4 -q10 | samtools sort - -m 55G -T {SCRATCH}/ngm_mtDNA/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
-                samtools index {output.alignment}
-                """
 
-rule mtDNA_freeBayes:
-        input:
-                expand(outDir + "/alignments-new/ngm_mtDNA/{sample}.bam", sample = SAMPLES)
-        output:
-                temp(outDir + "/var/ngm_mtDNA/split_mtDNA/freebayes_mtDNA.{regionmt}.vcf")
-        params:
-                span = lambda wildcards: REGIONSMT[wildcards.regionmt],
-                bams = lambda wildcards, input: os.path.dirname(input[0]) + "/*.bam",
-                missing = lambda wildcards, input: len(input) * 0.9
-        shell:
-                """
-		 for i in {params.bams}; do name=$(basename $i .bam); if [[ $name == VJ* ]] ; then echo $name VJ; else echo $name VD; fi ; done > {outDir}/var/pops_mtDNA.txt
-                freebayes --ploidy 1 --min-alternate-fraction 0.2 --use-best-n-alleles 4 -m 5 -q 5 --populations {outDir}/var/pops_mtDNA.txt -b {params.bams} {params.span} -f {vdmtDNA} | vcffilter -f "QUAL > 20 & NS > {params.missing}" > {output}
-                """
+###### ------------------------------------------------------------
+###### PART 5 PCA AND NGSADMIX
+###### ------------------------------------------------------------
 
-rule mtDNA_mergeVCF:
-        input:
-                expand(outDir + "/var/ngm_mtDNA/split_mtDNA/freebayes_mtDNA.{regionmt}.vcf", regionmt = REGIONSMT)
-        output:
-                temp(outDir + "/var/ngm_mtDNA/raw_mtDNA.vcf")
-        shell:
-                """
-		(grep "^#" {input[0]} ; cat {input} | grep -v "^#" ) | vcfuniq  > {output}
-                """
-		
-rule mtDNA_filterVCF:
-        input:
-                rules.mtDNA_mergeVCF.output
-        output:
-                vcf = outDir + "/var/ngm_mtDNA/filtered_mtDNA.vcf"
-        shell:
-               """
-		perl  -ne 'print "$1\\n" if /DP=(\d+)/'  {input} > {outDir}/var/ngm_mtDNA/depth_mtDNA.txt
-               sort -n {outDir}/var/ngm_mtDNA/depth_mtDNA.txt | uniq -c | awk '{{print $2,$1}}' | eplot -d -r [200:2000] 2>/dev/null | tee
-               Nind=$(grep -m1 "^#C" {input}  | cut -f10- |wc -w)
-               coverageCutoff=$(awk -v Nind=$Nind '{{sum+=$1}} END {{print "DP < "(sum / NR / Nind + sqrt(sum / NR / Nind) * 3 ) * Nind}}' {outDir}/var/ngm_mtDNA/depth_mtDNA.txt)
-               echo Using coverage cutoff $coverageCutoff
-               vcffilter -s -f \"$coverageCutoff\" {input} | vcftools --vcf - --max-alleles 2 --recode --stdout > {output}
-               """
-		
-###using vcflib
-## I used finally only the rawmtDNA.vcf fasta file and checked manually for problem that could appear with gap == alignment good
-rule vcf2fasta_mtdna:
-		input: outDir + "/var/ngm_mtDNA/raw_mtDNA.vcf"
-		output: outDir + "/var/ngm_mtDNA/fasta/{sample}.fasta"
-		shell: 
-			"""
-			vcf2fasta -f {vdmtDNA} -P1 > {output}
-			"""
-
-### NUCLEAR PART			
-##Be careful, GATK version 4.0.0 have a slight different program option than the 3.0 version. As example, FastaAlternateReferenceMaker is not available in 4.0.0.
 rule sortvcf:
 	input:	variant = outDir + "/var/primitives.vcf.gz", list = outDir + "/var/sortsiteyear.txt"
 	output:	outDir + "/var/primitives-sort.vcf.gz"
@@ -567,7 +453,7 @@ rule sortvcf:
 		bcftools view -Oz --samples-file {input.list} {input.variant} > {output}
 		tabix -p vcf {output}
 		"""
-
+# transform in BEAGLE format for NGSadmix
 rule vcf2GL:
         input:	outDir + "/var/primitives-sort.vcf.gz"
         output:	temp(outDir + "/ngsadmix/all44/{chromosome}.BEAGLE.GL")
@@ -584,16 +470,17 @@ rule mergeGL:
                 (head -1 {input[0]}; for i in {input}; do cat $i | sed 1d; done) > {output}
                 """
 
+## All individuals NGSadmix
 rule NGSadmix:
         input: outDir + "/ngsadmix/all44/sevenchr.BEAGLE.GL"
         threads: 12
-        output: temp(outDir + "/ngsadmix/all44/run5/all44_{kcluster}.fopt.gz")
+        output: temp(outDir + "/ngsadmix/all44/run1/all44_{kcluster}.fopt.gz")
         shell:
                 """
-                NGSadmix -P {threads} -likes {input} -K {wildcards.kcluster} -outfiles /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/all44/run5/all44_{wildcards.kcluster} -minMaf 0.1
+                NGSadmix -P {threads} -likes {input} -K {wildcards.kcluster} -outfiles /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/all44/run1/all44_{wildcards.kcluster} -minMaf 0.1
                 """
 
-### JUST VARROA DESTRUCTOR INDIV
+## Just for Varroa destructor samples
 rule vdonly_vcf2GL:
         input:  outDir + "/var/primitives-sort.vcf.gz"
         output: temp(outDir + "/ngsadmix/vdonly/{chromosome}.BEAGLE.GL")
@@ -613,13 +500,13 @@ rule vdonly_mergeGL:
 rule vdonly_admix:
         input: outDir + "/ngsadmix/vdonly/vdonly.BEAGLE.GL"
         threads: 12
-        output: temp(outDir + "/ngsadmix/vdonly/run5/vd_{kcluster}.fopt.gz")
+        output: temp(outDir + "/ngsadmix/vdonly/run1/vd_{kcluster}.fopt.gz")
         shell:
                 """
-                NGSadmix -P {threads} -likes {input} -K {wildcards.kcluster} -outfiles /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/vdonly/run5/vd_{wildcards.kcluster} -minMaf 0.1
+                NGSadmix -P {threads} -likes {input} -K {wildcards.kcluster} -outfiles /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/vdonly/run1/vd_{wildcards.kcluster} -minMaf 0.1
                 """
 
-### JUST VARROA JACOBSONI INDIV
+## just for Varroa jacobsoni samples
 rule vjonly_vcf2GL:
         input:  outDir + "/var/primitives-sort.vcf.gz"
         output: temp(outDir + "/ngsadmix/vjonly/{chromosome}.BEAGLE.GL")
@@ -639,112 +526,14 @@ rule vjonly_mergeGL:
 rule vjonly_admix:
         input: outDir + "/ngsadmix/vjonly/vjonly.BEAGLE.GL"
         threads: 12
-        output: temp(outDir + "/ngsadmix/vjonly/run5/vj_{kcluster}.fopt.gz")
+        output: temp(outDir + "/ngsadmix/vjonly/run1/vj_{kcluster}.fopt.gz")
         shell:
                 """
-                NGSadmix -P {threads} -likes {input} -K {wildcards.kcluster} -outfiles /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/vjonly/run5/vj_{wildcards.kcluster} -minMaf 0.1
+                NGSadmix -P {threads} -likes {input} -K {wildcards.kcluster} -outfiles /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/vjonly/run1/vj_{wildcards.kcluster} -minMaf 0.1
                 """
+#### MAKE A SECTION FOR PCA
 
-### REMOVE THE INDIV VARROA SP
-rule exclude_vcf2GL:
-        input:  outDir + "/var/primitives-sort.vcf.gz"
-        output: temp(outDir + "/ngsadmix/exclude-vsp/{chromosome}.BEAGLE.GL")
-        shell:
-                """
-                vcftools --gzvcf {input} --chr {wildcards.chromosome} --keep /work/MikheyevU/Maeva/varroa-jump/data/var/38ind.txt --out /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/exclude-vsp/{wildcards.chromosome} --max-missing 1 --BEAGLE-GL
-                """
+####### ------------------------------------------------------------
+####### PART 6 DEMOGRAPHIC INFERENCES INPUT
+####### ------------------------------------------------------------
 
-rule exclude_mergeGL:
-        input: expand(outDir + "/ngsadmix/exclude-vsp/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES)
-        output: outDir + "/ngsadmix/exclude-vsp/38indv.BEAGLE.GL"
-        shell:
-                """
-                (head -1 {input[0]}; for i in {input}; do cat $i | sed 1d; done) > {output}
-                """
-
-rule exclude_admix:
-        input: outDir + "/ngsadmix/exclude-vsp/38indv.BEAGLE.GL"
-        threads: 12
-        output: temp(outDir + "/ngsadmix/exclude-vsp/run5/38indv_{kcluster}.fopt.gz")
-        shell:
-                """
-                NGSadmix -P {threads} -likes {input} -K {wildcards.kcluster} -outfiles /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/exclude-vsp/run5/38indv_{wildcards.kcluster} -minMaf 0.1
-                """
-
-### FOR DEMOGRAPHIC INFERENCES
-##using GATK 4.0.0
-#rule selectVariant:
-#	input: outDir + "/var/primitives-sort.vcf.gz"
-#	output: indiv = temp(outDir + "/var/subset/singlevcf/selectvariants/{sample}.vcf"),
-#		bgzip = temp(outDir + "/var/subset/singlevcf/selectvariants/{sample}.vcf.gz")
-#	shell: 
-#		"""
-#		gatk SelectVariants -R {vdRef} --variant {input} --output {output.indiv} -sn {wildcards.sample}
-#		bgzip -c {output.indiv} > {output.bgzip}
-#		tabix -p vcf {output.bgzip}
-#		"""
-
-##I use bcftools as SelectVariant does not output GL flag with the previous command
-#rule bcftools_indiv:
-#	input: outDir + "/var/primitives-sort.vcf.gz"
-#	output: temp(outDir + "/var/subset/singlevcf/bcftools/{sample}.vcf.gz")
-#	shell: 
-#		"""
-#		bcftools view -Oz -s {wildcards.sample} {input} > {output}
-#		tabix -p vcf {output}
-#		"""
-
-## Cut the big vcf file to load it easily into igv and decide with regions to choose for future IMa2 runs
-#rule selectVarChrom:
-#        input: outDir + "/var/primitives-sort.vcf.gz"
-#        output: chrom = temp(outDir + "/var/subset/chromosome/selectvariants/{chromosome}.vcf"),
-#                bgzip = temp(outDir + "/var/subset/chromosome/selectvariants/{chromosome}.vcf.gz")
-#        shell:
-#               """
-#                gatk SelectVariants -R {vdRef} --variant {input} --output {output.chrom} -L {wildcards.chromosome}
-#                bgzip -c {output.chrom} > {output.bgzip}
-#                tabix -p vcf {output.bgzip}
-#		"""
-		
-#rule bcftools_chrom:
-#        input: outDir + "/var/primitives-sort.vcf.gz"
-#        output: temp(outDir + "/var/subset/chromosome/bcftools/{chromosome}.vcf.gz")
-#        shell:
-#                """
-#                bcftools view -Oz -r {wildcards.chromosome} {input} > {output}
-#		tabix -p vcf {output}
-#		"""
-		
-#rule getIMvcf:
-#	input: 	variant = outDir + "/var/primitives-sort.vcf.gz",
-#		indiv = outDir + "/ima2/imindiv.txt"
-#	output:	subset = temp(outDir + "/ima2/nuclearloci/{locus}.vcf.gz"),
-#		stats = temp(outDir + "/ima2/nuclearloci/{locus}.out")
-#	shell:
-#		"""
-#		bcftools view -Oz -S {input.indiv} -r {wildcards.locus} {input.variant} > {output.subset}
-#		tabix -p vcf {output.subset}
-#		bcftools stats {output.subset} > {output.stats} 
-#		"""
-
-## after getting the vcf only for the samples selected in IMa2 I cheched how many SNPs, only 8 loci remaining 
-# the only potential loci were keep in good folder
-# It is not adapated for a future snakemake automatic run but put here just for you to check my steps
-
-#rule headerchange:
-#	input: outDir + "/ima2/nuclearloci/good/{candidate}.vcf.gz"
-#	output: temp(outDir + "/ima2/nuclearloci/eight/{candidate}-new.vcf")
-#	shell:
-#		"""
-#		zcat {input} | sed '2,1490d' > {output}
-#		"""
-
-### Before this step we need to remove the excess vcf header here
-##using GATK 3.8
-#rule fastaMaker:
-#	input: outDir + "/ima2/nuclearloci/eight/{candidate}-new.vcf"
-#	output: temp(outDir + "/ima2/nuclearloci/eight/fasta/{imavarroa}_{candidate}.fasta")
-#	shell: 
-#		"""
-#		java -jar /apps/unit/MikheyevU/Maeva/GATK/GenomeAnalysisTK.jar -T FastaAlternateReferenceMaker -R {vdRef} -L {wildcards.candidate} -V {input} -IUPAC {wildcards.imavarroa} -o {output}
-#		"""
