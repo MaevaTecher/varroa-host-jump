@@ -63,9 +63,7 @@ KCLUSTERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 
 
 ## Change target here depending on the output and step you will like to run up to
 rule all:
-	input: 	expand(outDir + "/meta/hosts/{sample}-20.txt", sample = SAMPLES),
-		outDir + "/var/primitives.vcf.gz",
-		outDir + "/var/ngm_mtDNA/filtered_mtDNA.vcf"
+	input: 	expand(outDir + "/var/ngm_mtDNA/fasta/{sample}_raw_wholemtDNA.fasta", sample = SAMPLES)
 		#expand(outDir + "/ngsadmix/vjonly/run5/vj_{kcluster}.fopt.gz", kcluster = KCLUSTERS),
 		#expand(outDir + "/ngsadmix/exclude-vsp/run5/38indv_{kcluster}.fopt.gz", kcluster = KCLUSTERS)
 
@@ -332,13 +330,15 @@ rule mtDNA_filterVCF:
 ## Checking with Sanger sequencing it is better to not filter the vcf mtDNA
 ###using vcflib
 ### I used finally only the rawmtDNA.vcf fasta file and checked manually for problem that could appear with gap == alignment good
-rule vcf2fasta_mtdna:
-                input: outDir + "/var/ngm_mtDNA/raw_mtDNA.vcf"
-                output: outDir + "/var/ngm_mtDNA/fasta/{sample}.fasta"
-                shell:
-                        """
-                        vcf2fasta -f {vdmtDNA} -P1 > {output}
-                        """
+## vcf2fasta -f /var/ngm_mtDNA/fasta/{sample}_AJ493124.2:0.fasta -P1 /var/ngm_mtDNA/raw_mtDNA.vcf
+#rule renamefasta:
+#                input: outDir + "/var/ngm_mtDNA/fasta/{sample}_AJ493124.2:0.fasta"
+#                output: outDir + "/var/ngm_mtDNA/fasta/{sample}_raw_wholemtDNA.fasta"
+#                shell:
+#                        """
+#			mv {input} {output}
+#					
+#                        """
 
 ##### ------------------------------------------------------------
 ##### PART 4 ANALYSES FST, POPULATION DIFFERENTIATION & STRUCTURE
@@ -361,43 +361,104 @@ rule outflankFst:
 		Rscript --vanilla /work/MikheyevU/Maeva/varroa-jump/scripts/outflank.R {input} {output}
 		"""
 
-rule popstats:
-	input:
-		vcf = outDir + "/var/filtered.vcf.gz",
-		ref = refDir + "/varroa.txt"
-	output:
-		dFst = outDir + "/R/dFst.txt",
-		jFst = outDir + "/R/jFst.txt",
-		dcStats = outDir + "/R/dcStats.txt",
-		dmStats = outDir + "/R/dmStats.txt",
-		jcStats = outDir + "/R/jcStats.txt",
-		jmStats = outDir + "/R/jmStats.txt",
-		dpFst = outDir + "/R/dpFst.txt",
-		jpFst = outDir + "/R/jpFst.txt"
-	threads: 8
-	resources: mem=20, time=12*60
+
+rule vcfsort:
+	input: 	vcf = outDir + "/var/primitives.vcf.gz",
+		list = outDir + "/list/varroa44.txt"
+	output: outDir + "/var/primitives-sort.vcf.gz"
 	shell:
 		"""
-		module load vcflib/1.0.0-rc1 parallel
-		dc=$(awk -v host=cerana -v species=VD -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat {input.vcf} |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") {input.ref} | sed 's/,$//')
-		dm=$(awk -v host=mellifera -v species=VD -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat data/var/filtered.vcf.gz |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") {input.ref} | sed 's/,$//')
-		jm=$(awk -v host=mellifera -v species=VJ -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat data/var/filtered.vcf.gz |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") {input.ref} | sed 's/,$//')
-		jc=$(awk -v host=cerana -v species=VJ -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat data/var/filtered.vcf.gz |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") {input.ref} | sed 's/,$//')
+		bcftools view --samples-file {input.list} --output-file {output} -Oz --min-af 0.05 {input.vcf}
+              	tabix -p vcf {output}
+	
+		"""
+## rename in vcf file the BEIS01000001.1 to 1 and so on ans call it rename
+#gunzip primitives-sort-rename.vcf.gz
+#sed -i 's/BEIS01000002.1/2/g' primitives-sort-rename.vcf
+#...
+rule vcf2plink:
+	input: outDir + "/var/primitives-sort-rename.vcf"
+	output: outDir + "/ldprune/44imaf5"
+	shell:
+		"""
+		vcftools --vcf {input} --out {output} --plink --chr 1 --chr 2 --chr 3 --chr 4 --chr 5 --chr 6 --chr 7 --maf 0.055
+		"""
+
+rule ldprune:
+	input: outDir + "/ldprune/44imaf5"
+	output:	outDir + "/ldprune/44imaf5-ldpruned"
+	shell:
+		"""
+		module load plink/1.90b3.36
+		plink --file {input} --indep-pairwise 50 5 0.5 --out {output}
+
+		"""
+
+rule SNPpruning:
+	input: 	list = outDir + "/ldprune/44imaf5-ldpruned.prune.in",
+		vcf = outDir + "/var/primitives-sort.vcf.gz"
+	output:	keeping =  outDir + "/ldprune/prune2keep.txt",
+		pruned = outDir + "/ldprune/primitives-sort-pruned"
+	shell:
+		"""
+		cp {input.list} {output.keeping}
+		sed -i 's/1:/BEIS01000001.1\t/g' {output.keeping}
+		sed -i 's/2:/BEIS01000002.1\t/g' {output.keeping}
+		sed -i 's/3:/BEIS01000003.1\t/g' {output.keeping}
+		sed -i 's/4:/BEIS01000004.1\t/g' {output.keeping}
+		sed -i 's/5:/BEIS01000005.1\t/g' {output.keeping}
+		sed -i 's/6:/BEIS01000006.1\t/g' {output.keeping}
+		sed -i 's/7:/BEIS01000007.1\t/g' {output.keeping}
+		vcftools --gzvcf {input.vcf} --positions {output.keeping} --maf 0.055 --recode --recode-INFO-all --out {output.pruned}
+
+		""
+
+#rule pcavcf:
+#	input:  outDir + "/ldprune/primitives-sort-pruned.recode.vcf"
+#	output: outDir + "/R/pca-all44.pdf"
+#	shell:
+#		"""
+#		module load R/3.4.2
+#		Rscript --vanilla /work/MikheyevU/Maeva/varroa-jump/scripts/jump-pca-all.sh {input} {output}
+#		"""
+
+#rule popstats:
+#	input:
+#		vcf = outDir + "/var/filtered.vcf.gz",
+#		ref = refDir + "/varroa.txt"
+#	output:
+#		dFst = outDir + "/R/dFst.txt",
+#		jFst = outDir + "/R/jFst.txt",
+#		dcStats = outDir + "/R/dcStats.txt",
+#		dmStats = outDir + "/R/dmStats.txt",
+#		jcStats = outDir + "/R/jcStats.txt",
+#		jmStats = outDir + "/R/jmStats.txt",
+#		dpFst = outDir + "/R/dpFst.txt",
+#		jpFst = outDir + "/R/jpFst.txt"
+#	threads: 8
+#	resources: mem=20, time=12*60
+#	shell:
+#		"""
+#		module load vcflib/1.0.0-rc1 parallel
+#		dc=$(awk -v host=cerana -v species=VD -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat {input.vcf} |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") {input.ref} | sed 's/,$//')
+#		dm=$(awk -v host=mellifera -v species=VD -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat data/var/filtered.vcf.gz |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") {input.ref} | sed 's/,$//')
+#		jm=$(awk -v host=mellifera -v species=VJ -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat data/var/filtered.vcf.gz |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") {input.ref} | sed 's/,$//')
+#		jc=$(awk -v host=cerana -v species=VJ -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat data/var/filtered.vcf.gz |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") {input.ref} | sed 's/,$//')
 		#compute Fst for both species
 
-		tempfile=$(mktemp)
-		echo "wcFst --target $dm --background $dc --file {input} --type GL  > {output.dFst} " >> $tempfile
-		echo "wcFst --target $jm --background $jc --file {input} --type GL  > {output.jFst}" >> $tempfile
-		echo "pFst --target $dm --background $dc --file {input} --type GL  > {output.dpFst} " >> $tempfile
-		echo "pFst --target $jm --background $jc --file {input} --type GL  > {output.jpFst} " >> $tempfile
-		#compute descriptive statistics for both species
-		echo "popStats --type GL --target $dc --file {input}  > {output.dcStats}" >> $tempfile
-		echo "popStats --type GL --target $dm --file {input}  > {output.dmStats}" >> $tempfile
-		echo "popStats --type GL --target $jc --file {input}  > {output.jcStats}" >> $tempfile
-		echo "popStats --type GL --target $jm --file {input}  > {output.jmStats}" >> $tempfile
-		cat $tempfile | xargs -P {threads} -I % sh -c '%'
-		rm $tempfile
-		"""
+#		tempfile=$(mktemp)
+#		echo "wcFst --target $dm --background $dc --file {input} --type GL  > {output.dFst} " >> $tempfile
+#		echo "wcFst --target $jm --background $jc --file {input} --type GL  > {output.jFst}" >> $tempfile
+#		echo "pFst --target $dm --background $dc --file {input} --type GL  > {output.dpFst} " >> $tempfile
+#		echo "pFst --target $jm --background $jc --file {input} --type GL  > {output.jpFst} " >> $tempfile
+#		#compute descriptive statistics for both species
+#		echo "popStats --type GL --target $dc --file {input}  > {output.dcStats}" >> $tempfile
+#		echo "popStats --type GL --target $dm --file {input}  > {output.dmStats}" >> $tempfile
+#		echo "popStats --type GL --target $jc --file {input}  > {output.jcStats}" >> $tempfile
+#		echo "popStats --type GL --target $jm --file {input}  > {output.jmStats}" >> $tempfile
+#		cat $tempfile | xargs -P {threads} -I % sh -c '%'
+#		rm $tempfile
+#		"""
 
 # # estimate SNP effects
 # rule snpEff:
@@ -445,14 +506,6 @@ rule popstats:
 ###### PART 5 PCA AND NGSADMIX
 ###### ------------------------------------------------------------
 
-rule sortvcf:
-	input:	variant = outDir + "/var/primitives.vcf.gz", list = outDir + "/var/sortsiteyear.txt"
-	output:	outDir + "/var/primitives-sort.vcf.gz"
-	shell:
-		"""
-		bcftools view -Oz --samples-file {input.list} {input.variant} > {output}
-		tabix -p vcf {output}
-		"""
 # transform in BEAGLE format for NGSadmix
 rule vcf2GL:
         input:	outDir + "/var/primitives-sort.vcf.gz"
