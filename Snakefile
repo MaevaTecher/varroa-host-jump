@@ -63,9 +63,16 @@ KCLUSTERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 
 
 ## Change target here depending on the output and step you will like to run up to
 rule all:
-	input: 	expand(outDir + "/var/ngm_mtDNA/fasta/{sample}_raw_wholemtDNA.fasta", sample = SAMPLES)
-		#expand(outDir + "/ngsadmix/vjonly/run5/vj_{kcluster}.fopt.gz", kcluster = KCLUSTERS),
-		#expand(outDir + "/ngsadmix/exclude-vsp/run5/38indv_{kcluster}.fopt.gz", kcluster = KCLUSTERS)
+	input: 	expand(outDir + "/meta/hosts/hosts-10.txt"),
+		expand(outDir + "/meta/hosts/hosts-20.txt"),
+		expand(outDir + "/meta/hosts/hosts-30.txt"),
+		expand(outDir + "/meta/hosts/hosts-40.txt"),
+		outDir + "/R/pca-all44-ldpruned.pdf",
+		outDir + "/R/pca-vdonly-ldpruned.pdf",
+		outDir + "/R/pca-vjonly-ldpruned.pdf",
+		expand(outDir + "/ngsadmix/all44/run1/all44_{kcluster}.fopt.gz", kcluster = KCLUSTERS),
+		expand(outDir + "/ngsadmix/vdonly/run1/vd_{kcluster}.fopt.gz", kcluster = KCLUSTERS),
+		expand(outDir + "/ngsadmix/vjonly/run1/vj_{kcluster}.fopt.gz", kcluster = KCLUSTERS)
 
 ### ------------------------------------------------------------
 ### PART 1 CHECK HONEY BEE HOST IDENTITY
@@ -82,7 +89,7 @@ rule checkHost:
 	shell:
 		"""
 		module load bowtie2/2.2.6 samtools/1.3.1
-		bowtie2 -p {threads} -x {hostBeeMtBowtieIndex} -1  {input.read1} -2 {input.read2} | samtools view -S -q {wildcards.q}  -F4 - | awk -v mellifera=0 -v cerana=0 -v sample={wildcards.sample} '$3~/^L/ {{mellifera++; next}}  {{cerana++}} END {{if(mellifera>cerana) print sample"\\tmellifera\\t"cerana"\\t"mellifera ; else print sample"\\tcerana\\t"cerana"\\t"mellifera}}' > {output}
+		bowtie2 -p {threads} -x {hostBeeMtBowtieIndex} -1  {input.read1} -2 {input.read2} | samtools view -S -q {wildcards.q}  -F4 - | awk -v mellifera=0 -v cerana=0 -v sample={wildcards.sample} '$3~/^NC_001566.1/ {{mellifera++; next}}  {{cerana++}} END {{if(mellifera>cerana) print sample"\\tmellifera\\t"cerana"\\t"mellifera ; else print sample"\\tcerana\\t"cerana"\\t"mellifera}}' > {output}
 		"""
 
 rule combineHost:
@@ -331,14 +338,13 @@ rule mtDNA_filterVCF:
 ###using vcflib
 ### I used finally only the rawmtDNA.vcf fasta file and checked manually for problem that could appear with gap == alignment good
 ## vcf2fasta -f /var/ngm_mtDNA/fasta/{sample}_AJ493124.2:0.fasta -P1 /var/ngm_mtDNA/raw_mtDNA.vcf
-#rule renamefasta:
-#                input: outDir + "/var/ngm_mtDNA/fasta/{sample}_AJ493124.2:0.fasta"
-#                output: outDir + "/var/ngm_mtDNA/fasta/{sample}_raw_wholemtDNA.fasta"
-#                shell:
-#                        """
-#			mv {input} {output}
-#					
-#                        """
+rule vcf2fasta:
+                input: 	outDir + "/var/ngm_mtDNA/raw_mtDNA.vcf"
+                output: temp(outDir + "/var/ngm_mtDNA/fasta/{sample}_raw_wholemtDNA.fasta")
+                shell:
+                        """
+			vcf2fasta -f {vdmtDNA} -P1 {input}
+                        """
 
 ##### ------------------------------------------------------------
 ##### PART 4 ANALYSES FST, POPULATION DIFFERENTIATION & STRUCTURE
@@ -348,6 +354,7 @@ rule VCF2Dis:
 	input: outDir + "/var/filtered.vcf.gz"
 	output: outDir + "/var/filtered.mat"
 	shell: "module load VCF2Dis/1.09; VCF2Dis -InPut {input} -OutPut {output}"
+
 
 rule outflankFst:
 # compute FST for outflank analysis
@@ -361,10 +368,9 @@ rule outflankFst:
 		Rscript --vanilla /work/MikheyevU/Maeva/varroa-jump/scripts/outflank.R {input} {output}
 		"""
 
-
 rule vcfsort:
 	input: 	vcf = outDir + "/var/primitives.vcf.gz",
-		list = outDir + "/list/varroa44.txt"
+		list = outDir + "/list/varroa44i.txt"
 	output: outDir + "/var/primitives-sort.vcf.gz"
 	shell:
 		"""
@@ -372,21 +378,34 @@ rule vcfsort:
               	tabix -p vcf {output}
 	
 		"""
-## rename in vcf file the BEIS01000001.1 to 1 and so on ans call it rename
-#gunzip primitives-sort-rename.vcf.gz
-#sed -i 's/BEIS01000002.1/2/g' primitives-sort-rename.vcf
-#...
+
+rule ready4plink:
+	input: outDir + "/var/primitives-sort.vcf.gz"
+	output: outDir + "/var/primitives-ready4plink.vcf"
+	shell:
+		"""
+		gunzip -c {input} > {output}
+                sed -i 's/BEIS01000001.1/1/g' {output}
+		sed -i 's/BEIS01000002.1/2/g' {output}
+                sed -i 's/BEIS01000003.1/3/g' {output}
+                sed -i 's/BEIS01000004.1/4/g' {output}
+                sed -i 's/BEIS01000005.1/5/g' {output}
+                sed -i 's/BEIS01000006.1/6/g' {output}
+                sed -i 's/BEIS01000007.1/7/g' {output}
+		
+		"""
+
 rule vcf2plink:
-	input: outDir + "/var/primitives-sort-rename.vcf"
-	output: outDir + "/ldprune/44imaf5"
+	input: outDir + "/var/primitives-ready4plink.vcf"
+	output: outDir + "/LDprune/44imaf5"
 	shell:
 		"""
 		vcftools --vcf {input} --out {output} --plink --chr 1 --chr 2 --chr 3 --chr 4 --chr 5 --chr 6 --chr 7 --maf 0.055
 		"""
 
 rule ldprune:
-	input: outDir + "/ldprune/44imaf5"
-	output:	outDir + "/ldprune/44imaf5-ldpruned"
+	input: outDir + "/LDprune/44imaf5"
+	output:	outDir + "/LDprune/44imaf5-ldpruned"
 	shell:
 		"""
 		module load plink/1.90b3.36
@@ -395,10 +414,10 @@ rule ldprune:
 		"""
 
 rule SNPpruning:
-	input: 	list = outDir + "/ldprune/44imaf5-ldpruned.prune.in",
+	input: 	list = outDir + "/LDprune/44imaf5-ldpruned.prune.in",
 		vcf = outDir + "/var/primitives-sort.vcf.gz"
-	output:	keeping =  outDir + "/ldprune/prune2keep.txt",
-		pruned = outDir + "/ldprune/primitives-sort-pruned"
+	output:	keeping =  outDir + "/LDprune/prune2keep.txt",
+		pruned = outDir + "/LDprune/primitives-sort-pruned"
 	shell:
 		"""
 		cp {input.list} {output.keeping}
@@ -410,17 +429,7 @@ rule SNPpruning:
 		sed -i 's/6:/BEIS01000006.1\t/g' {output.keeping}
 		sed -i 's/7:/BEIS01000007.1\t/g' {output.keeping}
 		vcftools --gzvcf {input.vcf} --positions {output.keeping} --maf 0.055 --recode --recode-INFO-all --out {output.pruned}
-
-		""
-
-#rule pcavcf:
-#	input:  outDir + "/ldprune/primitives-sort-pruned.recode.vcf"
-#	output: outDir + "/R/pca-all44.pdf"
-#	shell:
-#		"""
-#		module load R/3.4.2
-#		Rscript --vanilla /work/MikheyevU/Maeva/varroa-jump/scripts/jump-pca-all.sh {input} {output}
-#		"""
+		"""
 
 #rule popstats:
 #	input:
@@ -506,13 +515,62 @@ rule SNPpruning:
 ###### PART 5 PCA AND NGSADMIX
 ###### ------------------------------------------------------------
 
+## PCA on whole genome using PCA and vcfR
+rule pcagenome:
+	input:	variant = outDir + "/LDprune/primitives-sort-pruned.recode.vcf",
+		listpop = outDir + "/list/varroaR44i_6POP.txt"
+	output:	outDir + "/R/pca-all44-ldpruned.pdf"
+	shell:
+		"""
+		module load R/3.4.2
+		Rscript --vanilla /work/MikheyevU/Maeva/varroa-jump/scripts/PCA_vcfR.R {input.variant} {input.listpop} {output}
+		"""
+
+rule parsevcfVD:
+	input:	variant = outDir + "/LDprune/primitives-sort-pruned.recode.vcf",
+		listpop = outDir + "/list/vdonly.txt"
+	output:	outDir + "/LDprune/vdonly-sort-pruned"
+	shell:
+		"""
+		vcftools --vcf {input.variant} --keep {input.listpop} --maf 0.055 --recode --recode-INFO-all --out {output}
+		"""
+
+rule pcavdonly:
+        input:  variant = outDir + "/LDprune/primitives-sort-pruned.recode.vcf",
+                listpop = outDir + "/list/vdonlyR19i_3POP.txt"
+        output: outDir + "/R/pca-vdonly-ldpruned.pdf"
+        shell:
+                """
+                module load R/3.4.2
+                Rscript --vanilla /work/MikheyevU/Maeva/varroa-jump/scripts/PCA_vcfR.R {input.variant} {input.listpop} {output}
+                """
+
+rule parsevcfVJ:
+        input:  variant = outDir + "/LDprune/primitives-sort-pruned.recode.vcf",
+                listpop = outDir + "/list/vjonly.txt"
+        output: outDir + "/LDprune/vjonly-sort-pruned"
+        shell:
+                """
+                vcftools --vcf {input.variant} --keep {input.listpop} --maf 0.055 --recode --recode-INFO-all --out {output}
+                """
+
+rule pcavjonly:
+        input:  variant = outDir + "/LDprune/primitives-sort-pruned.recode.vcf",
+                listpop = outDir + "/list/vjonlyR25i_3POP.txt"
+        output: outDir + "/R/pca-vjonly-ldpruned.pdf"
+        shell:
+                """
+                module load R/3.4.2
+                Rscript --vanilla /work/MikheyevU/Maeva/varroa-jump/scripts/PCA_vcfR.R {input.variant} {input.listpop} {output}
+                """
+
 # transform in BEAGLE format for NGSadmix
 rule vcf2GL:
-        input:	outDir + "/var/primitives-sort.vcf.gz"
+        input:	outDir + "/LDprune/primitives-sort-pruned.recode.vcf"
         output:	temp(outDir + "/ngsadmix/all44/{chromosome}.BEAGLE.GL")
         shell:
                 """
-		vcftools --gzvcf {input} --chr {wildcards.chromosome} --out /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/all44/{wildcards.chromosome} --max-missing 1 --BEAGLE-GL
+		vcftools --vcf {input} --chr {wildcards.chromosome} --keep {input} --out /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/all44/{wildcards.chromosome} --max-missing 1 --BEAGLE-GL
                 """
 
 rule mergeGL:
@@ -535,11 +593,11 @@ rule NGSadmix:
 
 ## Just for Varroa destructor samples
 rule vdonly_vcf2GL:
-        input:  outDir + "/var/primitives-sort.vcf.gz"
+        input:  outDir + "/LDprune/primitives-sort-pruned.recode.vcf"
         output: temp(outDir + "/ngsadmix/vdonly/{chromosome}.BEAGLE.GL")
         shell:
                 """
-                vcftools --gzvcf {input} --chr {wildcards.chromosome} --keep /work/MikheyevU/Maeva/varroa-jump/data/var/vdonly.txt --out /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/vdonly/{wildcards.chromosome} --max-missing 1 --BEAGLE-GL
+                vcftools --vcf {input} --chr {wildcards.chromosome} --keep /work/MikheyevU/Maeva/varroa-jump/data/list/vdonly.txt --out /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/vdonly/{wildcards.chromosome} --max-missing 1 --BEAGLE-GL
                 """
 
 rule vdonly_mergeGL:
@@ -561,11 +619,11 @@ rule vdonly_admix:
 
 ## just for Varroa jacobsoni samples
 rule vjonly_vcf2GL:
-        input:  outDir + "/var/primitives-sort.vcf.gz"
+        input:  outDir + "/LDprune/primitives-sort-pruned.recode.vcf"
         output: temp(outDir + "/ngsadmix/vjonly/{chromosome}.BEAGLE.GL")
         shell:
                 """
-                vcftools --gzvcf {input} --chr {wildcards.chromosome} --keep /work/MikheyevU/Maeva/varroa-jump/data/var/vjonly.txt --out /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/vjonly/{wildcards.chromosome} --max-missing 1 --BEAGLE-GL
+                vcftools --gzvcf {input} --chr {wildcards.chromosome} --keep /work/MikheyevU/Maeva/varroa-jump/data/list/vjonly.txt --out /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/vjonly/{wildcards.chromosome} --max-missing 1 --BEAGLE-GL
                 """
 
 rule vjonly_mergeGL:
@@ -584,7 +642,6 @@ rule vjonly_admix:
                 """
                 NGSadmix -P {threads} -likes {input} -K {wildcards.kcluster} -outfiles /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/vjonly/run1/vj_{wildcards.kcluster} -minMaf 0.1
                 """
-#### MAKE A SECTION FOR PCA
 
 ####### ------------------------------------------------------------
 ####### PART 6 DEMOGRAPHIC INFERENCES INPUT
