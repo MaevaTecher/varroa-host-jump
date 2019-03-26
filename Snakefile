@@ -11,6 +11,9 @@ refDir = "/work/MikheyevU/Maeva/varroa-jump/ref2019"
 SCRATCH  = "/work/scratch/" + getpass.getuser()
 krakenDB = "/work/MikheyevU/kraken_db"
 
+#path for software
+fastsimcoal2 = "/work/MikheyevU/Maeva/demography/fsc26_linux64/fsc26"
+easySFS = "/apps/unit/MikheyevU/Maeva/easySFS/easySFS.py"
 ### ------------------------------------------------------------
 ###  REFERENCE GENOMES HONEY BEE HOSTS AND VARROA MITES
 ### ------------------------------------------------------------
@@ -55,24 +58,27 @@ for regionmt in REGIONSMT:
                 REGIONSMT[regionmt][idx] = " -r " + str(i)
 
 ## Numbers of clusters for NGSadmix analyses
-KCLUSTERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+KCLUSTERS = range (1,21)
+
+RUNS = ["run1", "run2", "run3", "run4", "run5"]
+
+## Parameters for demographic inferences
+MODELS = ["M1_div", "M2_IM", "M3_IMtoAM", "M4_IMtoAC", "M5_botdiv", "M6_botIM", "M7_botIMtOAM", "M8_botIMtOAC"]
+# different species or pop-species for which SFS was computed and will be run independently
+TARGETS = ["destructor", "jacobsoni", "png_jacobsoni"]
 
 ### ------------------------------------------------------------
 ### PSEUDO RULE FOR BUILD-TARGET
 ### ------------------------------------------------------------
 
 ## Change target here depending on the output and step you will like to run up to
-rule all:
-	input: 	expand(outDir + "/meta/hosts/hosts-10.txt"),
-		expand(outDir + "/meta/hosts/hosts-20.txt"),
-		expand(outDir + "/meta/hosts/hosts-30.txt"),
-		expand(outDir + "/meta/hosts/hosts-40.txt"),
-		outDir + "/R/pca-all44-ldpruned.pdf",
-		outDir + "/R/pca-vdonly-ldpruned.pdf",
-		outDir + "/R/pca-vjonly-ldpruned.pdf",
-		expand(outDir + "/ngsadmix/all44/run1/all44_{kcluster}.fopt.gz", kcluster = KCLUSTERS),
-		expand(outDir + "/ngsadmix/vdonly/run1/vd_{kcluster}.fopt.gz", kcluster = KCLUSTERS),
-		expand(outDir + "/ngsadmix/vjonly/run1/vj_{kcluster}.fopt.gz", kcluster = KCLUSTERS)
+rule all: 
+	input:	expand(outDir + "/demography/{target}/{model}/{model}_{iteration}.tpl", model = MODELS, iteration = range (1,101), target = TARGETS),
+		expand(outDir + "/demography/{target}/{model}/{model}_{iteration}.est", model = MODELS, iteration = range (1,101), target = TARGETS),
+		expand(outDir + "/demography/{target}/{model}/{model}_{iteration}_jointMAFpop1_0.obs", model = MODELS, iteration = range (1,101), target = TARGETS),
+		expand(outDir + "/ngsadmix/all44/{run}/all44_{kcluster}.fopt.gz", kcluster = KCLUSTERS, run = RUNS),
+		expand(outDir + "/ngsadmix/vdonly/{run}/vd_{kcluster}.fopt.gz", kcluster = KCLUSTERS, run = RUNS),
+		expand(outDir + "/ngsadmix/vjonly/{run}/vj_{kcluster}.fopt.gz", kcluster = KCLUSTERS, run = RUNS)
 
 ### ------------------------------------------------------------
 ### PART 1 CHECK HONEY BEE HOST IDENTITY
@@ -536,7 +542,7 @@ rule parsevcfVD:
 		"""
 
 rule pcavdonly:
-        input:  variant = outDir + "/LDprune/primitives-sort-pruned.recode.vcf",
+        input:  variant = outDir + "/LDprune/vdonly-sort-pruned.recode.vcf",
                 listpop = outDir + "/list/vdonlyR19i_3POP.txt"
         output: outDir + "/R/pca-vdonly-ldpruned.pdf"
         shell:
@@ -555,7 +561,7 @@ rule parsevcfVJ:
                 """
 
 rule pcavjonly:
-        input:  variant = outDir + "/LDprune/primitives-sort-pruned.recode.vcf",
+        input:  variant = outDir + "/LDprune/vjonly-sort-pruned.recode.vcf",
                 listpop = outDir + "/list/vjonlyR25i_3POP.txt"
         output: outDir + "/R/pca-vjonly-ldpruned.pdf"
         shell:
@@ -585,10 +591,10 @@ rule mergeGL:
 rule NGSadmix:
         input: outDir + "/ngsadmix/all44/sevenchr.BEAGLE.GL"
         threads: 12
-        output: temp(outDir + "/ngsadmix/all44/run1/all44_{kcluster}.fopt.gz")
+        output: temp(outDir + "/ngsadmix/all44/{run}/all44_{kcluster}.fopt.gz")
         shell:
                 """
-                NGSadmix -P {threads} -likes {input} -K {wildcards.kcluster} -outfiles /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/all44/run1/all44_{wildcards.kcluster} -minMaf 0.1
+                NGSadmix -P {threads} -likes {input} -K {wildcards.kcluster} -outfiles /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/all44/{wildcards.run}/all44_{wildcards.kcluster} -minMaf 0.1
                 """
 
 ## Just for Varroa destructor samples
@@ -611,10 +617,10 @@ rule vdonly_mergeGL:
 rule vdonly_admix:
         input: outDir + "/ngsadmix/vdonly/vdonly.BEAGLE.GL"
         threads: 12
-        output: temp(outDir + "/ngsadmix/vdonly/run1/vd_{kcluster}.fopt.gz")
+        output: temp(outDir + "/ngsadmix/vdonly/{run}/vd_{kcluster}.fopt.gz")
         shell:
                 """
-                NGSadmix -P {threads} -likes {input} -K {wildcards.kcluster} -outfiles /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/vdonly/run1/vd_{wildcards.kcluster} -minMaf 0.1
+                NGSadmix -P {threads} -likes {input} -K {wildcards.kcluster} -outfiles /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/vdonly/{wildcards.run}/vd_{wildcards.kcluster} -minMaf 0.1
                 """
 
 ## just for Varroa jacobsoni samples
@@ -637,13 +643,54 @@ rule vjonly_mergeGL:
 rule vjonly_admix:
         input: outDir + "/ngsadmix/vjonly/vjonly.BEAGLE.GL"
         threads: 12
-        output: temp(outDir + "/ngsadmix/vjonly/run1/vj_{kcluster}.fopt.gz")
+        output: temp(outDir + "/ngsadmix/vjonly/{run}/vj_{kcluster}.fopt.gz")
         shell:
                 """
-                NGSadmix -P {threads} -likes {input} -K {wildcards.kcluster} -outfiles /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/vjonly/run1/vj_{wildcards.kcluster} -minMaf 0.1
+                NGSadmix -P {threads} -likes {input} -K {wildcards.kcluster} -outfiles /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/vjonly/{wildcards.run}/vj_{wildcards.kcluster} -minMaf 0.1
                 """
 
 ####### ------------------------------------------------------------
 ####### PART 6 DEMOGRAPHIC INFERENCES INPUT
 ####### ------------------------------------------------------------
 
+## We use here the python script easySFS obtained from https://github.com/isaacovercast/easySFS
+# Before running the following rule, use the --preview mode to choose the projection number to balance # of segregating sites against # of samples to avoid downsampling too far.
+# here we decided to keep all samples for VDAC so 
+
+#rule vcf2SFS:
+#        input:  variant = outDir + "/LDprune/primitives-sort-pruned.recode.vcf",
+#		poplist = outDir + "/list/popSFS_vd18i2pop.txt"
+#        output: temp(outDir + "/demography/inputMAF")
+#        shell:
+#                """
+#                module load python/2.7.10
+#		export PYTHONPATH=/apps/unit/MikheyevU/Maeva/easySFS/lib/python2.7/site-packages
+#		
+#		easySFS -i {input.variant} -p {input.poplist} -a -o {output} --proj=18,18
+#		"""
+
+## prepare the files .tpl and .est for each model tested here using fastsimcoal2, and copy the jointMAF from conversion using easySFS in each model folder
+## I noticed that easySFS convert the file for fastsimcoal but must be rename to fit the requirement from 
+
+rule files4fsc:
+	input:	tplin = outDir + "/demography/{target}/{model}/{model}.tpl",
+		estin = outDir + "/demography/{target}/{model}/{model}.est",
+		mafin = outDir + "/demography/{target}/{model}/{model}_jointMAFpop1_0.obs"
+	output:	tplout = outDir + "/demography/{target}/{model}/{model}_{iteration}.tpl",
+		estout = outDir + "/demography/{target}/{model}/{model}_{iteration}.est",
+                mafout = outDir + "/demography/{target}/{model}/{model}_{iteration}_jointMAFpop1_0.obs"
+	shell:
+		"""
+		cp {input.tplin} {output.tplout}
+		cp {input.estin} {output.estout}
+		cp {input.mafin} {output.mafout}
+		"""
+
+#rule runfastsimcoal:
+#	input:	tpl = outDir + "/demography/{target}/{model}/{model}_{iteration}.tpl",
+#		est = outDir + "/demography/{target}/{model}/{model}_{iteration}.est"
+#	output:	temp(outDir + "/demography/{target}/{model}/{model}_{iteration}/{model}_{iteration}.bestlhoods"
+#	shell:
+#		"""
+#		fastsimcoal2 --tplfile {input.tpl} --estfile {input.est} -m --numsims 1000000 --maxlhood 0.001 --minnumloops 20 --numloops 50 -c 10
+#		"""
