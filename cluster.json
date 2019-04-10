@@ -68,5 +68,17 @@
         "partition" : "largemem",
         "mem" : "150G",
         "time": "5:00:00"
+    },
+    "files4fsc":
+    {
+        "partition" : "compute",
+        "mem" : "5G",
+        "time": "00:10:00"
+    },
+    "runfastsimcoal":
+    {
+        "partition" : "compute",
+        "mem" : "5G",
+        "time": "8:00:00"
     }
 }
