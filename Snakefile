@@ -73,13 +73,8 @@ TARGETS = ["destructor", "jacobsoni", "png_jacobsoni"]
 
 ## Change target here depending on the output and step you will like to run up to
 rule all: 
-	input:	#expand(outDir + "/demography/{target}/{model}/{model}_{iteration}.tpl", model = MODELS, iteration = range (1,201), target = TARGETS),
-		#expand(outDir + "/demography/{target}/{model}/{model}_{iteration}.est", model = MODELS, iteration = range (1,201), target = TARGETS),
-		#expand(outDir + "/demography/{target}/{model}/{model}_{iteration}_jointMAFpop1_0.obs", model = MODELS, iteration = range (1,201), target = TARGETS),
-		expand(outDir + "/ngsadmix/all44/{run}/all44_{kcluster}.fopt.gz", kcluster = KCLUSTERS, run = RUNS),
-		outDir + "/R/VJP.txt"
-		#expand(outDir + "/ngsadmix/vdonly/{run}/vd_{kcluster}.fopt.gz", kcluster = KCLUSTERS, run = RUNS),
-		#expand(outDir + "/ngsadmix/vjonly/{run}/vj_{kcluster}.fopt.gz", kcluster = KCLUSTERS, run = RUNS)
+	input:	outDir + "/R/pca-all44-ldpruned.pdf"
+		#outDir + "/R/pca-vdonly-ldpruned.pdf"
 
 ### ------------------------------------------------------------
 ### PART 1 CHECK HONEY BEE HOST IDENTITY
@@ -187,6 +182,17 @@ rule nextgenmap:
 		ngm -t {threads} -b  -1 {input.read1} -2 {input.read2} -r {vdRef} --rg-id {wildcards.sample} --rg-sm {wildcards.sample} --rg-pl ILLUMINA --rg-lb {wildcards.sample} | samtools sort - -m 50G -T {SCRATCH}/ngm/{wildcards.sample} -o - | samtools rmdup - - | variant - -m 500 -b -o {output.alignment}
 		samtools index {output.alignment}
 		"""
+
+rule bamstats:
+        input:
+                bamfile = outDir + "/alignments/ngm/{sample}.bam"
+        output:
+                temp(outDir + "/statsbam/ngm/{sample}_stats.txt")
+        shell:
+                """
+                module load samtools/1.9
+		samtools flagstat {input} > {output}
+		"""
 	
 rule freeBayes:
 	input: 
@@ -203,6 +209,7 @@ rule freeBayes:
 		for i in {params.bams}; do name=$(basename $i .bam); if [[ $name == VJ* ]] ; then echo $name VJ; else echo $name VD; fi ; done > {outDir}/var/pops.txt
 		freebayes --min-alternate-fraction 0.2 --use-best-n-alleles 4 -m 5 -q 5 --populations {outDir}/var/pops.txt -b {params.bams} {params.span}  -f {vdRef} | vcffilter  -f "QUAL > 20 & NS > {params.missing}" > {output}
 		"""
+
 
 rule mergeVCF:
 	input: 
@@ -523,14 +530,18 @@ rule SNPpruning:
 ###### ------------------------------------------------------------
 
 ## PCA on whole genome using PCA and vcfR
+## here for the arguments of PCA we have to input five arguments
+## argument 4 is either myCol.all, myCol.vd or myCol.vj
+## argument 5 is either myShape.all, myShape.vd, myShape.vj
+
 rule pcagenome:
 	input:	variant = outDir + "/LDprune/primitives-sort-pruned.recode.vcf",
-		listpop = outDir + "/list/varroaR44i_6POP.txt"
+		listpop = outDir + "/list/varroaR44i_POP-COUNTRY.txt"
 	output:	outDir + "/R/pca-all44-ldpruned.pdf"
 	shell:
 		"""
 		module load R/3.4.2
-		Rscript --vanilla /work/MikheyevU/Maeva/varroa-jump/scripts/PCA_vcfR.R {input.variant} {input.listpop} {output}
+		Rscript --vanilla /work/MikheyevU/Maeva/varroa-jump/scripts/PCA_vcfR_modif.R {input.variant} {input.listpop} {output}
 		"""
 
 rule parsevcfVD:
@@ -544,7 +555,7 @@ rule parsevcfVD:
 
 rule pcavdonly:
         input:  variant = outDir + "/LDprune/vdonly-sort-pruned.recode.vcf",
-                listpop = outDir + "/list/vdonlyR19i_3POP.txt"
+                listpop = outDir + "/list/vdonlyR19i_POP-COUNTRY.txt"
         output: outDir + "/R/pca-vdonly-ldpruned.pdf"
         shell:
                 """
@@ -563,7 +574,7 @@ rule parsevcfVJ:
 
 rule pcavjonly:
         input:  variant = outDir + "/LDprune/vjonly-sort-pruned.recode.vcf",
-                listpop = outDir + "/list/vjonlyR25i_3POP.txt"
+                listpop = outDir + "/list/vjonlyR25i_POP-COUNTRY.txt"
         output: outDir + "/R/pca-vjonly-ldpruned.pdf"
         shell:
                 """
