@@ -76,8 +76,14 @@ rule all:
 	input:	#expand(outDir + "/demography/{target}/{model}/{model}_{iteration}.tpl", model = MODELS, iteration = range (1,201), target = TARGETS),
 		#expand(outDir + "/demography/{target}/{model}/{model}_{iteration}.est", model = MODELS, iteration = range (1,201), target = TARGETS),
 		#expand(outDir + "/demography/{target}/{model}/{model}_{iteration}_jointMAFpop1_0.obs", model = MODELS, iteration = range (1,201), target = TARGETS),
-		expand(outDir + "/ngsadmix/all44/{run}/all44_{kcluster}.fopt.gz", kcluster = KCLUSTERS, run = RUNS),
-		outDir + "/R/VJP.txt"
+		#expand(outDir + "/ngsadmix/all44/{run}/all44_{kcluster}.fopt.gz", kcluster = KCLUSTERS, run = RUNS),
+		outDir + "/R/VJP13.txt",
+		#outDir + "/R/VJcer.txt",
+		#outDir + "/R/VDcer.txt",
+		#outDir + "/R/VJmel.txt",
+                #outDir + "/R/VDmel.txt",
+		outDir + "/R/VJP13.outflank.rds"
+		#outDir + "/R/VDK.outflank.rds"
 		#expand(outDir + "/ngsadmix/vdonly/{run}/vd_{kcluster}.fopt.gz", kcluster = KCLUSTERS, run = RUNS),
 		#expand(outDir + "/ngsadmix/vjonly/{run}/vj_{kcluster}.fopt.gz", kcluster = KCLUSTERS, run = RUNS)
 
@@ -266,7 +272,7 @@ rule VCF012:
 	# convert vcf to R data frame with meta-data 
 	# remove maf 0.1, since we don't have much power for them
 	input: 
-		vcf = outDir + "/var/primitives-sort.vcf.gz",
+		vcf = outDir + "/LDprune/primitives-sort-pruned.recode.vcf",
 		ref = refDir + "/varroa2019.txt"
 	output: outDir + "/R/{species}.txt"
 	shell: 
@@ -358,8 +364,8 @@ rule vcf2fasta:
 ##### ------------------------------------------------------------
 
 rule VCF2Dis:
-	input: outDir + "/var/filtered.vcf.gz"
-	output: outDir + "/var/filtered.mat"
+	input: outDir + "/LDprune/primitives-sort-pruned.recode.vcf"
+	output: outDir + "/LDprune/primitives.mat"
 	shell: "module load VCF2Dis/1.09; VCF2Dis -InPut {input} -OutPut {output}"
 
 
@@ -438,43 +444,43 @@ rule SNPpruning:
 		vcftools --gzvcf {input.vcf} --positions {output.keeping} --maf 0.055 --recode --recode-INFO-all --out {output.pruned}
 		"""
 
-#rule popstats:
-#	input:
-#		vcf = outDir + "/var/filtered.vcf.gz",
-#		ref = refDir + "/varroa.txt"
-#	output:
-#		dFst = outDir + "/R/dFst.txt",
-#		jFst = outDir + "/R/jFst.txt",
-#		dcStats = outDir + "/R/dcStats.txt",
-#		dmStats = outDir + "/R/dmStats.txt",
-#		jcStats = outDir + "/R/jcStats.txt",
-#		jmStats = outDir + "/R/jmStats.txt",
-#		dpFst = outDir + "/R/dpFst.txt",
-#		jpFst = outDir + "/R/jpFst.txt"
-#	threads: 8
-#	resources: mem=20, time=12*60
-#	shell:
-#		"""
-#		module load vcflib/1.0.0-rc1 parallel
-#		dc=$(awk -v host=cerana -v species=VD -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat {input.vcf} |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") {input.ref} | sed 's/,$//')
-#		dm=$(awk -v host=mellifera -v species=VD -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat data/var/filtered.vcf.gz |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") {input.ref} | sed 's/,$//')
-#		jm=$(awk -v host=mellifera -v species=VJ -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat data/var/filtered.vcf.gz |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") {input.ref} | sed 's/,$//')
-#		jc=$(awk -v host=cerana -v species=VJ -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat data/var/filtered.vcf.gz |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") {input.ref} | sed 's/,$//')
+rule popstats:
+	input:
+		vcf = outDir + "/var/filtered.vcf.gz",
+		ref = refDir + "/varroa.txt"
+	output:
+		dFst = outDir + "/R/dFst.txt",
+		jFst = outDir + "/R/jFst.txt",
+		dcStats = outDir + "/R/dcStats.txt",
+		dmStats = outDir + "/R/dmStats.txt",
+		jcStats = outDir + "/R/jcStats.txt",
+		jmStats = outDir + "/R/jmStats.txt",
+		dpFst = outDir + "/R/dpFst.txt",
+		jpFst = outDir + "/R/jpFst.txt"
+	threads: 8
+	resources: mem=20, time=12*60
+	shell:
+		"""
+		module load vcflib/1.0.0-rc1 parallel
+		dc=$(awk -v host=cerana -v species=VD -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat {input.vcf} |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") {input.ref} | sed 's/,$//')
+		dm=$(awk -v host=mellifera -v species=VD -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat data/var/filtered.vcf.gz |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") {input.ref} | sed 's/,$//')
+		jm=$(awk -v host=mellifera -v species=VJ -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat data/var/filtered.vcf.gz |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") {input.ref} | sed 's/,$//')
+		jc=$(awk -v host=cerana -v species=VJ -v ORS=, '(NR==FNR) {{a[$1]=NR-1; next}} ($2==host) && ($3==species) {{print a[$1]}}'  <(zcat data/var/filtered.vcf.gz |grep -m1 "^#C" | cut -f10- | tr "\\t" "\\n") {input.ref} | sed 's/,$//')
 		#compute Fst for both species
 
-#		tempfile=$(mktemp)
-#		echo "wcFst --target $dm --background $dc --file {input} --type GL  > {output.dFst} " >> $tempfile
-#		echo "wcFst --target $jm --background $jc --file {input} --type GL  > {output.jFst}" >> $tempfile
-#		echo "pFst --target $dm --background $dc --file {input} --type GL  > {output.dpFst} " >> $tempfile
-#		echo "pFst --target $jm --background $jc --file {input} --type GL  > {output.jpFst} " >> $tempfile
-#		#compute descriptive statistics for both species
-#		echo "popStats --type GL --target $dc --file {input}  > {output.dcStats}" >> $tempfile
-#		echo "popStats --type GL --target $dm --file {input}  > {output.dmStats}" >> $tempfile
-#		echo "popStats --type GL --target $jc --file {input}  > {output.jcStats}" >> $tempfile
-#		echo "popStats --type GL --target $jm --file {input}  > {output.jmStats}" >> $tempfile
-#		cat $tempfile | xargs -P {threads} -I % sh -c '%'
-#		rm $tempfile
-#		"""
+		tempfile=$(mktemp)
+		echo "wcFst --target $dm --background $dc --file {input} --type GL  > {output.dFst} " >> $tempfile
+		echo "wcFst --target $jm --background $jc --file {input} --type GL  > {output.jFst}" >> $tempfile
+		echo "pFst --target $dm --background $dc --file {input} --type GL  > {output.dpFst} " >> $tempfile
+		echo "pFst --target $jm --background $jc --file {input} --type GL  > {output.jpFst} " >> $tempfile
+		#compute descriptive statistics for both species
+		echo "popStats --type GL --target $dc --file {input}  > {output.dcStats}" >> $tempfile
+		echo "popStats --type GL --target $dm --file {input}  > {output.dmStats}" >> $tempfile
+		echo "popStats --type GL --target $jc --file {input}  > {output.jcStats}" >> $tempfile
+		echo "popStats --type GL --target $jm --file {input}  > {output.jmStats}" >> $tempfile
+		cat $tempfile | xargs -P {threads} -I % sh -c '%'
+		rm $tempfile
+		"""
 
 # # estimate SNP effects
 # rule snpEff:
