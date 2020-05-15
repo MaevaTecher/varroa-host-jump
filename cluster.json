@@ -3,7 +3,7 @@
     {
         "cpus-per-task" : 1,
         "partition" : "compute",
-        "mem" : "30G",
+        "mem" : "80G",
         "time": "5-00:00:00"
     },
     "checkHost":
