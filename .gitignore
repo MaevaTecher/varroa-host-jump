@@ -1,4 +1,0 @@
-*.out
-slurm*
-scripts/__pycache__/*
-data/
