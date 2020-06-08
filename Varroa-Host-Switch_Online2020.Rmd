@@ -1,0 +1,434 @@
+---
+title: "Online Ressource: Varroa Host Switch Genomics and Demography"
+author: "Maeva A. Techer, Ecology and Evolution, OIST"
+date: "(updated 2020-06-08)"
+output: 
+  html_document:
+    toc: true 
+    toc_float: true # make 
+    depth: 3  
+    number_sections: false 
+    theme: flatly
+    code_folding: hide #
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This online ressource is there to provide additional interactive visualization tool for the Varroa mites sampling and sequencing data obtained from the associated paper "XXXX". A Snakemake pipeline created and used for genomics mapping, variant calling and analysis is provided in this host GitHub repository. Most genomics and demographic analysis using fastsimcoal2 were computed on the Okinawa Institute of Science and Technology OIST cluster, Sango. 
+
+Click on "code" button on the right to make appear the libraries used and R code for each section.
+
+``` {r rawmetadata, message = FALSE, warning = FALSE, results="hide"}
+setwd("~/Dropbox (OIST)/varroa-host-switch-demo/R_Markdown")
+library("tidyverse")
+library("knitr") # for the markdown
+library("kableExtra") # for creating a scrolling table
+library("ggplot2") # for plotting 
+library("maps")
+library("leaflet")
+library("htmltools")
+library("rgdal")
+library("gridExtra")
+library("gghighlight")
+library("adegenet")
+library("vcfR")
+library("ggmap")
+library("poppr")
+library("RColorBrewer")
+library("gridExtra")
+library("igraph")
+library("StAMPP")
+library("lattice")
+library("reshape2")
+library("ggrepel") # for text labels
+library("pcadapt")
+library("data.table")
+library("ggthemes")
+library("ggpubr")
+library("boot")
+library("plotly")
+library("forcats")
+library("plotly")
+
+```
+
+# 1. Distribution maps of the Varroa mites sampled
+
+Here, we have 43 samples of Varroa mites for which we have sequenced the whole genome succesfully. We use the `leaflet` package to create an interactive map showing the location and from which host, each Varroa mite was collected.
+
+*ID* = Name code of the samples obtained from the CSIRO varroa collection  
+*Species* = Identified species according to mtDNA of the mtDNA COX1 partial gene  
+*Host collected* = Varroa mites were collected from within honey bee colonies identified by the collector as either Western honey bee _Apis mellifera_ or Eastern honey bee _Apis cerana_.  
+*Location/Country/Date* = Exact informations on sampling  
+*Site* = Code name of each sampling site corresponding on the map
+*Approximate.X/Y* = GPS coordinates from samples obtained before 2008 are infered from approximate location given. All samples geo-coordinates after 2008 were obtained directly from field collection.  
+  
+*COI_haplogroup* = mtDNA haplogroup identified from mtDNA COX1 partial region (reconstruct from HiSeq4000 reads and confirmed by Sanger sequencing).  
+*Haplotype* = mtDNA haplotype name by concatenating four genes (COX1, COX3, ATP6 and ND2)  
+
+*Host_read* = Host DNA identified by number of reads mapped against either _A. cerana_ or _A. mellifera_  
+*reads_mellifera/cerana* = Number of reads mapped against reference genome of _A. cerana_ or _A. mellifera_ (Q > 20)
+
+``` {r Map_base, message = FALSE, warning = FALSE}
+
+# Import the metadata for the Varroa samples 
+metadata <- read.csv("R_data/metadata_varroa_asia_15052020.csv", header = TRUE)
+#head(metadata)
+
+## Create a scrolling table
+kable(cbind(metadata)) %>%
+  kable_styling(bootstrap_options = "striped", font_size = 9)  %>%
+  scroll_box(width = "100%", height = "400px") #%>%
+  #row_spec(1:23, bold = T, color = "white", background = "#E60000") %>%
+  #row_spec(24:39, bold = T, color = "white", background = "#FF9999")  %>%
+  #row_spec(40:74, bold = T, color = "white", background = "#0000FF")  %>%
+  #row_spec(75:96, bold = T, color = "white", background = "#3399FF")
+
+# Download the country borders layer
+#download.file("http://thematicmapping.org/downloads/TM_WORLD_BORDERS_SIMPL-0.3.zip" , destfile="world_shape_file.zip")
+#system("unzip world_shape_file.zip")
+world_spdf=readOGR(dsn= getwd() , layer="TM_WORLD_BORDERS_SIMPL-0.3")
+
+data.vdac <- metadata %>% filter(Species == "V. destructor") %>% filter(Host_collected == "A. cerana") 
+
+data.vdam <- metadata %>% filter(Species == "V. destructor") %>% filter(Host_collected == "A. mellifera")
+
+data.vjac <- metadata %>% filter(Species == "V. jacobsoni") %>% filter(Host_collected == "A. cerana") 
+
+data.vjam <- metadata %>% filter(Species == "V. jacobsoni") %>% filter(Host_collected == "A. mellifera") 
+``` 
+
+The following interactive map showed the distribution of both _V. destructor_ and _V. jacobsoni_ samples on either their original host the eastern honey bee _A. cerana_ or on the new host the western honey bee _A. mellifera_.
+  
+If you pass your mouse over a particular point, a pop-up will appear presenting essential information about the particular Varroa mite sample. On the right top corner, a layer control button allow to subselect species/host couple.
+
+<span style="color:red">*V. destructor* on *A. cerana*</span>  
+<span style="color:pink">*V. destructor* on *A. mellifera*</span>  
+<span style="color:blue">*V. jacobsoni* on *A. cerana*</span>    
+<span style="color:cyan">*V. jacobsoni* on *A. mellifera*</span>
+
+
+``` {r Map_mites, message = FALSE, warning = FALSE}
+
+## Create the interactive map with leaflet
+leaflet(metadata) %>% 
+  addTiles(group = "OSM (default)") %>%
+  ## add the layer other than default we would like to use for background
+  addProviderTiles(providers$CartoDB.PositronNoLabels, group = "Positron NoLabels") %>%
+  ## adding the layers with V. destructor
+  addCircleMarkers(data = data.vdac, data.vdac$Approximate.Y, data.vdac$Approximate.X,
+                   weight = 0.5,
+                   col = "#FB0000", 
+                   radius = 4, 
+                   fillOpacity = 0.9, 
+                   stroke = T, 
+                   popup = ~paste(sep = "<br/>",
+                              paste ("Name: ", as.character(ID)),
+                              paste ("Host: ", as.character(Host_collected)),
+                              paste ("Date: ", as.character(Date)),
+                              paste ("mtDNA: ", as.character(Haplotype))),
+                   group = 'V. destructor on A. cerana') %>%
+
+  addCircleMarkers(data = data.vdam, data.vdam$Approximate.Y, data.vdam$Approximate.X,
+                   weight = 0.5,
+                   col = "#FF9999", 
+                   radius = 4, 
+                   fillOpacity = 0.9, 
+                   stroke = T, 
+                   popup = ~paste(sep = "<br/>",
+                              paste ("Name: ", as.character(ID)),
+                              paste ("Host: ", as.character(Host_collected)),
+                              paste ("Date: ", as.character(Date)),
+                              paste ("mtDNA: ", as.character(Haplotype))),
+                   group = 'V. destructor on A. mellifera') %>%
+
+  ## adding the layers with V. jacobsoni
+  addCircleMarkers(data = data.vjac, data.vjac$Approximate.Y, data.vjac$Approximate.X,
+                   weight = 0.5,
+                   col = "#0000FF", 
+                   radius = 4, 
+                   fillOpacity = 0.9, 
+                   stroke = T, 
+                   popup = ~paste(sep = "<br/>",
+                              paste ("Name: ", as.character(ID)),
+                              paste ("Host: ", as.character(Host_collected)),
+                              paste ("Date: ", as.character(Date)),
+                              paste ("mtDNA: ", as.character(Haplotype))),
+                   group = 'V. jacobsoni on A. cerana') %>%
+
+  addCircleMarkers(data = data.vjam, data.vjam$Approximate.Y, data.vjam$Approximate.X,
+                   weight = 0.5,
+                   col = "#00CCFF", 
+                   radius = 4, 
+                   fillOpacity = 0.9, 
+                   stroke = T,    
+                   popup = ~paste(sep = "<br/>",
+                              paste ("Name: ", as.character(ID)),
+                              paste ("Host: ", as.character(Host_collected)),
+                              paste ("Date: ", as.character(Date)),
+                              paste ("mtDNA: ", as.character(Haplotype))),
+                   group = 'V. jacobsoni on A. mellifera') %>%
+
+    ## adding the control button to remove or add layers of points 
+  addLayersControl(position = "topright",
+    baseGroups = c("OSM (default)", "Positron NoLabels"),
+    overlayGroups = c("V. destructor on A. cerana", 
+                      "V. destructor on A. mellifera", 
+                      "V. jacobsoni on A. cerana", 
+                      "V. jacobsoni on A. mellifera"), 
+    options = layersControlOptions(collapsed = TRUE))  %>%
+  ## show the positron background prerably to the OSM layer
+  showGroup("Positron NoLabels")
+
+```
+
+# 2. Reads and mapping statistics for Varroa libraries
+
+Here we plot the mean read depth computed from each .bam file mapped to the reference vdes3.0.fasta using `samtools depth -a FILE.bam | awk '{c++;s+=$3}END{print s/c}'` in relation to the mapping percentage.
+
+As you can see by moving your pointer on the graph, the individual `V788_1` has been removed from the analysis and replaced by the replicate `V788_2` with much better reads statistics.
+
+```{r readsstats1, message = FALSE, warning = FALSE}
+
+raichu <- ggplot(metadata, aes(x=Mapping_rate, y = Mean_Read_Depth, col=Species, shape=Host_collected, label = ID))
+mycol = c("red2", "blue2")
+raichu <- raichu + geom_point(size = 3)
+raichu <- raichu + scale_color_manual(values = mycol)
+raichu <- raichu + scale_size_manual(values = mycol)
+raichu <- raichu +  theme_calc()
+raichu <- raichu +  xlab("Mapping rate to Vdes_3.0 reference genome(%)")
+raichu <- raichu +  ylab("Mean average read depth")
+raichu <- raichu +  ylim(0,20)
+#raichu
+
+## make an interactive version of the scatter plot
+intraichu <- ggplotly(raichu)
+intraichu
+```
+
+We highlight the mean read depth regarding the general distribution, where is each group of individuals "species per host" located in it.
+
+```{r readsstats2, message = FALSE, warning = FALSE}
+
+evoli <- ggplot(metadata, aes(Mean_Read_Depth, fill = Species))
+evoli <- evoli + geom_histogram(bins = 44) 
+evoli <- evoli + gghighlight() 
+evoli <- evoli + facet_wrap(~Species~Host_collected)
+evoli <- evoli + scale_fill_manual(values = c("red", "blue"))
+evoli <- evoli + theme_classic()
+evoli <- evoli + labs(x = "Mean Read Depth using NextGenMap", y = "Number of samples")
+evoli <- evoli + ggtitle("Read depth does not appear as unbalanced accross species and host")
+evoli
+```
+
+Following is a plot of the total number of reads generated per individual and the proportion of reads mapped onto the reference.
+
+```{r readsstats3, message = FALSE, warning = FALSE, results="hide"}
+
+togepi <- ggplot(metadata, aes(x=ID, label = Mapping_rate))
+togepi <- togepi + geom_bar(aes(weight=Total_reads), fill="black", position="dodge")
+togepi <- togepi + geom_bar(aes(weight=Mapped), fill="#1d96f2", position="dodge")
+togepi <- togepi + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+togepi <- togepi + labs(x = "Individuals", y = "Number of reads")
+togepi <- togepi + ggtitle("Proportion of reads mapped against reference using NextGenMap")
+togepi
+```
+
+# 3. Variation in the body size
+
+Before proceeding to DNA extraction with a destructive method, we measured the body size of each Varroa mite whenever possible on both dorsal and ventral view. We measured seven morphological characters but retained only the body width and length for comparison here between Varroa species and their associated honey bee hosts.
+
+The scatterplot also shows the average values obtained by Anderson and Trueman (2000) _Exp. App. Acar._ for _V. destructor_, _V. jacobsoni_ and undetermined mites from Luzon and Mindanao. 
+
+``` {r Morpho_plot, message = FALSE, warning = FALSE}
+# Table with 512 morpho data for the moment
+morpho <- read.csv("R_data/Varroa-morpho-subset.csv", header = TRUE)
+#kable(cbind(morpho)) %>%
+#  kable_styling(bootstrap_options = "striped", font_size = 10) %>%
+#  scroll_box(width = "100%", height = "400px")
+
+morpho %>% 
+  plot_ly(x = ~BW_V, y = ~BL_V,
+          color = ~Species,
+          symbol = ~Host,
+          hoverinfo = "text",
+          text = ~paste("Name: ", Sample.ID, "<br>",
+                        "Species: ", Species, "<br>",
+                        "Host: ", Host, "<br>",
+                        "Country: ", Country.Island)) %>%
+  add_markers(colors = c("indianred2", "red3", "skyblue2", "blue2", "black"), 
+              symbols = c( "triangle-up", "circle", "x"), 
+              size = 3) %>%
+  layout(xaxis = list(title = "Body width (mm)"),
+         yaxis = list(title = "Body length (mm)"),
+         title = "Variation in body size measured from ventral view")
+
+  
+morpho %>% 
+  plot_ly(x = ~BW_D, y = ~BL_D,
+          color = ~Species,
+          symbol = ~Host,
+          hoverinfo = "text",
+          text = ~paste("Name: ", Sample.ID, "<br>",
+                        "Species: ", Species, "<br>",
+                        "Host: ", Host, "<br>",
+                        "Country: ", Country.Island)) %>%
+  add_markers(colors = c("indianred2", "red3", "skyblue2", "blue2", "black"), 
+              symbols = c( "triangle-up", "circle", "x"), 
+              size = 3) %>%
+  layout(xaxis = list(title = "Body width (mm)"),
+         yaxis = list(title = "Body length (mm)"),
+         title = "Variation in body size measured from dorsal view")
+
+```
+
+STATS TEST?
+
+# 4. Genetic diversity on 43 samples and two species confonded
+## 2D and 3D PCAs on ~ 1.4 million filtered biallelic SNPs
+
+After formatting the variant call file `.vcf` into a `plink` format by renaming each chromosome (e.g., NW_019211454.1 by 1, NW_019211455.1 by 2, ...), and applying the option `pca`, we obtained the two files `.eigenval` and `.eigenvec`.
+
+The following 2D and 3D PCAs are based on the ~1.4 million biallelic SNPs with a minor allelic frequency higher than 5%.
+
+``` {r PCA-all, message = FALSE, warning = FALSE}
+
+pca.all<- read_table2("R_data/43indplink.eigenvec", col_names = FALSE)
+eigenval.all <- scan("R_data/43indplink.eigenval")
+
+## Here the first two columns contains the individuals names as we did not specify it in plink earlier
+# We remove the first column and assign the new name of column 1
+pca.all <- pca.all[,-1]
+names(pca.all)[1] <- "ID_NAMES"
+
+# Rename the columns for PCA axis 
+names(pca.all)[2:ncol(pca.all)] <- paste0("PC", 1:(ncol(pca.all)-1))
+
+## Joint both table by using the FILE_ID as common parameters
+metapca.all <- left_join(pca.all, metadata, by = c("ID_NAMES" = "SEQ_ID"))
+
+### PLOTS
+# first convert to percentage variance explained
+pve <- data.frame(PC = 1:20, pve = eigenval.all/sum(eigenval.all)*100)
+
+# make Eigenplot
+a <- ggplot(pve, aes(PC, pve)) + geom_bar(stat = "identity")
+a + ylab("Percentage variance explained") + theme_light()
+
+metapca.all %>% 
+  plot_ly(x = ~PC1, y = ~PC2,
+          color = ~Species,
+          symbol = ~Host_collected,
+          hoverinfo = "text",
+          text = ~paste("Name: ", ID, "<br>",
+                        "Species: ", Species, "<br>",
+                        "Host: ", Host_collected, "<br>",
+                        "Country: ", Country)) %>%
+  add_markers(colors = c("red3", "blue2"), 
+              symbols = c( "triangle-up", "circle"), 
+              size = 4)%>%
+  layout(title = "Varroa mites genetically differentiate between hosts in both species")
+
+metapca.all %>% 
+  plot_ly(x = ~PC1, y = ~PC2, z = ~PC3,
+          color = ~Country,
+          hoverinfo = "text",
+          text = ~paste("Name: ", ID, "<br>",
+                        "Species: ", Species, "<br>",
+                        "Host: ", Host_collected, "<br>",
+                        "Country: ", Country,
+                        "Haplogroup: ", COI_haplogroup)) %>%
+  add_markers(colors = c("red3", "purple", "blue2", "green", "orange", "brown", "pink"), 
+              size = 10) %>%
+  layout(title = "Mites on A. cerana genetically differs within the native range")
+
+metapca.all %>% 
+  plot_ly(x = ~PC1, y = ~PC2, z = ~PC3,
+          color = ~COI_haplogroup,
+          hoverinfo = "text",
+          text = ~paste("Name: ", ID, "<br>",
+                        "Species: ", Species, "<br>",
+                        "Host: ", Host_collected, "<br>",
+                        "Country: ", Country,
+                        "Haplogroup: ", COI_haplogroup)) %>%
+  add_markers(colors = c("red3", "purple", "blue2", "green", "orange", "brown", "pink"), 
+              size = 10) %>%
+  layout(title = "Mitochondrial lineages can be a pre-indicator of whole genome differentiation")
+
+```
+
+## 2D and 3D PCAs on ~ 200,000 biallelic SNPs pruned for LD
+
+Same idea as the previous PCA, except that only 236,713 SNPs were kept to reduce the effect of linkage disequilibrium.
+
+We can see that even with a smaller reduce number of SNPs, Varroa mites species are genetically distinct and 
+
+``` {r PCA-allLDpruned, message = FALSE, warning = FALSE}
+
+pca.allLD<- read_table2("R_data/43ind-ldpruned.eigenvec", col_names = FALSE)
+eigenval.allLD <- scan("R_data/43ind-ldpruned.eigenval")
+
+## Here the first two columns contains the individuals names as we did not specify it in plink earlier
+# We remove the first column and assign the new name of column 1
+pca.allLD <- pca.allLD[,-1]
+names(pca.allLD)[1] <- "ID_NAMES"
+
+# Rename the columns for PCA axis 
+names(pca.allLD)[2:ncol(pca.allLD)] <- paste0("PC", 1:(ncol(pca.allLD)-1))
+
+## Joint both table by using the FILE_ID as common parameters
+metapca.allLD <- left_join(pca.allLD, metadata, by = c("ID_NAMES" = "SEQ_ID"))
+
+### PLOTS
+# first convert to percentage variance explained
+pve <- data.frame(PC = 1:20, pve = eigenval.allLD/sum(eigenval.allLD)*100)
+
+# make Eigenplot
+a <- ggplot(pve, aes(PC, pve)) + geom_bar(stat = "identity")
+a + ylab("Percentage variance explained") + theme_light()
+
+metapca.allLD %>% 
+  plot_ly(x = ~PC1, y = ~PC2,
+          color = ~Species,
+          symbol = ~Host_collected,
+          hoverinfo = "text",
+          text = ~paste("Name: ", ID, "<br>",
+                        "Species: ", Species, "<br>",
+                        "Host: ", Host_collected, "<br>",
+                        "Country: ", Country)) %>%
+  add_markers(colors = c("red3", "blue2"), 
+              symbols = c( "triangle-up", "circle"), 
+              size = 4) %>%
+  layout(title = "~200,000 LD pruned SNPs still allowed to see host genetic divergence")
+
+
+metapca.allLD %>% 
+  plot_ly(x = ~PC1, y = ~PC2, z = ~PC3,
+          color = ~Country,
+          hoverinfo = "text",
+          text = ~paste("Name: ", ID, "<br>",
+                        "Species: ", Species, "<br>",
+                        "Host: ", Host_collected, "<br>",
+                        "Country: ", Country,
+                        "Haplogroup: ", COI_haplogroup)) %>%
+  add_markers(colors = c("red3", "purple", "blue2", "green", "orange", "brown", "pink"), 
+              size = 10) %>%
+  layout(title = "3D PCA color-coded by country")
+
+metapca.allLD %>% 
+  plot_ly(x = ~PC1, y = ~PC2, z = ~PC3,
+          color = ~COI_haplogroup,
+          hoverinfo = "text",
+          text = ~paste("Name: ", ID, "<br>",
+                        "Species: ", Species, "<br>",
+                        "Host: ", Host_collected, "<br>",
+                        "Country: ", Country,
+                        "Haplogroup: ", COI_haplogroup)) %>%
+  add_markers(colors = c("red3", "purple", "blue2", "green", "orange", "brown", "pink"), 
+              size = 10) %>%
+  layout(title = "3D PCA color-coded by mtDNA COX1 haplogroup")
+
+
+```
