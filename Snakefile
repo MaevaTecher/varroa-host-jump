@@ -6,8 +6,8 @@ import getpass
 localrules: getHaps, all
 
 ### Set path for input files folders
-outDir = "/work/MikheyevU/Maeva/varroa-jump-data/data"
-refDir = "/work/MikheyevU/Maeva/varroa-jump-data/ref2020" 
+outDir = "/work/MikheyevU/Maeva/varroa-host-jump/data"
+refDir = "/work/MikheyevU/Maeva/varroa-host-jump/ref2020" 
 SCRATCH  = "/work/scratch/" + getpass.getuser()
 krakenDB = "/work/MikheyevU/kraken_db"
 
@@ -85,9 +85,8 @@ rule all:
 		#outDir + "/var/ngm_mtDNA/raw_mtDNA.vcf",
 		outDir + "/var/ngm/filtered.vcf",
 		outDir + "/var/bowtie2/filtered.vcf",
-		outDir + "/var/primitives.vcf.gz",
-		outDir + "/var/primitives-sortind_maf005.vcf.gz"
-		#expand(outDir + "/ngsadmix/all44/{run}/all44_{kcluster}.fopt.gz", kcluster = KCLUSTERS, run = RUNS),
+		outDir + "/var/primitives-sortind_maf005.vcf.gz",
+		expand(outDir + "/ngsadmix/all43/{run}/all43_{kcluster}.fopt.gz", kcluster = KCLUSTERS, run = RUNS)
 		#outDir + "/R/VJP13.txt",
 		#outDir + "/R/VJcer.txt",
 		#outDir + "/R/VDcer.txt",
@@ -302,7 +301,7 @@ rule vcfsort_maf:
 
 #Plink needs chromosome which are numbered 1 to X, so we need to rename here the original ID of Varroa chromosome by these numbers.
 rule ready4plink:
-        input: outDir + "/var/primitives-sortind.vcf.gz"
+        input: outDir + "/var/primitives-sortind_maf005.vcf.gz"
         output: outDir + "/plink/primitives-sortind-ready4plink.vcf"
         shell:
                 """
@@ -319,15 +318,15 @@ rule ready4plink:
 # we use plink to prune our SNP and minimize the linkage beteween our SNP filtered
 rule vcf2plink:
         input: outDir + "/var/primitives-sortind-ready4plink.vcf"
-        output: outDir + "/LDprune/50indplink"
+        output: outDir + "/LDprune/43indplink"
         shell:
                 """
                 vcftools --vcf {input} --out {output} --plink --chr 1 --chr 2 --chr 3 --chr 4 --chr 5 --chr 6 --chr 7
                 """
 
 rule ldprune:
-        input: outDir + "/LDprune/50indplink"
-        output: outDir + "/LDprune/50ind-ldpruned"
+        input: outDir + "/LDprune/43indplink"
+        output: outDir + "/LDprune/43ind-ldpruned"
         shell:
                 """
                 module load plink/1.90b3.36
@@ -336,8 +335,8 @@ rule ldprune:
 
 # Now we need to revert the process and transform the list of SNP to keep the same name as in the original VCF file
 rule SNPpruning:
-        input:  list = outDir + "/LDprune/54ind-ldpruned.prune.in",
-                vcf = outDir + "/var/primitives-sortind.vcf.gz"
+        input:  list = outDir + "/LDprune/43ind-ldpruned.prune.in",
+                vcf = outDir + "/var/primitives-sortind_maf005.vcf.gz"
         output: keeping =  outDir + "/LDprune/prune2keep.txt",
                 pruned = outDir + "/LDprune/primitives-sortind-pruned"
         shell:
@@ -350,7 +349,7 @@ rule SNPpruning:
                 sed -i 's/5:/NW_019211458.1\t/g' {output.keeping}
                 sed -i 's/6:/NW_019211459.1\t/g' {output.keeping}
                 sed -i 's/7:/NW_019211460.1\t/g' {output.keeping}
-                vcftools --gzvcf {input.vcf} --positions {output.keeping} --maf 0.05 --recode --recode-INFO-all --out {output.pruned}
+                vcftools --gzvcf {input.vcf} --positions {output.keeping} --recode --recode-INFO-all --out {output.pruned}
                 """
 
 #### ------------------------------------------------------------
@@ -432,15 +431,15 @@ rule vcf2fasta:
 ##### ------------------------------------------------------------
 
 ## DO the same for non pruned and pruned dataset
-rule pcagenome:
-        input:  variant = outDir + "/LDprune/primitives-sortind-pruned.recode.vcf",
-                listpop = outDir + "/list/varroaR44i_6POP.txt"
-        output: outDir + "/R/pca-all44-ldpruned.pdf"
-        shell:
-                """
-                module load R/3.4.2
-                Rscript --vanilla /work/MikheyevU/Maeva/varroa-jump/scripts/PCA_vcfR.R {input.variant} {input.listpop} {output}
-                """
+#rule pcagenome:
+#        input:  variant = outDir + "/LDprune/primitives-sortind-pruned.recode.vcf",
+#                listpop = outDir + "/list/varroaR43i_6POP.txt"
+#        output: outDir + "/R/pca-all43-ldpruned.pdf"
+#        shell:
+#                """
+#                module load R/3.4.2
+#                Rscript --vanilla /work/MikheyevU/Maeva/varroa-jump/scripts/PCA_vcfR.R {input.variant} {input.listpop} {output}
+#                """
 
 # Alternatively we can also use directly plink, which will be making eigen files for R
 
@@ -577,56 +576,18 @@ rule popstats:
 ###### PART 5 ADMIXTURE WITH NGSADMIX
 ###### ------------------------------------------------------------
 
-rule parsevcfVD:
-	input:	variant = outDir + "/LDprune/primitives-sortind-pruned.recode.vcf",
-		listpop = outDir + "/list/vdonly.txt"
-	output:	outDir + "/LDprune/vdonly-sort-pruned"
-	shell:
-		"""
-		vcftools --vcf {input.variant} --keep {input.listpop} --maf 0.055 --recode --recode-INFO-all --out {output}
-		"""
-
-rule pcavdonly:
-        input:  variant = outDir + "/LDprune/vdonly-sort-pruned.recode.vcf",
-                listpop = outDir + "/list/vdonlyR19i_3POP.txt"
-        output: outDir + "/R/pca-vdonly-ldpruned.pdf"
-        shell:
-                """
-                module load R/3.4.2
-                Rscript --vanilla /work/MikheyevU/Maeva/varroa-jump/scripts/PCA_vcfR.R {input.variant} {input.listpop} {output}
-                """
-
-rule parsevcfVJ:
-        input:  variant = outDir + "LDprune/primitives-sortind-pruned.recode.vcf",
-                listpop = outDir + "/list/vjonly.txt"
-        output: outDir + "/LDprune/vjonly-sort-pruned"
-        shell:
-                """
-                vcftools --vcf {input.variant} --keep {input.listpop} --maf 0.055 --recode --recode-INFO-all --out {output}
-                """
-
-rule pcavjonly:
-        input:  variant = outDir + "/LDprune/vjonly-sort-pruned.recode.vcf",
-                listpop = outDir + "/list/vjonlyR25i_3POP.txt"
-        output: outDir + "/R/pca-vjonly-ldpruned.pdf"
-        shell:
-                """
-                module load R/3.4.2
-                Rscript --vanilla /work/MikheyevU/Maeva/varroa-jump/scripts/PCA_vcfR.R {input.variant} {input.listpop} {output}
-                """
-
 # transform in BEAGLE format for NGSadmix
 rule vcf2GL:
-        input:	outDir + "LDprune/primitives-sortind-pruned.recode.vcf"
-        output:	temp(outDir + "/ngsadmix/all44/{chromosome}.BEAGLE.GL")
+        input:	outDir + "/LDprune/primitives-sortind-pruned.recode.vcf"
+        output:	temp(outDir + "/ngsadmix/all43/{chromosome}.BEAGLE.GL")
         shell:
                 """
-		vcftools --vcf {input} --chr {wildcards.chromosome} --out /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/all44/{wildcards.chromosome} --max-missing 1 --BEAGLE-GL
+		vcftools --vcf {input} --chr {wildcards.chromosome} --out /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/all43/{wildcards.chromosome} --max-missing 1 --BEAGLE-GL
                 """
 
 rule mergeGL:
-        input: expand(outDir + "/ngsadmix/all44/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES)
-        output: outDir + "/ngsadmix/all44/sevenchr.BEAGLE.GL"
+        input: expand(outDir + "/ngsadmix/all43/{chromosome}.BEAGLE.GL", chromosome = CHROMOSOMES)
+        output: outDir + "/ngsadmix/all43/sevenchr.BEAGLE.GL"
         shell:
                 """
                 (head -1 {input[0]}; for i in {input}; do cat $i | sed 1d; done) > {output}
@@ -634,12 +595,12 @@ rule mergeGL:
 
 ## All individuals NGSadmix
 rule NGSadmix:
-        input: outDir + "/ngsadmix/all44/sevenchr.BEAGLE.GL"
+        input: outDir + "/ngsadmix/all43/sevenchr.BEAGLE.GL"
         threads: 12
-        output: temp(outDir + "/ngsadmix/all44/{run}/all44_{kcluster}.fopt.gz")
+        output: temp(outDir + "/ngsadmix/all43/{run}/all43_{kcluster}.fopt.gz")
         shell:
                 """
-                NGSadmix -P {threads} -likes {input} -K {wildcards.kcluster} -outfiles /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/all44/{wildcards.run}/all44_{wildcards.kcluster} -minMaf 0.1
+                NGSadmix -P {threads} -likes {input} -K {wildcards.kcluster} -outfiles /work/MikheyevU/Maeva/varroa-jump/data/ngsadmix/all43/{wildcards.run}/all43_{wildcards.kcluster} -minMaf 0.1
                 """
 
 ## Just for Varroa destructor samples
