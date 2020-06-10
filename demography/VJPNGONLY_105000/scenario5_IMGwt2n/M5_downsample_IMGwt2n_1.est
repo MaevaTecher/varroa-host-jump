@@ -1,0 +1,20 @@
+// Search ranges and rules file
+// ****************************
+
+[PARAMETERS]
+//#isInt? #name   #dist.#min  #max 
+//all Ns are in number of haploid individuals
+1       NVJAM0  unif  2   10000   output
+1       NVJAC1  unif  2   10000   output
+1       TBOT    unif  1   200   output
+0       GAM     unif    -1      0       output
+0	N0M1	logunif  1e-6   100   output
+0	N1M0	logunif  1e-6   100   output
+
+[RULES]
+TBOT < 200
+
+[COMPLEX PARAMETERS]
+
+0  MACtoAM   = N1M0/NVJAC1      output
+0  MAMtoAC   = N0M1/NVJAM0      output

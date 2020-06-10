@@ -21,7 +21,6 @@ This online ressource is there to provide additional interactive visualization t
 Click on "code" button on the right to make appear the libraries used and R code for each section.
 
 ``` {r rawmetadata, message = FALSE, warning = FALSE, results="hide"}
-setwd("~/Dropbox (OIST)/varroa-host-switch-demo/R_Markdown")
 library("tidyverse")
 library("knitr") # for the markdown
 library("kableExtra") # for creating a scrolling table
@@ -74,7 +73,7 @@ Here, we have 43 samples of Varroa mites for which we have sequenced the whole g
 ``` {r Map_base, message = FALSE, warning = FALSE}
 
 # Import the metadata for the Varroa samples 
-metadata <- read.csv("R_data/metadata_varroa_asia_15052020.csv", header = TRUE)
+metadata <- read.csv("metadata_varroa_asia_15052020.csv", header = TRUE)
 #head(metadata)
 
 ## Create a scrolling table
@@ -244,7 +243,7 @@ The scatterplot also shows the average values obtained by Anderson and Trueman (
 
 ``` {r Morpho_plot, message = FALSE, warning = FALSE}
 # Table with 512 morpho data for the moment
-morpho <- read.csv("R_data/Varroa-morpho-subset.csv", header = TRUE)
+morpho <- read.csv("Varroa-morpho-subset.csv", header = TRUE)
 #kable(cbind(morpho)) %>%
 #  kable_styling(bootstrap_options = "striped", font_size = 10) %>%
 #  scroll_box(width = "100%", height = "400px")
@@ -295,8 +294,8 @@ The following 2D and 3D PCAs are based on the ~1.4 million biallelic SNPs with a
 
 ``` {r PCA-all, message = FALSE, warning = FALSE}
 
-pca.all<- read_table2("R_data/43indplink.eigenvec", col_names = FALSE)
-eigenval.all <- scan("R_data/43indplink.eigenval")
+pca.all<- read_table2("43indplink.eigenvec", col_names = FALSE)
+eigenval.all <- scan("43indplink.eigenval")
 
 ## Here the first two columns contains the individuals names as we did not specify it in plink earlier
 # We remove the first column and assign the new name of column 1
@@ -367,8 +366,8 @@ We can see that even with a smaller reduce number of SNPs, Varroa mites species 
 
 ``` {r PCA-allLDpruned, message = FALSE, warning = FALSE}
 
-pca.allLD<- read_table2("R_data/43ind-ldpruned.eigenvec", col_names = FALSE)
-eigenval.allLD <- scan("R_data/43ind-ldpruned.eigenval")
+pca.allLD<- read_table2("43ind-ldpruned.eigenvec", col_names = FALSE)
+eigenval.allLD <- scan("43ind-ldpruned.eigenval")
 
 ## Here the first two columns contains the individuals names as we did not specify it in plink earlier
 # We remove the first column and assign the new name of column 1
