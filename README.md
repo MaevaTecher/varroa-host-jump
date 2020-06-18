@@ -12,15 +12,15 @@ Using whole-genome sequencing, (i) we compared sympatric populations genetic div
 2. Interactive visualization of sampling distribution and details is available [here](https://MaevaTecher.github.io/varroa-host-jump)  
 3. Exploratory R codes used for the maps and other analysis such as PCAs can be found in `R_data`.
 4. Snakemake pipeline is available in the file `Snakefile`, along with parameters file `cluster.json` and launcher `snakemake.slurm`.  
-5. Raw, filtered and LD_pruned variant calling file `vcf` can be downloaded on **TO DO DRYAD REPO**  
+5. Raw, filtered and LD_pruned variant calling file `vcf` can be downloaded on **DRYAD DOI to add**  
 6. Fastsimcoal2 input files for demographic scenarios and SFS subsets are available in `demography`.
 
 ## Customed Snakemake workflow for Varroa population genomics
 
 ### Software and dependencies necessary to run the Snakemake pipeline :  
 
-[`Samtools`](http://www.htslib.org/) : the version used here was samtools/1.3.1.  
-[`Mashtree`](https://github.com/lskatz/mashtree) 
+[`Samtools`](http://www.htslib.org/) : version samtools/1.3.1 used here.  
+[`Mashtree`](https://github.com/lskatz/mashtree)   
 [`Bowtie2`](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml): version bowtie2/2.2 used here.   
 [`NextGenMap`](https://cibiv.github.io/NextGenMap/): version NextGenMap/0.5.0 used here.   
 [`VariantBam`](https://github.com/broadinstitute/VariantBam): version VariantBam/1.4.3 used here.   
@@ -39,7 +39,7 @@ You can change the targets of `rule all` depending on which particular steps of 
 
 For example, if you want to generate the mapped read .bam files from the original .fastq files downloaded on NCBI:  
 1. Place the fastq files in a `reads` folder  
-2. Samples name will be recognized according to lines 45 for which fastq R1 files end with `{sample}-R1_001.fastq.gz`  
+2. Samples name will be recognized according to line 45 for which fastq R1 files end with `{sample}-R1_001.fastq.gz`  
 3. Apply rule all as `expand(outDir + "/alignments/ngm/{sample}.bam", sample = SAMPLES)`  
 
 Or, if you want to generate the variant call file from NextGenMap reads apply:
@@ -57,24 +57,23 @@ We designed six evolutionary scenario using [`fastsimcoal2`](http://cmpg.unibe.c
 
 ### Useful links and tools for running your own demographic inferences
 
-Additionally to the complete [manual available](http://cmpg.unibe.ch/software/fastsimcoal2/man/fastsimcoal26.pdf) for `fastsimcoal2` written by Laurent Excoffier, we found help on the active [google group forum](https://groups.google.com/forum/?nomobile=true#!forum/fastsimcoal). 
+Additionally to the complete [manual available](http://cmpg.unibe.ch/software/fastsimcoal2/man/fastsimcoal26.pdf) for `fastsimcoal2` written by Laurent Excoffier, we recommend the helpful active [google group forum](https://groups.google.com/forum/?nomobile=true#!forum/fastsimcoal). 
 
-We are extremely grateful to the excellent tutorial that can be found [here](https://speciationgenomics.github.io/fastsimcoal2/), hosted on the [speciationgenomics](https://github.com/speciationgenomics) Github page by Mark Ravinet & Joana Meier. 
+An excellent tutorial on fastsimcoal2 usage on genomics data can be found [here](https://speciationgenomics.github.io/fastsimcoal2/), hosted on the [speciationgenomics](https://github.com/speciationgenomics) Github page by Mark Ravinet & Joana Meier. 
 
-[easySFS](https://github.com/isaacovercast/easySFS) was used to generate SFS input files from our vcf files (developped by Isaac Overcast).
-For 
+[easySFS](https://github.com/isaacovercast/easySFS) was used to generate SFS input files from our vcf files (developed by Isaac Overcast).
 
-[SFS-scripts](https://github.com/marqueda/SFS-scripts) were used to plot observed and expected 2D-SFS under each scenario model (developped by David Marques).
+[SFS-scripts](https://github.com/marqueda/SFS-scripts) were used to plot observed and expected 2D-SFS under each scenario model (developed by David Marques).
 
 ### Templates files in `demography` folder:  
 
-Here I described the command line used for one demographic model (`VDNOV475_105000/scenario6_IMGwt`) with the SFS generated from the largest SNP subset for _V. destructor_ (`dataset_VD4_38108snps.obs`). The `M6_downsample_IMGwt_1_jointMAFpop1_0.obs` file should be place in the same folder as the same named .tpl and .est files.
+Here, we described the command lines used for one demographic model (`VDNOV475_105000/scenario6_IMGwt`) with the SFS generated from the largest SNP subset for _V. destructor_ (`dataset_VD4_38108snps.obs`). The `M6_downsample_IMGwt_1_jointMAFpop1_0.obs` file should be place in the same folder as the same named .tpl and .est files.
 
 Briefly the `M6_downsample_IMGwt_1.tpl` file draw the scenario with :  
 1. A two populations model between _V. destructor_ mites on original host _A. cerana_ with a current effective population size `NVDAC1` and `NVDAM0` for the novel host _A. mellifera_.
-2. We projeted the data using easySFS with 17 haploid genomes for both _A. mellifera_ (population 0) and _A. cerana_ (population 1) mites.
-3. We assumed a growth rate GAM since the host switch event only for the novel host (expansion biologically known).
-4. Two migration matrices are given for the population split and after.
+2. Observed SFS Data were projected using easySFS with 17 haploid genomes for both _A. mellifera_ (population 0) and _A. cerana_ (population 1) mites.
+3. A growth rate GAM since the host switch event only for the novel host (expansion biologically known).
+4. Two migration matrices were given for the population split and after.
 5. We considered a single historical event `TBOT` from which a number of haploid mites `JUMP` splited from _A. cerana_ population to found the new _A. mellifera_ population.
 6. The mutation rate was proposed following preliminary _de novo_ mutations estimations.  
   
@@ -83,7 +82,6 @@ In the `M6_downsample_IMGwt_1.est` file, most parameters were sampled in a unifo
 We copied-named `M6_downsample_IMGwt_XXX.est`, `M6_downsample_IMGwt_XXX.tpl`, `M6_downsample_IMGwt_XXX_jointMAFpop1_0.obs` 100 times for which XXX is in {1..100}. Using an array bash script we then ran the following command for each replicate.  
 
 __________________________
-
 `#!/bin/bash`  
 `#SBATCH --job-name=vdM6`  
 `#SBATCH --partition=XXX`  
@@ -105,7 +103,14 @@ __________________________
 `cat scenario6_vd.txt | sort -k 10nr` # the first line is then the scenatio with the lowest MaxEstLhood  
 __________________________
 
-For the best scenario, bootstraps from the best replicate were performed following the tutorial in the manual (page 56-57). 
+For the best scenario, bootstraps from the best replicate were performed following the tutorial in the manual (page 56-57). We simulated 100 SFS datasets from the best output `.par` file after modifying it to generate a DNA sequence data, using:   
+`[PATH_TO_FASTSIMCOAL2]/NUMBER=YYY` # where NUMBER is the replicate number with the lowest MaxEstLhood
+`fsc26 -i M6_downsample_IMGwt_${NUMBER}_boot.par -n100 -j -m -s0 -x -I -q`
+
+We then repeat the parameters estimation 100 times for each of the 100 simulated SFS `M6_downsample_IMGwt_${NUMBER}_boot_jointMAFpop1_0.obs` using the same initial command lines. 
+
+The best replicate for each simulated SFS run is then used to obtain the confidence interval of `NVDAM0`, `NVAC1`, `TBOT`, `JUMP`, `GAM` and migration rates.
+
 
 ## Contact
 Questions about the data or scripts? please contact either:  
