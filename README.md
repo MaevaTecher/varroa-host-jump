@@ -4,6 +4,9 @@ This repository aims at providing an online resource for the manuscript "Tracing
 
 Using whole-genome sequencing, (i) we compared sympatric populations genetic diversity, and (ii) estimated the demographic parameters of independent host switches in the _Apis_ honey bee ectoparasites mites: _Varroa destructor_ and _V. jacobsoni_. The following sections described how the bioinformatics analysis were processed and how to replicate them with available genome data reads, Snakemake pipeline and other file formats or codes necessary.
 
+<figure>
+    <a href="ProfKini"><img src="{{ site.url }}{{ site.baseurl }}/images/Varroabanner.jpg" alt="Varroabanner" width="300"></a>
+</figure>
 
 ## Where can you find the data?
 
@@ -17,20 +20,13 @@ Using whole-genome sequencing, (i) we compared sympatric populations genetic div
 ## Customed Snakemake workflow for Varroa population genomics
 
 ### Software and dependencies necessary to run the Snakemake pipeline :  
-(Sasha conda environment?)  
 
-[`Samtools`](http://www.htslib.org/) : the version used here was samtools/1.3.1.
-[`Mashtree`](https://github.com/lskatz/mashtree)
-
-For reads mapping and filtering:  
+[`Samtools`](http://www.htslib.org/) : the version used here was samtools/1.3.1.  
+[`Mashtree`](https://github.com/lskatz/mashtree) 
 [`Bowtie2`](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml): version bowtie2/2.2 used here.   
 [`NextGenMap`](https://cibiv.github.io/NextGenMap/): version NextGenMap/0.5.0 used here.   
 [`VariantBam`](https://github.com/broadinstitute/VariantBam): version VariantBam/1.4.3 used here.   
-
-For variant calling:
 [`Freebayes`](https://github.com/ekg/freebayes): version freebayes/1.1.0 used here.  
-
-For .vcf files manipulation and population genomics analysis:
 [`VCFtools`](https://vcftools.github.io/index.html): version vcftools/0.1.12b used here.  
 [`vcflib`](https://github.com/vcflib/vcflib): version vcflib/1.0.0-rc1 used here.  
 [`PLINK`](https://www.cog-genomics.org/plink/): version plink/1.90b3.36 used here.  
@@ -63,12 +59,14 @@ We designed six evolutionary scenario using [`fastsimcoal2`](http://cmpg.unibe.c
 
 ### Useful links and tools for running your own demographic inferences
 
-Additionally to the complete [manual available for `fastsimcoal2`](http://cmpg.unibe.ch/software/fastsimcoal2/man/fastsimcoal26.pdf) written by Laurent Excoffier, we found help on the active [google group forum](https://groups.google.com/forum/?nomobile=true#!forum/fastsimcoal). We are extremely grateful to the excellent tutorial that can be found [here](https://speciationgenomics.github.io/fastsimcoal2/), hosted on the[speciationgenomics](https://github.com/speciationgenomics) Github page by Mark Ravinet & Joana Meier. 
+Additionally to the complete [manual available](http://cmpg.unibe.ch/software/fastsimcoal2/man/fastsimcoal26.pdf) for `fastsimcoal2` written by Laurent Excoffier, we found help on the active [google group forum](https://groups.google.com/forum/?nomobile=true#!forum/fastsimcoal). 
 
-The SFS input for fsc26 were generated from our vcf files using the [easySFS](https://github.com/isaacovercast/easySFS) conversion scripts developped by Isaac Overcast.
+We are extremely grateful to the excellent tutorial that can be found [here](https://speciationgenomics.github.io/fastsimcoal2/), hosted on the [speciationgenomics](https://github.com/speciationgenomics) Github page by Mark Ravinet & Joana Meier. 
+
+[easySFS](https://github.com/isaacovercast/easySFS) was used to generate SFS input files from our vcf files (developped by Isaac Overcast).
 For 
 
-2D-SFS were plotted from the observed and expected SFS under each scenario model using [SFS-scripts](https://github.com/marqueda/SFS-scripts) developped by David Marques.
+[SFS-scripts](https://github.com/marqueda/SFS-scripts) were used to plot observed and expected 2D-SFS under each scenario model (developped by David Marques).
 
 ### Templates files in `demography` folder:  
 
@@ -85,8 +83,9 @@ Briefly the `M6_downsample_IMGwt_1.tpl` file draw the scenario with :
 In the `M6_downsample_IMGwt_1.est` file, most parameters were sampled in a uniform distribution (NB: upper limit does not constitute a maximum bound for fsc26, see manual).  
   
 We copied-named `M6_downsample_IMGwt_XXX.est`, `M6_downsample_IMGwt_XXX.tpl`, `M6_downsample_IMGwt_XXX_jointMAFpop1_0.obs` 100 times for which XXX is in {1..100}. Using an array bash script we then ran the following command for each replicate.  
-  
-==================   
+
+__________________________
+
 `#!/bin/bash`  
 `#SBATCH --job-name=vdM6`  
 `#SBATCH --partition=XXX`  
@@ -95,25 +94,20 @@ We copied-named `M6_downsample_IMGwt_XXX.est`, `M6_downsample_IMGwt_XXX.tpl`, `M
 `#SBATCH --time=3:00:00`  
   
 `number=$SLURM_ARRAY_TASK_ID`  
-`[PATH_TO_FASTSIMCOAL2]/fsc26 	--tplfile M6_downsample_IMGwt_"$number".tpl \  
-								--estfile M6_downsample_IMGwt_"$number".est \  
-								-m \  
-								--numsims 1000000 \  
-								--maxlhood 0.001 \  
-								--minnumloops 20 \  
-								--numloops 100 \  
-								-c 10`  
-   
-================  
+`[PATH_TO_FASTSIMCOAL2]/fsc26 --tplfile M6_downsample_IMGwt_"$number".tpl --estfile M6_downsample_IMGwt_"$number".est -m --numsims 1000000 --maxlhood 0.001 --minnumloops 20 --numloops 100 -c 10`  
+__________________________
+
 
 Then to extract the best results from each run, we simply apply the following command lines:  
+__________________________
 `cat M6_downsample_IMGwt_1/M6_downsample_IMGwt_1.bestlhoods >> scenario6_vd.txt`  
 `for i in {2..100}; do sed -n 2p M6_downsample_IMGwt_"$i"/M6_downsample_IMGwt_"$i".bestlhoods >> scenario6_vd.txt; done`  
 `for i in {1..100}; do cat M6_downsample_IMGwt_"$i"/M6_downsample_IMGwt_"$i".bestlhoods >> scenario6_vd.txt; done`  
-`cat scenario6_vd.txt | wc -l` # to check that we have all replicates results  
+`cat scenario6_vd.txt | wc -l` # to check that we have the results for the 100 replicates 
 `cat scenario6_vd.txt | sort -k 10nr` # the first line is then the scenatio with the lowest MaxEstLhood  
+__________________________
 
-The bootstraps from the best replicate in the best scenario were performed following tutorial in the manual (page 56-57). 
+For the best scenario, bootstraps from the best replicate were performed following the tutorial in the manual (page 56-57). 
 
 ## Contact
 Questions about the data or scripts? please contact either:  
