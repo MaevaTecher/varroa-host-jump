@@ -4,9 +4,7 @@ This repository aims at providing an online resource for the manuscript "Tracing
 
 Using whole-genome sequencing, (i) we compared sympatric populations genetic diversity, and (ii) estimated the demographic parameters of independent host switches in the _Apis_ honey bee ectoparasites mites: _Varroa destructor_ and _V. jacobsoni_. The following sections described how the bioinformatics analysis were processed and how to replicate them with available genome data reads, Snakemake pipeline and other file formats or codes necessary.
 
-<figure>
-    <a href="ProfKini"><img src="{{ site.url }}{{ site.baseurl }}/images/Varroabanner.jpg" alt="Varroabanner" width="300"></a>
-</figure>
+<img src="/images/Varroabanner.jpg" alt="Honey bee Varroa mites"/>
 
 ## Where can you find the data?
 
