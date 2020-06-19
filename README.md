@@ -8,12 +8,23 @@ Using whole-genome sequencing, (i) we compared sympatric populations genetic div
 
 ## Where can you find the data?
 
-1. Varroa mite sequencing reads are available under the DDBJ _DNA Data Bank of Japan_ **BioProject PRJDB9195**  
-2. Interactive visualization of sampling distribution and details is available [here](https://MaevaTecher.github.io/varroa-host-jump)  
-3. Exploratory R codes used for the maps and other analysis such as PCAs can be found in `R_data`.
-4. Snakemake pipeline is available in the file `Snakefile`, along with parameters file `cluster.json` and launcher `snakemake.slurm`.  
-5. Raw, filtered and LD_pruned variant calling file `vcf` can be downloaded on **DRYAD DOI to add**  
-6. Fastsimcoal2 input files for demographic scenarios and SFS subsets are available in `demography`.
+### Varroa mites whole-genome sequences
+
+1. Varroa mite sequencing reads are available under the DDBJ _DNA Data Bank of Japan_ **BioProject PRJDB9195**   
+2. [GCF_002443255.1 Vdes_3.0](https://www.ncbi.nlm.nih.gov/genome/?term=txid109461[orgn]) Reference genome can be directly downloaded from NCBI developed by [Techer et al. 2020. Comms. Biology](https://www.nature.com/articles/s42003-019-0606-0)  
+3. Honey bees and Varroa mites fasta sequences and Bowtie2 index build are available in the `ref2020` folder on **DRYAD DOI TO ADD**  
+
+### Codes
+
+1. Genomics analysis are summarized into a Snakemake pipeline is available in the file `Snakefile`, along with parameters file `cluster.json` and launcher `snakemake.slurm`.
+2. All scripts called in `Snakefile` are present in the `scripts` folder.  
+3. Interactive visualization of sampling distribution and details is available [here](https://MaevaTecher.github.io/varroa-host-jump).   
+4. R markdown including the code lines used to generate the interactive maps, PCAs analysis and bootstraping for the demographic inferences can be found in `R_data`.
+
+### Input or output files 
+
+1. Variant calling files (Raw, filtered and LD_pruned) as well as some lists (samples ID, SNP list, ) **DRYAD DOI to add**  
+2. Fastsimcoal2 input files for demographic scenarios and SFS subsets are available in `demography`.
 
 ## Customed Snakemake workflow for Varroa population genomics
 
