@@ -25,6 +25,7 @@ Using whole-genome sequencing, (i) we compared sympatric populations genetic div
 
 1. Variant calling files (Raw, filtered and LD_pruned) as well as some lists (samples ID, SNP list, ) **DRYAD DOI to add**  
 2. Fastsimcoal2 input files for demographic scenarios and SFS subsets are available in `demography`.
+3. FASTA files generated for mitochondrial analysis (COX1 and COX1-COX3-ATP6-CYTB) and compared to _Varroa_ reference sequences are available in `alignment_mtDNA`
 
 ## Customed Snakemake workflow for Varroa population genomics
 
@@ -59,7 +60,7 @@ Or, if you want to generate the variant call file from NextGenMap reads apply:
 
 ## Estimation of the mutation rate
 
-TBD
+All files are available in the DRYAD repository.
 
 
 ## Demographic scenarios testing and parameters estimation with fastsimcoal2
@@ -133,10 +134,6 @@ Gmail: maeva.angelique.techer@oist.jp
 Alexander (Sasha) Mikheyev, Adjunct Professor Ecology and Evolution @OIST, Associate Professor Evolutionary Genomics@ANU
 OIST Email: alexander.mikheyev@oist.jp  
 ANU Email: alexander.mikheyev@anu.edu.au 
-
-## TO do:
-Dryad repo to add once the title is finalized
-
 
 
 
