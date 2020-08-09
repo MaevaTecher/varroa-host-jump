@@ -1,6 +1,6 @@
 # Population genomics and demographic history of successful host switches in Varroa mites
 
-This repository aims at providing an online resource for the manuscript "Tracing the history of successful host switches in the beekeeping Varroa mite pests". 
+This repository aims at providing an online resource for the [preprint](https://www.biorxiv.org/content/10.1101/2020.07.30.228320v1.full) "Tracing the history of successful host switches in the beekeeping Varroa mite pests". 
 
 Using whole-genome sequencing, (i) we compared sympatric populations genetic diversity, and (ii) estimated the demographic parameters of independent host switches in the _Apis_ honey bee ectoparasites mites: _Varroa destructor_ and _V. jacobsoni_. The following sections described how the bioinformatics analysis were processed and how to replicate them with available genome data reads, Snakemake pipeline and other file formats or codes necessary.
 
@@ -10,7 +10,7 @@ Using whole-genome sequencing, (i) we compared sympatric populations genetic div
 
 ### Varroa mites whole-genome sequences
 
-1. Varroa mite sequencing reads are available under the DDBJ _DNA Data Bank of Japan_ **BioProject PRJDB9195**   
+1. Varroa mite sequencing reads are available under the DDBJ _DNA Data Bank of Japan_ [BioProject PRJDB9195](https://www.ncbi.nlm.nih.gov/bioproject/PRJDB9195)   
 2. [GCF_002443255.1 Vdes_3.0](https://www.ncbi.nlm.nih.gov/genome/?term=txid109461[orgn]) Reference genome can be directly downloaded from NCBI developed by [Techer et al. 2020. Comms. Biology](https://www.nature.com/articles/s42003-019-0606-0)  
 3. Honey bees and Varroa mites fasta sequences and Bowtie2 index build are available in the `ref2020` folder on **DRYAD DOI TO ADD**  
 
