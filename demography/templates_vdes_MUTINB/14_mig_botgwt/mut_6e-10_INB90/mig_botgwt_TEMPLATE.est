@@ -1,0 +1,27 @@
+// Search ranges and rules file
+// ****************************
+
+[PARAMETERS]
+//#isInt? #name   #dist.#min  #max 
+//all Ns are in number of haploid individuals
+1 	NVAM0 	unif  2   20000   output
+1 	NVAC1 	unif  2   20000   output
+1       NBOTAM   unif  2   1000   output
+1       TBOTEND   unif  1   1000   output bounded
+1 	TJUMP	unif  1   1000   output bounded 
+0 	GAM	unif	-1 	0 	output
+0	N0M1	logunif  1e-6   100   output
+0	N1M0	logunif  1e-6   100   output
+
+
+[RULES]
+NBOTAM < NVAM0
+NBOTAM < NVAC1
+TBOTEND < TJUMP
+
+[COMPLEX PARAMETERS]
+
+0  ResBOT   = NBOTAM/NVAM0      output
+0  ResJUMP   = NVAC1/NBOTAM      output
+0  MACtoAM   = N1M0/NVAC1      output
+0  MAMtoAC   = N0M1/NVAM0      output

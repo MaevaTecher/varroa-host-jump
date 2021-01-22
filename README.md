@@ -79,49 +79,49 @@ An excellent tutorial on fastsimcoal2 usage on genomics data can be found [here]
 
 ### Templates files in `demography` folder:  
 
-Here, we described the command lines used for one demographic model (`VDNOV475_105000/scenario6_IMGwt`) with the SFS generated from the largest SNP subset for _V. destructor_ (`dataset_VD4_38108snps.obs`). The `M6_downsample_IMGwt_1_jointMAFpop1_0.obs` file should be place in the same folder as the same named .tpl and .est files.
+Here, we described the command lines used for one demographic model (`templates_vjac_MUTINB/14_mig_botgwt/mut_8e-10`) with the SFS generated from all sites subset for _V. destructor_ (`VDES32by22_folded_50kbvcf2sfs.txt`). The `mig_botgwt_TEMPLATE_jointMAFpop1_0.obs` file should be place in the same folder as the same named .tpl and .est files.
 
-Briefly the `M6_downsample_IMGwt_1.tpl` file draw the scenario with :  
-1. A two populations model between _V. destructor_ mites on original host _A. cerana_ with a current effective population size `NVDAC1` and `NVDAM0` for the novel host _A. mellifera_.
+Briefly the `mig_botgwt_TEMPLATE.tpl` file draw the scenario with :  
+1. A two populations model between _V. destructor_ mites on original host _A. cerana_ with a current effective population size `NVAC1` and `NVAM0` for the novel host _A. mellifera_.
 2. Observed SFS Data were projected using easySFS with 17 haploid genomes for both _A. mellifera_ (population 0) and _A. cerana_ (population 1) mites.
 3. A growth rate GAM since the host switch event only for the novel host (expansion biologically known).
 4. Two migration matrices were given for the population split and after.
-5. We considered a single historical event `TBOT` from which a number of haploid mites `JUMP` splited from _A. cerana_ population to found the new _A. mellifera_ population.
+5. We considered a single historical event `TJUMP` ending at `TBOTEND` from which a number of haploid mites `NBOTAM` splited from _A. cerana_ population to found the new _A. mellifera_ population.
 6. The mutation rate was proposed following preliminary _de novo_ mutations estimations.  
   
-In the `M6_downsample_IMGwt_1.est` file, most parameters were sampled in a uniform distribution (NB: upper limit does not constitute a maximum bound for fsc26, see manual).  
+In the `mig_botgwt_TEMPLATE.est` file, most parameters were sampled in a uniform distribution (NB: upper limit does not constitute a maximum bound for fsc26, see manual).  
   
-We copied-named `M6_downsample_IMGwt_XXX.est`, `M6_downsample_IMGwt_XXX.tpl`, `M6_downsample_IMGwt_XXX_jointMAFpop1_0.obs` 100 times for which XXX is in {1..100}. Using an array bash script we then ran the following command for each replicate.  
+We copied-named `mig_botgwt_TEMPLATE_XXX.est`, `mig_botgwt_TEMPLATE_XXX.tpl`, `mig_botgwt_TEMPLATE_XXX_jointMAFpop1_0.obs` 100 times for which XXX is in {1..100}. Using an array bash script we then ran the following command for each replicate.  
 
 __________________________
 `#!/bin/bash`  
-`#SBATCH --job-name=vdM6`  
+`#SBATCH --job-name=vd-migbotgwt`  
 `#SBATCH --partition=XXX`  
 `#SBATCH --mem=5G`  
 `#SBATCH -c 10`  
 `#SBATCH --time=3:00:00`  
   
 `number=$SLURM_ARRAY_TASK_ID`  
-`[PATH_TO_FASTSIMCOAL2]/fsc26 --tplfile M6_downsample_IMGwt_"$number".tpl --estfile M6_downsample_IMGwt_"$number".est -m --numsims 1000000 --maxlhood 0.001 --minnumloops 20 --numloops 100 -c 10`  
+`[PATH_TO_FASTSIMCOAL2]/fsc26 --tplfile mig_botgwt_TEMPLATE_"$number".tpl --estfile mig_botgwt_TEMPLATE_"$number".est -m --numsims 1000000 --maxlhood 0.001 --minnumloops 20 --numloops 100 -c 10`  
 __________________________
 
 
 Then to extract the best results from each run, we simply apply the following command lines:  
 __________________________
-`cat M6_downsample_IMGwt_1/M6_downsample_IMGwt_1.bestlhoods >> scenario6_vd.txt`  
-`for i in {2..100}; do sed -n 2p M6_downsample_IMGwt_"$i"/M6_downsample_IMGwt_"$i".bestlhoods >> scenario6_vd.txt; done`  
-`for i in {1..100}; do cat M6_downsample_IMGwt_"$i"/M6_downsample_IMGwt_"$i".bestlhoods >> scenario6_vd.txt; done`  
-`cat scenario6_vd.txt | wc -l` # to check that we have the results for the 100 replicates 
-`cat scenario6_vd.txt | sort -k 10nr` # the first line is then the scenatio with the lowest MaxEstLhood  
+`cat mig_botgwt_TEMPLATE_1/mig_botgwt_TEMPLATE_1.bestlhoods >> scenario_migbotgwt.txt`  
+`for i in {2..100}; do sed -n 2p mig_botgwt_TEMPLATE_"$i"/mig_botgwt_TEMPLATE_"$i".bestlhoods >> scenario_migbotgwt.txt; done`  
+`for i in {1..100}; do cat mig_botgwt_TEMPLATE_"$i"/mig_botgwt_TEMPLATE_"$i".bestlhoods >> scenario_migbotgwt.txt; done`  
+`cat scenario_migbotgwt.txt | wc -l` # to check that we have the results for the 100 replicates 
+`cat scenario_migbotgwt.txt | sort -k 10nr` # the first line is then the scenatio with the lowest MaxEstLhood  
 __________________________
 
 For the best scenario, bootstraps from the best replicate were performed following the tutorial in the manual (page 56-57). We simulated 100 SFS datasets from the best output `.par` file after modifying it to generate a DNA sequence data, using:   
 `[PATH_TO_FASTSIMCOAL2]/NUMBER=YYY` # where NUMBER is the replicate number with the lowest MaxEstLhood
-`fsc26 -i M6_downsample_IMGwt_${NUMBER}_boot.par -n100 -j -m -s0 -x -I -q`
+`fsc26 -i mig_botgwt_TEMPLATE_${NUMBER}_boot.par -n100 -j -m -s0 -x -I -q`
 
-We then repeat the parameters estimation 100 times for each of the 100 simulated SFS `M6_downsample_IMGwt_${NUMBER}_boot_jointMAFpop1_0.obs` using the same initial command lines. 
+We then repeat the parameters estimation 100 times for each of the 100 simulated SFS `mig_botgwt_TEMPLATE_${NUMBER}_boot_jointMAFpop1_0.obs` using the same initial command lines. 
 
-The best replicate for each simulated SFS run is then used to obtain the confidence interval of `NVDAM0`, `NVAC1`, `TBOT`, `JUMP`, `GAM` and migration rates.
+The best replicate for each simulated SFS run is then used to obtain the confidence interval of `NVAM0`, `NVAC1`, `TJUMP`, `NBOTAM`, `GAM` and migration rates.
 
 
 ## Contact

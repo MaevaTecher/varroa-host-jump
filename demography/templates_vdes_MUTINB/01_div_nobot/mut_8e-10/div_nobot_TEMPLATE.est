@@ -1,0 +1,16 @@
+// Search ranges and rules file
+// ****************************
+
+[PARAMETERS]
+//#isInt? #name   #dist.#min  #max 
+//all Ns are in number of haploid individuals
+1 	NVAM0 	unif  2   20000   output
+1 	NVAC1 	unif  2   20000   output
+1 	TJUMP	unif  1   1000   output bounded 
+
+
+[RULES]
+
+[COMPLEX PARAMETERS]
+
+0  ResJUMP   = NVAC1/NVAM0      output

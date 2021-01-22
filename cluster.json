@@ -1,0 +1,142 @@
+{
+    "__default__" :
+    {
+        "cpus-per-task" : 1,
+        "partition" : "compute",
+        "mem" : "40G",
+        "time": "1-00:00:00"
+    },
+    "nextgenmap":
+    {
+        "cpus-per-task" : 3,
+        "partition" : "compute",
+        "mem" : "200G",
+        "time": "2-00:00:00"
+    },
+    "bowtie2":
+    {
+        "cpus-per-task" : 8,
+        "partition" : "compute",
+        "mem" : "100G",
+        "time": "2-00:00:00"
+    },
+    "kraken":
+    {
+        "cpus-per-task" : 8,
+        "partition" : "compute",
+        "mem" : "300G",
+        "time": "4-00:00:00"
+    },
+    "braken":
+    {
+        "cpus-per-task" : 2,
+        "partition" : "short",
+        "mem" : "50G",
+        "time": "0-02:00:00"
+    },
+    "statsbam":
+    {
+        "cpus-per-task" : 1,
+        "partition" : "short",
+        "mem" : "50G",
+        "time": "0-02:00:00"
+    },
+    "mpileup_call":
+    {
+        "cpus-per-task" : 2,
+        "partition" : "compute",
+        "mem" : "100G",
+        "time": "2-00:00:00"
+    },
+    "merge_allsites":
+    {
+        "cpus-per-task" : 4,
+        "partition" : "compute",
+        "mem" : "100G",
+        "time": "0-12:00:00"
+    },
+    "filter_allsites":
+    {
+        "cpus-per-task" : 2,
+        "partition" : "compute",
+        "mem" : "100G",
+        "time": "0-12:00:00"
+    },
+    "freebayes":
+    {
+        "cpus-per-task" : 2,
+        "partition" : "compute",
+        "mem" : "100G",
+        "time": "2-00:00:00"
+    },
+    "merge_snponly":
+    {
+        "cpus-per-task" : 4,
+        "partition" : "compute",
+        "mem" : "50G",
+        "time": "0-10:00:00"
+    },
+    "filter_snponly":
+    {
+        "cpus-per-task" : 2,
+        "partition" : "compute",
+        "mem" : "100G",
+        "time": "0-12:00:00"
+    },
+    "vcf2plink":
+    {
+        "cpus-per-task" : 1,
+        "partition" : "short",
+        "mem" : "40G",
+        "time": "0-02:00:00"
+    },
+    "plink_LDlist":
+    {
+        "cpus-per-task" : 1,
+        "partition" : "short",
+        "mem" : "40G",
+        "time": "0-02:00:00"
+    },
+    "LDpruning":
+    {
+        "cpus-per-task" : 1,
+        "partition" : "short",
+        "mem" : "50G",
+        "time": "0-02:00:00"
+    },
+    "vcf2GL":
+    {
+        "cpus-per-task" : 2,
+        "partition" : "short",
+        "mem" : "50G",
+        "time": "0-02:00:00"
+    },
+    "NGSadmix":
+    {
+        "cpus-per-task" : 2,
+        "partition" : "short",
+        "mem" : "100G",
+        "time": "0-02:00:00"
+    },
+    "freebayes_mtDNA":
+    {
+        "cpus-per-task" : 4,
+        "partition" : "compute",
+        "mem" : "200G",
+        "time": "0-12:00:00"
+    },
+    "filter_mtDNA":
+    {
+        "cpus-per-task" : 2,
+        "partition" : "compute",
+        "mem" : "50G",
+        "time": "0-05:00:00"
+    },
+    "mtDNA_consensus":
+    {
+        "cpus-per-task" : 1,
+        "partition" : "short",
+        "mem" : "20G",
+        "time": "0-00:40:00"
+    }
+}
