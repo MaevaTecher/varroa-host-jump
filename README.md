@@ -1,6 +1,6 @@
-# Online resource for : The first steps toward a global pandemic: Reconstructing the demographic history of parasite host switches in its native range
+# Online resource "The first steps toward a global pandemic: Reconstructing the demographic history of parasite host switches in its native range"
 
-This repository aims at providing an online resource for the [preprint](https://www.biorxiv.org/content/10.1101/2020.07.30.228320v1.full) "Tracing the history of successful host switches in the beekeeping Varroa mite pests". 
+This repository aims at providing an online resource for the [preprint](https://www.biorxiv.org/content/10.1101/2020.07.30.228320v1.full)
 
 Using whole-genome sequencing, (i) we compared sympatric populations genetic diversity, and (ii) estimated the demographic parameters of independent host switches in the _Apis_ honey bee ectoparasites mites: _Varroa destructor_ and _V. jacobsoni_. The following sections described how the bioinformatics analysis were processed and how to replicate them with available genome data reads, Snakemake pipeline and other file formats or codes necessary.
 
@@ -63,7 +63,7 @@ Or, if you want to generate the variant call file from NextGenMap reads apply:
 All files are available in the DRYAD repository.
 
 
-## TO UPDATE Demographic scenarios testing and parameters estimation with fastsimcoal2
+## Demographic scenarios testing and parameters estimation with fastsimcoal2
 
 We designed six evolutionary scenario using [`fastsimcoal2`](http://cmpg.unibe.ch/software/fastsimcoal2/) to choose the most likely and estimate demographic parameters such as the size of founding population at time of independent host switch events by _V. destructor_ and _V. jacobsoni_ from _A. cerana_ to _A. mellifera_.
 
