@@ -1,5 +1,5 @@
 ---
-title: "Online Ressource: Varroa Host Switch Genomics and Demography"
+title: "Online Resource: Varroa Host Switch Genomics and Demography"
 date: "`r Sys.Date()`"
 author: "Maeva A. TECHER, Ecology and Evolution, OIST" 
 output:
@@ -11,49 +11,23 @@ output:
     lightbox: false
 ---
 
-This online ressource is there to provide additional interactive visualization tool for the Varroa mites sampling and sequencing data obtained from the associated paper “XXXX”. A Snakemake pipeline created and used for genomics mapping, variant calling and analysis is provided in this host GitHub repository. Most genomics and demographic analysis using fastsimcoal2 were computed on the Okinawa Institute of Science and Technology OIST cluster, Sango.
+This online resource is there to provide additional interactive visualization tool for the Varroa mites sampling and sequencing data obtained from the associated paper **“Techer, M. A., Roberts, J. M. K., Cartwright, R. A., & Mikheyev, A. S. (2020). The first steps toward a global pandemic: Reconstructing the demographic history of parasite host switches in its native range. https://www.researchsquare.com/article/rs-196900/v1"** 
+  
+A Snakemake pipeline created and used for genomics mapping, variant calling, and analysis is provided in this host GitHub repository. Most genomics and demographic analysis using fastsimcoal2 were computed on the Okinawa Institute of Science and Technology OIST cluster, Sango.
 
-Click on “code” button on the right to make appear the libraries used and R code for each section.
+Click on the “code” button on the right to make appear the libraries used and R code for each section.
 
 ```{r setup, warning = FALSE, message= FALSE}
-library("knitr")
-library("rmdformats")
-library("ggplot2")
-library("ggthemes")
-library("ggrepel") # for text labels
-library("plotly")
-library("tidyverse")
-library("rgdal") ## for maps
-library("leaflet") ##interactive maps
-library("ggpubr")
-library("grid")
-library("boot")
-library("kableExtra") # for creating a scrolling table
-library("dplyr")
-library("ggpubr")
-library("tidyverse")
+#packages necessary to run the code in order of need
 library("knitr") # for the markdown
-library("kableExtra") # for creating a scrolling table
-library("ggplot2") # for plotting 
-library("maps")
-library("htmltools")
-library("gridExtra")
-library("gghighlight")
-library("adegenet")
-library("vcfR")
-library("ggmap")
-library("poppr")
-library("RColorBrewer")
-library("igraph")
-library("StAMPP")
-library("lattice")
-library("reshape2")
-library("pcadapt")
-library("data.table")
-library("boot")
-library("plotly")
-library("forcats")
-
+library("rmdformats")
+library("tidyverse") # for reading table and parsing data
+library("ggplot2")  # for general plotting 
+library("rgdal") # for maps and using the function "readOGR"
+library("leaflet") # to create interactive maps
+library("plotly") # for interactive plots
+library("multcompView") # for putting letters on Anova
+library("boot") # for computing bootstraps on demographic parameters
 
 ## Global options
 Sys.setenv('R_MAX_VSIZE'=100000000000)
@@ -87,18 +61,19 @@ We import the metadata of the samples here with following information:
 **Host** = Varroa mites were collected from within honey bee colonies identified by the collector as either Western honey bee _Apis mellifera_ or Asian honey bee _Apis cerana_.  
 **Country/Date** = Exact informations on sampling  
 **Site** = Code name of each sampling site corresponding on the map
-**Latitude/Longitude** = GPS coordinates from samples obtained before 2008 are infered from approximate location given. All samples geo-coordinates after 2008 were obtained directly from field collection.  
+**Latitude/Longitude** = GPS coordinates from samples obtained before 2008 are inferred from the approximate location given. All samples geocoordinates after 2008 were obtained directly from field collection.  
   
 **Lineage** = mtDNA haplogroup identified from mtDNA COX1 partial region (reconstruct from HiSeq4000 reads and confirmed by Sanger sequencing).  
-**Haplotype** = mtDNA haplotype name by concatenating four genes (COX1, COX3, ATP6 and ND2)  
+**Haplotype** = mtDNA haplotype name by concatenating four genes (COX1, COX3, ATP6 and CytB)  
 
-**Host_Read_Identity** = Host DNA identified by number of reads mapped against either _A. cerana_ or _A. mellifera_  
-**Reads_mellifera/cerana** = Number of reads mapped against reference genome of _A. cerana_ or _A. mellifera_ (Q > 20)
+**Host_Read_Identity** = Host DNA identified by the number of reads mapped against either _A. cerana_ or _A. mellifera_  
+**Reads_mellifera/cerana** = Number of reads mapped against the reference genome of _A. cerana_ or _A. mellifera_ (Q > 20)
 
 ``` {r map-base, message = FALSE, warning = FALSE}
 # Download the country borders layer
 #download.file("http://thematicmapping.org/downloads/TM_WORLD_BORDERS_SIMPL-0.3.zip" , destfile="world_shape_file.zip")
 #system("unzip world_shape_file.zip")
+
 world_spdf=readOGR(dsn= getwd() , layer="TM_WORLD_BORDERS_SIMPL-0.3")
 
 data.vdac <- metadata %>% filter(Species == "V.destructor") %>% filter(Host == "A.cerana") 
@@ -109,9 +84,7 @@ data.vjac <- metadata %>% filter(Species == "V.jacobsoni") %>% filter(Host == "A
 data.vjam <- metadata %>% filter(Species == "V.jacobsoni") %>% filter(Host == "A.mellifera") 
 ```
 
-The following interactive map showed the distribution of both _V. destructor_ and _V. jacobsoni_ samples on either their original host the eastern honey bee _A. cerana_ or on the new host the western honey bee _A. mellifera_.
-  
-If you pass your mouse over a particular point, a pop-up will appear presenting essential information about the particular Varroa mite sample. On the right top corner, a layer control button allow to subselect species/host couple.
+The following map is interactive. If you pass your mouse over a particular point, a pop-up will present essential information about the specific sample. On the right top corner, a layer control button allows sub-selecting species/host couple.
 
 <span style="color:red">*V. destructor* on *A. cerana*</span>  
 <span style="color:pink">*V. destructor* on *A. mellifera*</span>  
@@ -191,15 +164,14 @@ leaflet(metadata) %>%
 
 ```
   
-
-The map shows the distribution of both _V. destructor_ and _V. jacobsoni_ on either their original host the eastern honey bee _A. cerana_ or on the new host the western honey bee _A. mellifera_.
+### Figure OR1: Interactive sampling map of _V. destructor_ and _V. jacobsoni_ distribution on their original and new hosts in their native range.
 
 
 ## Reads Mapping and Coverage
 
-Commands used for each analysis step are available on our Snakemake script. Briefly, we assessed demultiplexed fastq read quality using FastQC. We then mapped reads to the _V. destructor_ reference genome on NCBI [GCF_002443255.1] separately from the complete mitogenome [NC_004454.2] using the soft-clipping and very sensitive mode of NextGenMap v0.5.0 (following a comparison with Bowtie2 v2.6). Reads were sorted and duplicates were removed using SAMtools, and subsampled to a maximum coverage of 200 using VariantBam to speed up processing. Mapping rates and reads depths were computed from the generated BAM files.
+Commands used for each analysis step are available on our Snakemake script. Briefly, we assessed demultiplexed fastq reads quality using FastQC. We then mapped reads to the _V. destructor_ reference genome on NCBI [GCF_002443255.1] separately from the complete mitogenome [NC_004454.2] using the soft-clipping and very sensitive mode of NextGenMap v0.5.0 (following a comparison with Bowtie2 v2.6). Reads were sorted, and duplicates were removed using SAMtools and subsampled to a maximum coverage of 200 using VariantBam to speed up processing. Mapping rates and reads depths were computed from the generated BAM files.
 
-Here we plot the mean read depth computed from each .bam file mapped to the reference vdes3.0.fasta using `samtools depth -a FILE.bam | awk '{c++;s+=$3}END{print s/c}'` in relation to the mapping percentage.
+The mean read depth was computed from each .bam file mapped to the reference vdes3.0.fasta using `samtools depth -a FILE.bam | awk '{c++;s+=$3}END{print s/c}'`.
 
 ```{r mapping-reads, cache=TRUE}
 metadata %>%
@@ -216,10 +188,13 @@ metadata %>%
 
 ```
 
-# All-sites dataset
+### Figure OR2: Mapping quality and coverage of the samples allows in depth genomic comparisons.
+
+
+# All-sites dataset (nuclear analysis)
 ## Variant and invariant sites calling
 
-We decided to follow the methods as described in the paper by Yamasaki et al. (2020) "Genome-wide patterns of divergence and introgression after secondary contact between Pungitius sticklebacks".  
+We decided to guide our workflow by following the methods described in Yamasaki et al. (2020) "Genome-wide patterns of divergence and introgression after secondary contact between Pungitius sticklebacks".  
 
 First, we called both variants and non-variants from our .bam files using the function **mpileup** and **call** from `bcftools` to obtain a dataset to be used for SFS (Site Frequency Spectrum) analysis. We designed a Snakemake pipeline which implement these commands in the `rule mpileup_call` such as:  
 
@@ -227,11 +202,11 @@ First, we called both variants and non-variants from our .bam files using the fu
 
 `{VDESRef}` is the path to our fasta file containing the nuclear contigs and the mitogenome.  
 
-`{params.span}` corresponds to one of the 1/300 genome split regions to parallelize the computation that we will merge afterwards as a single file.  
+`{params.span}` corresponds to one of the 1/300 genome split regions to parallelize the computation that we will merge afterward as a single file.  
 
-`{params.bams}` corresponds to all the .bam files here generated with [NextGenMap](https://github.com/Cibiv/NextGenMap/wiki). It is worth noting we decided to only kept the reads associated with a minimum mapping quality of 10 (leaving only reads with less than 0.1% chance of being mapped incorrectly) with `{params.mapqual}`
+`{params.bams}` corresponds to all the .bam files here generated with [NextGenMap](https://github.com/Cibiv/NextGenMap/wiki). It is worth noting we decided to only keep the reads associated with a minimum mapping quality of 10 (leaving reads with less than 0.1% chance of being mapped incorrectly) with `{params.mapqual}`
 
-`{params.idlist}` we specify here the samples list we want to use for the analysis (if we decide in the future to subset with only V. destructor mites for example)
+`{params.idlist}` we specify here the samples list we want to use for the analysis (e.g., if we decide in the future to subset with only V. destructor mites)
 
 We obtained the file `/flash/MikheyevU/Maeva/varroa-jump-asia/data_2020/var/ngm/allsites63ind/allsites63_mpileupM2020.vcf` (126Gb), for which `bcftools stats` revealed the following stats:  
 
@@ -247,7 +222,7 @@ number of multiallelic sites:	88005
 number of multiallelic SNP sites:	18782
 ------------
 
-In comparison, we obtained ~3.7 million SNPs with the 2019 dataset which included only 43 samples and in 2020, we detected ~4.4 million SNPs.
+In comparison, we obtained ~3.7 million SNPs with the 2019 dataset, which included only 43 samples and in 2020, we detected ~4.4 million SNPs.
 
 ------------
 SN	0	number of samples:	43
@@ -261,11 +236,11 @@ SN	0	number of multiallelic sites:	75285
 SN	0	number of multiallelic SNP sites:	13417
 ------------
 
-To filter this raw file, we need to know the site mean depth. However, I couldn't use `vcftools --site-mean-depth` option on this .vcf as it seems the DP is not coded in the right format. Instead, we parsed directly the .vcf file by using the following perl command  
+To filter this raw file, we need to know the site mean depth. However, I couldn't use `vcftools --site-mean-depth` option on this .vcf as it seems the DP is not coded in the right format. Instead, we parsed the .vcf file directly by using the following Perl command.  
 
 <pre><code> perl -ne 'print "$1\n" if /DP=(\d+)/' {input.vcf} > allsites63_mpileupM2020_depth.txt </code></pre>
 
-We use this output file to plot the raw depth distribution before any filtering. In parallel, we also checked if computing the depth only the seven major chromomosomes will greatly affect the mean computed and it does have only little effect. Thus no need to run the `rule prevfilterVCF` with the following parameters:   
+We use this output file to plot the raw depth distribution before any filtering. In parallel, we also checked if computing the depth of only the seven major chromosomes will greatly affect the mean computed, and it does have only little effect. Thus no need to run the `rule prevfilterVCF` with the following parameters:     
 
 <pre><code> vcftools --vcf {input.rawvcf} --keep {input.list} --chr NW_019211454.1 --chr NW_019211455.1 --chr NW_019211456.1 --chr NW_019211457.1 --chr NW_019211458.1 --chr NW_019211459.1 --chr NW_019211460.1 --recode --recode-INFO-all --out {output} </code></pre>
 
@@ -333,19 +308,19 @@ SN	0	number of multiallelic SNP sites:	0
 ------------
 
 ## Host switch and demographic analyses
-### Reducing effect of selection by keeping sites 50kb away from annotated genes
+### Reducing the effect of selection by keeping sites 50kb away from annotated genes
 
-I downloaded the tabular version of the protein coding regions [here](https://www.ncbi.nlm.nih.gov/genome/browse/#!/proteins/937/335323%7CVarroa%20destructor/). After extracting them in excel in a file named `gene_Vdes_3.txt` in which I have the column Accession, Start, Stop, GeneID and Locus (the last two will be removed). I removed the duplicate entries and kept only for the seven main chromosome NW_019211454.1-0.60.1
+We downloaded the tabular version of the protein-coding regions [here](https://www.ncbi.nlm.nih.gov/genome/browse/#!/proteins/937/335323%7CVarroa%20destructor/). After extracting them in excel in a file named `gene_Vdes_3.txt` in which we have the columns Accession, Start, Stop, GeneID, and Locus (the last two are removed). We drew the duplicate entries and kept only for the seven main chromosome NW_019211454.1-0.60.1
 
-Before processing to further filtering, I computed the depth distribution for routine check.
+Before processing to further filtering, we computed the depth distribution for a routine check.
 
-The next step consisted in excluding any genes and 50kb wide regions flanking annotated genes. We simply use `vcftools` for this step and subsequently proceeded for the dmeography.
+The next step consisted of excluding any genes and 50kb wide regions flanking annotated genes. We use `VCFtools` for this step and subsequently proceed
 
 <pre><code> vcftools --vcf {input.rawvcf} --exclude-bed {input.list} --recode --recode-INFO-all --out {output} </code></pre>
 
 `{input.list}` is the path to our list `gene_Vdes_3_50kb.txt`.
 
-We of course loose a lot of the variation observed by such strict depletion, however we still harvest **224,568 biallelic SNPs** and **12,370,234 invariant sites** to build the SFS.
+We, of course, lose a lot of the variation observed by such strict depletion. However we still harvest **224,568 biallelic SNPs** and **12,370,234 invariant sites** to build the SFS.
 
 We will run fastsimcoal2 independently for _V. destructor_ and _V. jacobsoni_ and will not select all individuals as we wish to only test for similar dates and in sympatry. For that I will subset the final vcf with a sample list using :  
 
@@ -353,7 +328,7 @@ We will run fastsimcoal2 independently for _V. destructor_ and _V. jacobsoni_ an
 
 ### Converting vcf into minor allelic frequency spectrum (folded SFS)
 
-We use [vcf2sfs scripts](https://github.com/shenglin-liu/vcf2sfs) developped by Shenglin-liu to convert, fold and plot the file. Important note, the vcf file should be sorted so that the order of individuals name is the same as in the population file (separated by a tabulation not only a space)
+We used [vcf2sfs scripts](https://github.com/shenglin-liu/vcf2sfs) which were developed by Shenglin-liu to convert, fold and plot the file. Important note, the vcf file should be sorted so that the order of individuals name is the same as in the population file (separated by a tabulation, not only space)
 
 ```{r vcf2sfs convertion, cache=TRUE}
 
@@ -384,7 +359,7 @@ We use [vcf2sfs scripts](https://github.com/shenglin-liu/vcf2sfs) developped by 
 
 ### Maximum likelihood distribution fastsimcoal2 runs
 
-After estimating the demographic history for each Varroa species on their novel and original hosts using `fastsimcoal2`, we plotted here the distribution of the log likelihood from the 100 run replicates for each scenario and each SFS subset size.
+After estimating the demographic history for each Varroa species on their novel and original hosts using `fastsimcoal2`, we plotted here the distribution of the log-likelihood from the 100 run replicates for each scenario and each SFS subset size.
 
 This method for model selection comes on top of the AIC calculation and is followed the same methods as described in [Meier et al. 2016. Mol. Ecol.](https://onlinelibrary.wiley.com/doi/full/10.1111/mec.13838). 
 
@@ -407,7 +382,9 @@ kangourex
 #shapiro.test(vdes.lhoods$mut_1e.11)
 ```
 
-The **figure above** shows the distribution of the log likelihood for _V. destructor_ demographic runs whether the mutation rate was set at 1.0 x 10<sup>-11</sup>, 2.0 x 10<sup>-10</sup>, 4.0 x 10<sup>-10</sup>, 6.0 x 10<sup>-10</sup> to 8.0 x 10<sup>-10</sup>. Replicates generated with lower mutation rates than the directly estimated 8.0 x 10-10 were not associated with a better fit to the observed SFS from our genomic data for _V. destructor_.
+### Figure OR3: Distribution of the log likelihood for _V. destructor_ demographic runs in regards to the mutation rate setting (1.0 x 10<sup>-11</sup>, 2.0 x 10<sup>-10</sup>, 4.0 x 10<sup>-10</sup>, 6.0 x 10<sup>-10</sup> to 8.0 x 10<sup>-10</sup>).  
+  
+Replicates generated with lower mutation rates than the directly estimated 8.0 x 10-10 were not associated with a better fit to the observed SFS from our genomic data for _V. destructor_.
 
 ```{r test-destructor, cache=TRUE}
 kruskal.test(mutation_model ~ lhoods_value, data = vdes.lhoods)
@@ -417,7 +394,7 @@ test <- pairwise.wilcox.test(vdes.lhoods$lhoods_value, vdes.lhoods$mutation_mode
 
 #pairwise.wilcox.test(vdes.lhoods$lhoods_value, vdes.lhoods$mutation_model, p.adjust.method = "bonferroni")
 
-library(multcompView)
+
  
 ## scripts from https://fabiomarroni.wordpress.com/2017/03/25/perform-pairwise-wilcoxon-test-classify-groups-by-significance-and-plot-results/
 tri.to.squ<-function(x)
@@ -474,11 +451,13 @@ mymat<-tri.to.squ(pp$p.value)
 myletters<-multcompLetters(mymat,compare="<=",threshold=0.05,Letters=letters)
 ```
 
-The **figure above** shows the distribution of the log likelihood for _V. jacobsoni_ demographic runs whether the mutation rate was set at 1.0 x 10<sup>-11</sup>, 2.0 x 10<sup>-10</sup>, 4.0 x 10<sup>-10</sup>, 6.0 x 10<sup>-10</sup> to 8.0 x 10<sup>-10</sup>. Replicates generated with lower mutation rates than the directly estimated 8.0 x 10-10 were not associated with a better fit to the observed SFS from our genomic data for _V. jacobsoni_.
+### Figure OR4: Distribution of the log likelihood for _V. jacobsoni_ demographic runs depending of the mutation rate selected.   
+
+Replicates generated with lower mutation rates than the directly estimated 8.0 x 10-10 were not associated with a better fit to the observed SFS from our genomic data for _V. jacobsoni_.
 
 ### Bootstraps _V. destructor_
 
-After summarizing the 100 best replicates from the 100 simulated SFS run, we computed the mean estimate value and 95% confidence interval for each demographic parameter using `boot` package.
+After summarizing the 100 best replicates from the 100 simulated SFS run, we computed the mean estimate value and 95% confidence interval for each demographic parameter using the `boot` package.
 
 ```{r bootstraps destructor,  warning = FALSE, cache=TRUE}
 
@@ -605,9 +584,9 @@ boot.ci(N0M1.boot)
 
 ## Genome-wide analysis of genetic diversity and divergence
 
-We use the all-sites dataset to detect whether certain genomic regions diverged among populations and if Varroa genomes on _A. mellifera_ have a lower variability than _A. cerana_ host. For that we computed three indices using sliding window throughout the genome.   
+We use the all-sites dataset to detect if the bottleneck associated with host-switch affected all genomic regions the same way. For that, we computed three indices using a sliding window throughout the genome.   
 
-For this part, we followed the [tutorial by Mark Ravinet and Joana Meier](https://speciationgenomics.github.io/sliding_windows/), and we used the python scripts developped by [Simon Martin](https://github.com/simonhmartin/genomics_general) for parsing our .vcf into a .geno object and then computed the diversity and divergence analyses in sliding window with `popgenWindows.py`.  
+For this part, we followed the [tutorial by Mark Ravinet and Joana Meier](https://speciationgenomics.github.io/sliding_windows/), and we used the python scripts developed by [Simon Martin](https://github.com/simonhmartin/genomics_general) for parsing our .vcf into a .geno object and then computed the diversity and divergence analyses in sliding window with `popgenWindows.py`.  
 
 π, as a measure of genetic variation
 FST, as a measure of genomic differentiation
@@ -615,7 +594,7 @@ Dxy, as a measure of absolute divergence
 
 ### Estimation of genetic diversity (π) within host/species population 
 
-We started with a preliminary run using a large window (`-w 50000 -s 20000 -m 100`) which specified a window size of 50kb that is sliding by 20kb and with a minimum of 100 sites covered. The windows were too large and so I went with a much smaller one going of 10kb (`-w 10000`), sliding by 5kb (`-s 5000`) with a minimum of 100 sites covered (`-m 100`).
+We started with a preliminary run using a large window (`-w 50000 -s 20000 -m 100`) which specified a window size of 50kb that is sliding by 20kb and with a minimum of 100 sites covered. The windows were too large, and so I went with a much smaller one going of 10kb (`-w 10000`), sliding by 5kb (`-s 5000`) with a minimum of 100 sites covered (`-m 100`).
 
 Below are the graphs of the nucleotide diversity computed from `allsites63_filtered2020_small.Fst.Dxy.pi.csv.gz`  
 1) populations are separated by species and hosts   
@@ -662,9 +641,9 @@ ronflex <- ronflex + theme(plot.background = element_blank()
 ronflex
 ```
   
-**Figure: Nucleotide diversity in V. destructor mites between original host and new host**  
+### Figure OR5: Nucleotide diversity in _V. destructor_ mites between original host and new host populations. 
 
-In darkred, we plotted the nucleotide variation present along the genome of _V. destructor_ mites collected on their original host _A. cerana_, while those collected on _A. mellifera_ are represented by a light red. We can see that the nucleotide diversity is much smaller in _A. mellifera_ mites in general, which is to expected as the # lineages and diversity is higher in the original source population.
+We plotted the nucleotide variation present along the genome of _V. destructor_ mites parasitizing their original host, _A. cerana_ (dark-red), or the new one, _A. mellifera_ (light-red). We can see that the nucleotide diversity is much smaller in _A. mellifera_ mites in general, which reflect the expected host switch bottleneck  (# lineages and diversity were higher in the source population).
   
 
 ```{r compute_pi small windowvjac, cache=TRUE}
@@ -683,7 +662,8 @@ goinfrex <- goinfrex + theme(plot.background = element_blank()
 goinfrex
 ```
   
-**Figure: Nucleotide diversity in V. jacobsoni mites between original host and new host** 
+### Figure OR6: Nucleotide diversity in _V. jacobsoni_ mites between original host and new host populations. 
+
 Similarly, we plotted for _V. jacobsoni_ with blue shades.  
 
 
@@ -710,7 +690,7 @@ goupix <- goupix + theme(plot.background = element_blank()
 goupix
 ```
   
-**Figure: Genome-wide differentiation among all V. destructor mites** 
+### Figure OR7: Genome-wide differentiation among all _V. destructor_ mites
   
 
 ```{r compute_FST small window V. destructorK1, cache=TRUE}
@@ -728,9 +708,9 @@ feunard <- feunard + theme(plot.background = element_blank()
 feunard
 ```
   
-**Figure: Genome-wide differentiation among all V. destructor sharing a Korean K1 mtDNA ancestry** 
+### Figure OR8: Genome-wide differentiation among all switched _V. destructor_ (sharing a Korean K1 mtDNA ancestry)
 
-The Korean K1 lineage is one the two reported to have switched hosts in Asia. Here, we also found that all _V. destructor_ mites from A. mellifera in Asia clustered with K1 mites from _A. cerana_.
+The Korean K1 lineage is one of the two reported to have switched hosts in Asia. Here, we also found that all _V. destructor_ mites from A. mellifera in Asia clustered with K1 mites from _A. cerana_.
   
 
 ```{r compute_FST small window V. jacobsoni, cache=TRUE}
@@ -748,7 +728,7 @@ psykokwak <- psykokwak + theme(plot.background = element_blank()
 psykokwak
 ```
   
-**Figure: Genome-wide differentiation among all V. jacobsoni mites** 
+### Figure OR9: Genome-wide differentiation among all _V. jacobsoni_ mites
   
 
 ```{r compute_FST small window V. jacobsoniPNG1, cache=TRUE}
@@ -767,7 +747,7 @@ akwakwak
 
 ```
   
-**Figure: Genome-wide differentiation among all V. jacobsoni sharing a Papua New Guinea 1 mtDNA ancestry** 
+### Figure OR10: Genome-wide differentiation among all switched _V. jacobsoni_ (sharing a Papua New Guinea 1 mtDNA ancestry)
   
 
 
@@ -801,10 +781,11 @@ lugia
 #abline(h=mean(windowStats.small$dxy_VDESAC_VJACAC,na.rm=T),col="grey")
 ```
   
-**Figure: Absolute genetic divergence between the sibling Varroa species on their original and shared host A. cerana** 
+### Figure OR11: Absolute genetic divergence between the two Varroa species populations parasitizing the shared original host _A. cerana_
   
 We used these levels as they should be the most extreme between species to compare the levels observed among host populations within species.
-
+  
+  
 ```{r compute_dxy small destructor, cache=TRUE}
 # Divergence within V. destructor all lineages confonded
 salameche <- ggplot(windowStats.small, aes(mid, dxy_VDESAC_VDESAM))
@@ -820,15 +801,16 @@ salameche <- salameche + theme(plot.background = element_blank()
 salameche
 ```
   
-**Figure: Absolute genetic divergence between V. destructor host populations (A. cerana vs A. mellifera)** 
-
+### Figure OR12: Absolute genetic divergence between the two _V. destructor_ host populations ( _A. cerana_ vs _A. mellifera_)
+  
+  
 ```{r compute_dxy small destructor lineages, cache=TRUE}
 # Divergence within V. destructor between Korean individuals
 reptincel <- ggplot(windowStats.hapsmall, aes(mid, dxy_VDESAC_K1_VDESAM_K1))
 reptincel <- reptincel + geom_point(aes(x=mid,y=dxy_VDESAC_K1_VDESAM_K1,col = scaffold), size = 1)
 reptincel <- reptincel + scale_color_manual(values = destructor)
 reptincel <- reptincel + geom_vline(xintercept = chrom$add, size = 0.2, lty = "dashed")
-reptincel <- reptincel + labs(title = "[SOURCE vs SWITCHING LINEAGE] Genetic divergence between A. cerana K1 vs A. mellifera K1 mites", x = "Position in the genome", y = "Sliding window Dxy")
+reptincel <- reptincel + labs(title = "[SOURCE vs SWITCHING LINEAGE] A. cerana K1 vs A. mellifera K1 mites", x = "Position in the genome", y = "Sliding window Dxy")
 #reptincel <- reptincel + ylim(0,0.045)
 reptincel <- reptincel + theme_bw()
 reptincel <- reptincel + theme(plot.background = element_blank()
@@ -841,7 +823,7 @@ dracaufeu <- ggplot(windowStats.hapsmall, aes(mid, dxy_VDESAC_V1_VDESAM_K1))
 dracaufeu <- dracaufeu + geom_point(aes(x=mid,y=dxy_VDESAC_V1_VDESAM_K1,col = scaffold), size = 1)
 dracaufeu <- dracaufeu + scale_color_manual(values = destructor)
 dracaufeu <- dracaufeu + geom_vline(xintercept = chrom$add, size = 0.2, lty = "dashed")
-dracaufeu <- dracaufeu + labs(title = "[NON-SWITCHING vs SWITCHING LINEAGE] Genetic divergence between A. cerana V1 vs A. mellifera K1 mites", x = "Position in the genome", y = "Sliding window Dxy")
+dracaufeu <- dracaufeu + labs(title = "[NON-SWITCHING vs SWITCHING LINEAGE] A. cerana V1 vs A. mellifera K1 mites", x = "Position in the genome", y = "Sliding window Dxy")
 #dracaufeu <- dracaufeu + ylim(0,0.045)
 dracaufeu <- dracaufeu + theme_bw()
 dracaufeu <- dracaufeu + theme(plot.background = element_blank()
@@ -854,7 +836,7 @@ megadracaufeu <- ggplot(windowStats.hapsmall, aes(mid, dxy_VDESAC_J1_VDESAM_K1))
 megadracaufeu <- megadracaufeu + geom_point(aes(x=mid,y=dxy_VDESAC_J1_VDESAM_K1,col = scaffold), size = 1)
 megadracaufeu <- megadracaufeu + scale_color_manual(values = destructor)
 megadracaufeu <- megadracaufeu + geom_vline(xintercept = chrom$add, size = 0.2, lty = "dashed")
-megadracaufeu <- megadracaufeu + labs(title = "[SOURCE 2 vs SWITCHING LINEAGE] Genetic divergence between A. cerana J1 vs A. mellifera K1 mites", x = "Position in the genome", y = "Sliding window Dxy")
+megadracaufeu <- megadracaufeu + labs(title = "[SOURCE 2 vs SWITCHING LINEAGE] A. cerana J1 vs A. mellifera K1 mites", x = "Position in the genome", y = "Sliding window Dxy")
 #megadracaufeu <- megadracaufeu + ylim(0,0.045)
 megadracaufeu <- megadracaufeu + theme_bw()
 megadracaufeu <- megadracaufeu + theme(plot.background = element_blank()
@@ -869,7 +851,7 @@ canarticho <- ggplot(windowStats.hapsmall, aes(mid, dxy_VDESAC_V1_VDESAC_J1))
 canarticho <- canarticho + geom_point(aes(x=mid,y=dxy_VDESAC_V1_VDESAC_J1,col = scaffold), size = 1)
 canarticho <- canarticho + scale_color_manual(values = destructor)
 canarticho <- canarticho + geom_vline(xintercept = chrom$add, size = 0.2, lty = "dashed")
-canarticho <- canarticho + labs(title = "[NON-SWITCHING vs SWITCHING LINEAGE] Genetic divergence between A. cerana V1 vs A. cerana J1 mites", x = "Position in the genome", y = "Sliding window Dxy")
+canarticho <- canarticho + labs(title = "[NON-SWITCHING vs SWITCHING LINEAGE] A. cerana V1 vs A. cerana J1 mites", x = "Position in the genome", y = "Sliding window Dxy")
 #canarticho <- canarticho + ylim(0,0.045)
 canarticho <- canarticho + theme_bw()
 canarticho <- canarticho + theme(plot.background = element_blank()
@@ -878,11 +860,12 @@ canarticho <- canarticho + theme(plot.background = element_blank()
 canarticho
 ```
   
-**Figure: Absolute genetic divergence between V. destructor host and lineage populations (A. cerana vs A. mellifera)** 
+### Figure OR13: Comparison of the absolute genetic divergence between host population pairs of source, switched and non-switched _V. destructor_ in regards to maternal lineage.
 
-Here our aim is to detect whether some regions are highly diverging among non-switched and switched mite lineages.
+Here we aim to detect whether some regions are highly diverging among non-switched and switched mite lineages.
 
-In the next step, we do the same comparison process but among _V. jacobsoni_ mites.
+In the next step, we do the same comparison process but among _V. jacobsoni_ mites.  
+  
 ```{r compute_dxy small jacobsoni, cache=TRUE}
 
 # Combine 2 plots into a single figure:
@@ -909,7 +892,8 @@ carapuce <- carapuce + theme(plot.background = element_blank()
 carapuce
 ```
   
-**Figure: Absolute genetic divergence between V. jacobsoni host populations (A. cerana vs A. mellifera)** 
+### Figure OR14: Comparison of the absolute genetic divergence between host population pairs of source, switched and non-switched _V. jacobsoni_ in regards to maternal lineage.
+
 
 ```{r compute_dxy small jacobsoni lineages, cache=TRUE}
 
@@ -958,7 +942,7 @@ megatortank
 
 ### Zoom in of outliers
 
-On this part, we wanted to zoom in on the outliers sites and we started with the chromosome 6 (NW_019211459.1:22180001-22190000). Contrary to the plots before, we do an interactive plot_ly which allowed to zoom in the areas of interest.  
+We wanted to zoom in on the outliers sites, and we started with chromosome 6 (NW_019211459.1:22180001-22190000). Contrary to the plots before, we do an interactive plot_ly which allowed us to zoom in on the areas of interest.  
 
 ```{r zoom chrom6, cache=TRUE}
 
@@ -985,6 +969,9 @@ windowStats.small %>%
 #  layout(title="Dxy sliding window VjacAc vs VjacAm")
 
 ```
+
+### Figure OR14: Dxy sliding window between *V. destructor* on *A. cerana* vs on *A. mellifera*.
+
 After checking the most outlier window, I used the genome data browser in NCBI to identify which genes may be associated to this region. 
 
 **Chromosome 2**
@@ -1023,7 +1010,7 @@ The entire region (NW_019211459.1:22180001-22190000) spanned on the annotated ge
 In the same chromosome, we also have the region spanning from (NW_019211459.1:22515001-22530000) which shows two estimates outside of the other values. These two regions are associated to an uncharacterized [LOC111253430](https://www.ncbi.nlm.nih.gov/gene/111253430) locus.  
 
 
-**All sites with Dxy value > 0.01 were investigated manually by examining individual genotypes, which showed an excess in heterozygosity levels. These regions were also poorly conserved within species and had BLAST matches elsewhere in the genome, suggesting the presence of sequencing artefacts rather than biological signal (labelled *af on the plots).**
+**All sites with Dxy value > 0.01 were investigated manually by examining individual genotypes, which showed an excess in heterozygosity levels. These regions were also poorly conserved within species. They had BLAST matches elsewhere in the genome, suggesting the presence of sequencing artifacts rather than biological signals (labeled *af on the plots).**
 
 # All-sites (mitochondrial analysis)
 
@@ -1033,7 +1020,7 @@ In the same chromosome, we also have the region spanning from (NW_019211459.1:22
 
 ## Inferring population structure with PCA
 
-``` {r PCA-all MAF001, message = FALSE, warning = FALSE, results="hide"}
+``` {r 3DPCA-all MAF001, message = FALSE, warning = FALSE}
 
 ### Import the PCA results from plink in .eigenvec and .eigenval format
 pca<- read_table2("data/pca/snp63_maf001/snponly63sort_maf001_plink.eigenvec", col_names = FALSE)
@@ -1069,9 +1056,12 @@ metapca %>%
                         "Host: ", Host, "<br>",
                         "Lineage: ", Lineage, "<br>",
                         "Country: ", Country)) %>%
-  add_markers(colors = c("red2", "blue2"), size = 6)%>%
-  layout(title="Interactive 3D-PCA using a MAF filtering of 0.01 on the 63 mites sequenced")
+  add_markers(colors = c("red2", "blue2"), size = 6)
+```
 
+### Figure OR15: Interactive 3D-PCA using a MAF filtering of 0.01 on the 63 mites sequenced
+
+`````` {r PCA-all MAF001, message = FALSE, warning = FALSE, results="hide"}
 #PLOT PCA
 evoli <- ggplot(metapca, aes(x=PC1, y=PC2, label = FILE_bam))
 evoli <- evoli + geom_point(aes(fill=Species, shape=Host), size=5, alpha = 0.7)
@@ -1084,200 +1074,11 @@ evoli <- evoli + theme(plot.background = element_blank()
 evoli
 ```
   
-**Figure: PCA on the ** 
+### Figure OR16: PCA using a MAF filtering of 0.01 on the 63 mites sequenced colored by species.
 
+We did the same within each species later to obtain the base of figure 2  presented in the manuscript.
+  
 
-
-``` {r PCA V.destructor MAF001, message = FALSE, warning = FALSE, results="hide"}
-### PRUNED one MAF001
-
-pca.pruned<- read_table2("data/pca/snp63_maf001/snponly63sort_prunedmaf001_plink.eigenvec", col_names = FALSE)
-eigenval.pruned <- scan("data/pca/snp63_maf001/snponly63sort_prunedmaf001_plink.eigenval")
-pca.pruned  <- pca.pruned [,-1]
-names(pca.pruned )[1] <- "ID_NAMES"
-names(pca.pruned )[2:ncol(pca.pruned )] <- paste0("PC", 1:(ncol(pca.pruned )-1))
-metapca.pruned <- left_join(metadata, pca.pruned, by = c("FILE_bam" = "ID_NAMES"))
-pve.pruned <- data.frame(PC = 1:20, pve.pruned = eigenval.pruned/sum(eigenval.pruned)*100)
-b <- ggplot(pve.pruned, aes(PC, pve.pruned)) + geom_bar(stat = "identity")
-b + ylab("Percentage variance explained") + theme_light()
-
-metapca.pruned %>%
-  plot_ly(x = ~PC1, y = ~PC2, z = ~PC3,
-          color = ~Species,
-          symbol = ~Host,
-          hoverinfo = "text",
-          text = ~paste("Name: ", FILE_ID, "<br>",
-                        "Species: ", Species, "<br>",
-                        "Host: ", Host, "<br>",
-                        "Lineage: ", Lineage, "<br>",
-                        "Country: ", Country)) %>%
-  add_markers(colors = c("red2", "blue2"), size = 4)%>%
-  layout(title="PCA maf = 0.01 pruned")
-
-#PLOT PCA
-pyroli <- ggplot(metapca.pruned, aes(x=PC1, y=PC2, label = FILE_ID))
-pyroli <- pyroli + geom_point(aes(fill=Species, shape=Host), size=5, alpha = 0.7)
-pyroli <- pyroli + scale_fill_manual(values = c("red2", "blue2"))
-pyroli <- pyroli + scale_shape_manual(values = c(21, 22, 23))
-pyroli <- pyroli + theme_bw()
-pyroli <- pyroli + theme(plot.background = element_blank()
-  ,panel.grid.major = element_blank()
-  ,panel.grid.minor = element_blank())
-pyroli
-
-### RAW MAF001_VDES31
-
-pca.vdes <- read_table2("data/pca/snp63_maf001/vdes31_maf001_plink.eigenvec", col_names = FALSE)
-eigenval.vdes <- scan("data/pca/snp63_maf001/vdes31_maf001_plink.eigenval")
-pca.vdes  <- pca.vdes [,-1]
-names(pca.vdes )[1] <- "ID_NAMES"
-names(pca.vdes )[2:ncol(pca.vdes )] <- paste0("PC", 1:(ncol(pca.vdes )-1))
-metapca.vdes <- left_join(metadata, pca.vdes, by = c("FILE_bam" = "ID_NAMES"))
-pve.vdes <- data.frame(PC = 1:20, pve.vdes = eigenval.vdes/sum(eigenval.vdes)*100)
-b <- ggplot(pve.vdes, aes(PC, pve.vdes)) + geom_bar(stat = "identity")
-b + ylab("Percentage variance explained") + theme_light()
-
-metapca.vdes %>%
-  plot_ly(x = ~PC1, y = ~PC2,
-          color = ~Lineage,
-          symbol = ~Host,
-          hoverinfo = "text",
-          text = ~paste("Name: ", FILE_ID, "<br>",
-                        "Species: ", Species, "<br>",
-                        "Host: ", Host, "<br>",
-                        "Lineage: ", Lineage, "<br>",
-                        "Country: ", Country)) %>%
-  add_markers(colors = c("brown", "yellow", "orange", "purple", "red2", "black", "deeppink2"), size = 4)%>%
-  layout(title="MAF001 VDES31")
-
-aquali <- ggplot(metapca.vdes, aes(x=PC1, y=PC2, label = FILE_ID))
-aquali <- aquali + geom_point(aes(fill=Lineage, shape=Host), size=5, alpha = 0.7)
-#aquali <- aquali + scale_fill_manual(n= 14, name = rainbow)
-aquali <- aquali + scale_shape_manual(values = c(21, 22, 23))
-aquali <- aquali + theme_bw()
-aquali <- aquali + theme(plot.background = element_blank()
-  ,panel.grid.major = element_blank()
-  ,panel.grid.minor = element_blank())
-aquali
-
-### PRUNED one MAF001_VDES31
-
-pca.vdespruned<- read_table2("data/pca/snp63_maf001/vdes31sort_prunedmaf001_plink.eigenvec", col_names = FALSE)
-eigenval.vdespruned <- scan("data/pca/snp63_maf001/vdes31sort_prunedmaf001_plink.eigenval")
-pca.vdespruned  <- pca.vdespruned [,-1]
-names(pca.vdespruned )[1] <- "ID_NAMES"
-names(pca.vdespruned )[2:ncol(pca.vdespruned )] <- paste0("PC", 1:(ncol(pca.vdespruned )-1))
-metapca.vdespruned <- left_join(metadata, pca.vdespruned, by = c("FILE_bam" = "ID_NAMES"))
-pve.vdespruned <- data.frame(PC = 1:20, pve.vdespruned = eigenval.vdespruned/sum(eigenval.vdespruned)*100)
-b <- ggplot(pve.vdespruned, aes(PC, pve.vdespruned)) + geom_bar(stat = "identity")
-b + ylab("Percentage variance explained") + theme_light()
-
-metapca.vdespruned %>%
-  plot_ly(x = ~PC1, y = ~PC2,
-          color = ~Lineage,
-          symbol = ~Host,
-          hoverinfo = "text",
-          text = ~paste("Name: ", FILE_ID, "<br>",
-                        "Species: ", Species, "<br>",
-                        "Host: ", Host, "<br>",
-                        "Lineage: ", Lineage, "<br>",
-                        "Country: ", Country)) %>%
-  add_markers(colors = c("brown", "yellow", "orange", "purple", "red2", "black", "deeppink2"), size = 4)%>%
-  layout(title="MAF001 VDES31 pruned")
-
-voltali <- ggplot(metapca.vdespruned, aes(x=PC1, y=PC2, label = FILE_ID))
-voltali <- voltali + geom_point(aes(fill=Lineage, shape=Host), size=5, alpha = 0.7)
-#voltali <- voltali + scale_fill_manual(n= 14, name = rainbow)
-voltali <- voltali + scale_shape_manual(values = c(21, 22, 23))
-voltali <- voltali + theme_bw()
-voltali <- voltali + theme(plot.background = element_blank()
-  ,panel.grid.major = element_blank()
-  ,panel.grid.minor = element_blank())
-voltali
-
-#raichu <- ggplot(metapca.pruned, aes(x=PC1, y=PC2, label = FILE_ID))
-#raichu <- raichu + geom_point(aes(fill=Host, shape=Host), size=5)
-#raichu <- raichu + scale_fill_manual(values = c("black", "white", "gray"))
-#pikachu <- pikachu + scale_fill_manual(values = c("gray50", "mediumblue", "chartreuse3", "skyblue1", "darkolivegreen2", "darkgreen",  "deepskyblue1"))
-#raichu <- raichu + scale_shape_manual(values = c(21, 22,  8))
-#raichu <- raichu + geom_hline(yintercept = 0)
-#raichu <- raichu + geom_vline(xintercept = 0)
-#raichu <- raichu + theme_bw()
-#raichu <- raichu + theme(plot.background = element_blank()
-#panel.grid.major = element_blank()
-#  ,panel.grid.minor = element_blank())
-#raichu
-
-### RAW MAF001_VJAC32
-
-pca.vjac <- read_table2("data/pca/snp63_maf001/vjac32_maf001_plink.eigenvec", col_names = FALSE)
-eigenval.vjac <- scan("data/pca/snp63_maf001/vjac32_maf001_plink.eigenval")
-pca.vjac  <- pca.vjac [,-1]
-names(pca.vjac )[1] <- "ID_NAMES"
-names(pca.vjac )[2:ncol(pca.vjac )] <- paste0("PC", 1:(ncol(pca.vjac )-1))
-metapca.vjac <- left_join(metadata, pca.vjac, by = c("FILE_bam" = "ID_NAMES"))
-pve.vjac <- data.frame(PC = 1:20, pve.vjac = eigenval.vjac/sum(eigenval.vjac)*100)
-b <- ggplot(pve.vjac, aes(PC, pve.vjac)) + geom_bar(stat = "identity")
-b + ylab("Percentage variance explained") + theme_light()
-
-metapca.vjac %>%
-  plot_ly(x = ~PC1, y = ~PC2,
-          color = ~Lineage,
-          symbol = ~Host,
-          hoverinfo = "text",
-          text = ~paste("Name: ", FILE_ID, "<br>",
-                        "Species: ", Species, "<br>",
-                        "Host: ", Host, "<br>",
-                        "Lineage: ", Lineage, "<br>",
-                        "Country: ", Country)) %>%
-  add_markers(colors = c("gray50", "mediumblue", "chartreuse3", "skyblue1", "darkolivegreen2", "darkgreen",  "deepskyblue1"), size = 4)%>%
-  layout(title="MAF001 VJAC32")
-
-noctali <- ggplot(metapca.vjac, aes(x=PC1, y=PC2, label = FILE_ID))
-noctali <- noctali + geom_point(aes(fill=Lineage, shape=Host), size=5, alpha = 0.7)
-#noctali <- noctali + scale_fill_manual(n= 14, name = rainbow)
-noctali <- noctali + scale_shape_manual(values = c(21, 22, 23))
-noctali <- noctali + theme_bw()
-noctali <- noctali + theme(plot.background = element_blank()
-  ,panel.grid.major = element_blank()
-  ,panel.grid.minor = element_blank())
-noctali
-
-### PRUNED one MAF001_VJAC32
-
-pca.vjacpruned<- read_table2("data/pca/snp63_maf001/vjac32sort_prunedmaf001_plink.eigenvec", col_names = FALSE)
-eigenval.vjacpruned <- scan("data/pca/snp63_maf001/vjac32sort_prunedmaf001_plink.eigenval")
-pca.vjacpruned  <- pca.vjacpruned [,-1]
-names(pca.vjacpruned )[1] <- "ID_NAMES"
-names(pca.vjacpruned )[2:ncol(pca.vjacpruned )] <- paste0("PC", 1:(ncol(pca.vjacpruned )-1))
-metapca.vjacpruned <- left_join(metadata, pca.vjacpruned, by = c("FILE_bam" = "ID_NAMES"))
-pve.vjacpruned <- data.frame(PC = 1:20, pve.vjacpruned = eigenval.vjacpruned/sum(eigenval.vjacpruned)*100)
-b <- ggplot(pve.vjacpruned, aes(PC, pve.vjacpruned)) + geom_bar(stat = "identity")
-b + ylab("Percentage variance explained") + theme_light()
-
-metapca.vjacpruned %>%
-  plot_ly(x = ~PC1, y = ~PC2,
-          color = ~Host,
-          symbol = ~Host,
-          hoverinfo = "text",
-          text = ~paste("Name: ", FILE_ID, "<br>",
-                        "Species: ", Species, "<br>",
-                        "Host: ", Host, "<br>",
-                        "Lineage: ", Lineage, "<br>",
-                        "Country: ", Country)) %>%
-  #add_markers(colors = c("gray50", "mediumblue", "chartreuse3", "skyblue1", "darkolivegreen2", "darkgreen",  "deepskyblue1"), size = 4)%>%
-  add_markers(colors = c("mediumblue", "skyblue1",  "purple"), size = 4)%>%
-  layout(title="MAF001 VJAC32 pruned")
-
-mentali <- ggplot(metapca.vjacpruned, aes(x=PC1, y=PC2, label = FILE_ID))
-mentali <- mentali + geom_point(aes(fill=Lineage, shape=Host), size=5, alpha = 0.7)
-#mentali <- mentali + scale_fill_manual(n= 14, name = rainbow)
-mentali <- mentali + scale_shape_manual(values = c(21, 22, 23))
-mentali <- mentali + theme_bw()
-mentali <- mentali + theme(plot.background = element_blank()
-  ,panel.grid.major = element_blank()
-  ,panel.grid.minor = element_blank())
-mentali
-
-```
 ## Population structure and admixture with NGSadmix
+
+(see graphs in manuscript)
